@@ -50,7 +50,7 @@ Comments have been left in [TFLiteHelpers.java](../tflite_helpers/TFLiteHelpers.
 
 The below is a non-exhaustive list of [AI Hub Models](https://aihub.qualcomm.com/mobile/models) that should be compatible.
 
-**Not every model has been individually tested with this app**. Please file an issue or reach out on [Slack](https://join.slack.com/t/qualcomm-ai-hub/shared_invite/zt-2j76uzoye-Xya17vQESuxrWTKEwK2uMQ) if you find a model in this list with app compatibility issues.
+**Not every model has been individually tested with this app**. Please file an issue or reach out on [Slack](http://aihub.qualcomm.com/community/slack) if you find a model in this list with app compatibility issues.
 
 Please download the TFLite asset. Variants `float` and `w8a8` are both supported by the app.
 

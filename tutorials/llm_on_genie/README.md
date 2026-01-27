@@ -40,7 +40,7 @@ Target device requirements:
 Software requirements:
 
 - Android 15+, Windows 11
-- [QAIRT SDK](https://qpm.qualcomm.com/#/main/tools/details/Qualcomm_AI_Runtime_SDK) v2.29.0+ (see [QNN SDK](https://qpm.qualcomm.com/#/main/tools/details/qualcomm_ai_engine_direct) for versions prior to 2.32)
+- [QAIRT SDK](https://qpm.qualcomm.com/#/main/tools/details/Qualcomm_AI_Runtime_SDK) v2.29.0+ (see [QNN SDK](https://qpm.qualcomm.com/#/main/tools/details/qualcomm_ai_engine_direct) for versions prior to 2.32; Automotive devices require Auto QAIRT SDK instead of the standard QAIRT SDK, see below for more details)
 - [qai-hub-models](https://pypi.org/project/qai-hub-models/)
 
 > [!IMPORTANT]
@@ -63,9 +63,13 @@ and copy it to the target device. If the target has internet connectivity, you
 can also download it directly using `wget` with the URL shown in the Software
 Center. Alternately, download [QAIRT SDK](https://qpm.qualcomm.com/#/main/tools/details/Qualcomm_AI_Runtime_SDK) and install it via [QPM.](https://docs.qualcomm.com/bundle/publicresource/topics/80-88500-5/install_qualcomm_package_manager_qpm.html)
 
+> [!IMPORTANT]
+> Automotive devices require access to the Auto specific QAIRT SDK which can be obtained by contacting your Qualcomm Account Manager, for those looking to purchase Auto SoCs and gain access to Auto SDK, please reach out on our [Qualcomm AI Hub Slack Community](http://aihub.qualcomm.com/community/slack) for next steps. Additional steps required to set up auto devices can be found in [Android (Automotive)](https://github.com/qcom-ai-hub/ai-hub-apps-internal/tree/main/tutorials/llm_on_genie#android-automotive)
+
+
 Once downloaded, please set the following environment variables:
 
-## Android (bash)
+### Android (bash)
 
 Please make sure the architecture matches that of the device. The [mapping of
 architecture to device](https://app.aihub.qualcomm.com/devices) can help.
@@ -116,6 +120,31 @@ Android/Linux and `$PROFILE` on Windows PowerShell.
 > Please make sure the `ADSP_LIBRARY_PATH` variable points to the libraries
 > for the appropriate architecture. The [mapping of device to architecture](https://app.aihub.qualcomm.com/devices)
 > can provide additional details.
+
+### Android (Automotive)
+
+```bash
+export AUTO_QAIRT_HOME= ## Location of downloaded Auto QAIRT SDK on target device
+export PATH=${AUTO_QAIRT_HOME}/bin/aarch64-android/:${PATH}
+
+# Please make sure the architecture matches that of the device (v73, v75); replace vXX with appropriate architecture
+export VENDOR_LIB=${AUTO_QAIRT_HOME}/lib/hexagon-vXX/unsigned
+
+export ADSP_LIBRARY_PATH="/vendor/lib/rfsa/adsp;$VENDOR_LIB;"
+export LD_LIBRARY_PATH=${AUTO_QAIRT_HOME}/lib/aarch64-android:/vendor/lib64/
+```
+
+For auto devices, once the SDK is installed, users need to copy additional library files (`libc++.so.1` and `libc++abi.so.1`) from QNX to Linux/Android Guest Virtual Machine (LA GVM) in order to run `genie-t2t`.
+
+* A standard automotive device may have more than one VM running - a primary VM (QNX) and guest VMs through a hypervisor (Android or Linux or both). You will be running the application in LA GVM while the required files are present in QNX.
+* In order to transfer the required library files, you need to FTP to QNX and copy the library files to a HOST system and then push it to the LA GVM (preferrably through ADB). The library files will be available in `/dsplib/image/dsp/cdsp0/` or `/mnt/etc/images/cdsp0/` under your QNX filesystem.
+* Copy the `libc++.so.1` and `libc++abi.so.1` files from this directory to your HOST system and connect to LA GVM. Push these files to `$VENDOR_LIB` in LA GVM from your HOST system.
+
+> [!NOTE]
+> On QDC automotive devices, `libc++.so.1` and `libc++abi.so.1` are typically already present in the LA GVM at `/data/local/tmp/qxa.qa_adsplib/`. You can use the following command to copy the files:
+> ```
+> cp /data/local/tmp/qxa.qa_adsplib/libc++.so.1 $VENDOR_LIB
+> cp /data/local/tmp/qxa.qa_adsplib/libc++abi.so.1 $VENDOR_LIB
 
 ## Step 2: Export QAIRT-compatible LLM models (on the host machine)
 
