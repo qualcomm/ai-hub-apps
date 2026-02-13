@@ -1,6 +1,6 @@
 # Core SDK Versions
-qairt_sdk: "2.40.0"
-qairt_sdk_llm: "2.37.0.250724" # This is the full SDK version used to download the SDK from Qualcomm Software Center (https://softwarecenter.qualcomm.com/catalog/item/Qualcomm_AI_Runtime_Community)
+qairt_sdk: "2.42.0"
+qairt_sdk_llm: "2.42.0.251225" # This is the full SDK version used to download the SDK from Qualcomm Software Center (https://softwarecenter.qualcomm.com/catalog/item/Qualcomm_AI_Runtime_Community)
 onnx_runtime: "1.22.1"
 tf_lite: "2.17.0"
 

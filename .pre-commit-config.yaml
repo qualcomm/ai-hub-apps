@@ -3,8 +3,10 @@
 # * CloudFormation templates don't pass the yaml-check hook (a known issue)
 
 exclude: |
-    (?x)(
+    (?x)
+    (
         /build/
+    |   ^playgrounds/
     )
 
 repos:

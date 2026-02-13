@@ -99,15 +99,14 @@ $env:ADSP_LIBRARY_PATH = "$env:QAIRT_HOME\lib\hexagon-v73\unsigned"
 
 ### Linux - Ubuntu (bash)
 
-```bash
-# Copy Genie to correct folders
-cp ${QAIRT_HOME}/lib/aarch64-oe-linux-gcc11.2/libGenie.so ${QAIRT_HOME}/lib/aarch64-ubuntu-gcc9.4/
-cp ${QAIRT_HOME}/bin/aarch64-oe-linux-gcc11.2/genie* ${QAIRT_HOME}/bin/aarch64-ubuntu-gcc9.4/
+This will work on Ubuntu 22.04+. Please adjust `aarch64-oe-linux-gcc11.2` if
+you are on an older version.
 
+```bash
 # Export environment variables
 export QAIRT_HOME= ## Location of downloaded QAIRT SDK on target device
-export PATH=${QAIRT_HOME}/bin/aarch64-ubuntu-gcc9.4/:${PATH}
-export LD_LIBRARY_PATH=${QAIRT_HOME}/lib/aarch64-ubuntu-gcc9.4:${LD_LIBRARY_PATH}
+export PATH=${QAIRT_HOME}/bin/aarch64-oe-linux-gcc11.2:${PATH}
+export LD_LIBRARY_PATH=${QAIRT_HOME}/lib/aarch64-oe-linux-gcc11.2:${LD_LIBRARY_PATH}
 
 # Please make sure the architecture matches that of the device (v73, v75)
 export ADSP_LIBRARY_PATH=${QAIRT_HOME}/lib/hexagon-v73/unsigned
