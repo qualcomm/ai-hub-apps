@@ -1,0 +1,7 @@
+{
+    "files.associations": {
+        "xlocale": "cpp",
+        "xlocmes": "cpp",
+        "vector": "cpp"
+    }
+}
