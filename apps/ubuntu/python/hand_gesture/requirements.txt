@@ -1,0 +1,6 @@
+PyGObject==3.50.0
+opencv-python-headless
+ai-edge-litert==1.3.0
+pillow==12.0.0
+numpy==2.3.5
+flask

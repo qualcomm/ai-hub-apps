@@ -19,6 +19,7 @@ With this repository, you can...
 ### Supported Deployment Targets
 * Android 11 Red Velvet Cake & Newer, API v30+
 * Windows 11
+* Ubuntu 24.04+
 
 ### Supported compute units
 * CPU, GPU, NPU (includes [hexagon HTP](https://developer.qualcomm.com/hardware/qualcomm-innovators-development-kit/ai-resources-overview/ai-hardware-cores-accelerators))
@@ -65,6 +66,12 @@ __NOTE: Some of these apps will run without NPU acceleration on non-Snapdragon®
 | [Super Resolution](apps/windows/cpp/SuperResolution) | C++ | ONNX | OpenCV |
 | [Whisper Speech-to-Text](apps/windows/python/Whisper) | Python | ONNX |
 | [Stable Diffusion Image Generation](apps/windows/python/StableDiffusion) | Python | ONNX |
+
+## _Ubuntu_ App Directory
+
+| Task | Language | Inference API | Special Tags |
+| -- | -- | -- | -- |
+| [Hand Gesture Recognition](apps/ubuntu/python/hand_gesture) | Python | TensorFlow Lite | GStreamer |
 
 ## _Tutorials_ Directory
 
