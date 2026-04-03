@@ -110,7 +110,7 @@ jobs:
               repository: qcom-ai-hub/tetra-public-website
               token: ${{ secrets.STAGING_GH_TOKEN }}
 
-          - uses: actions/setup-node@v4
+          - uses: actions/setup-node@v6
             name: Setup Node
             with:
               node-version: ${{ env.NODE_VERSION }}
