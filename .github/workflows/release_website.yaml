@@ -79,7 +79,7 @@ jobs:
           VENV_PATH: build/ci-envs/release
 
         steps:
-          - uses: actions/checkout@v4
+          - uses: actions/checkout@v6
             id: checkout_apps_custom_ref
             if: ${{ env.SRC_BRANCH_NAME != 'curr_ref' }}
             name: Clone AI Hub Apps Internal (${{ env.SRC_BRANCH_NAME }})
@@ -87,13 +87,13 @@ jobs:
               path: ai-hub-apps-internal
               ref: ${{ env.SRC_BRANCH_NAME }}
 
-          - uses: actions/checkout@v4
+          - uses: actions/checkout@v6
             if: ${{ steps.checkout_apps_custom_ref.conclusion == 'skipped' }}
             name: Clone AI Hub Apps Internal
             with:
               path: ai-hub-apps-internal
 
-          - uses: actions/checkout@v4
+          - uses: actions/checkout@v6
             id: checkout_models
             if: ${{ inputs.import_models }}
             name: Clone AI Hub Models Internal (${{ env.MODELS_BRANCH_NAME }})
@@ -103,7 +103,7 @@ jobs:
               token: ${{ secrets.STAGING_GH_TOKEN }}
               ref: ${{ env.MODELS_BRANCH_NAME }}
 
-          - uses: actions/checkout@v4
+          - uses: actions/checkout@v6
             name: Clone Tetra Public Website
             with:
               path: tetra-public-website
