@@ -155,7 +155,7 @@ jobs:
       # Send result to Slack channel #ai-hub-apps
       - name: Send Slack Notification
         id: slack_notification
-        uses: slackapi/slack-github-action@v1.25.0
+        uses: slackapi/slack-github-action@v3.0.1
         with:
           channel-id: C08KWAVBQNB
           slack-message: |

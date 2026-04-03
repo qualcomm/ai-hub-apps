@@ -24,7 +24,7 @@ jobs:
     name: Notify Slack - New Issue
     runs-on: ubuntu-latest
     steps:
-    - uses: slackapi/slack-github-action@v1.25.0
+    - uses: slackapi/slack-github-action@v3.0.1
       with:
         channel-id: ${{ secrets.SLACK_CHANNEL_ID }}
         slack-message: "${{ env.ISSUE_EMOJI }} ${{ env.MSG_TITLE }} New issue created: <${{ github.event.issue.html_url }}|${{ github.event.issue.title }}>"
@@ -40,7 +40,7 @@ jobs:
     name: Notify Slack - New Issue Comment
     runs-on: ubuntu-latest
     steps:
-    - uses: slackapi/slack-github-action@v1.25.0
+    - uses: slackapi/slack-github-action@v3.0.1
       with:
         channel-id: ${{ secrets.SLACK_CHANNEL_ID }}
         slack-message: "${{ env.ISSUE_EMOJI }} ${{ env.MSG_TITLE }} New issue comment: <${{ github.event.issue.html_url }}|${{ github.event.issue.title }}>"
@@ -56,7 +56,7 @@ jobs:
     name: Notify Slack - Issue became Stale
     runs-on: ubuntu-latest
     steps:
-    - uses: slackapi/slack-github-action@v1.25.0
+    - uses: slackapi/slack-github-action@v3.0.1
       with:
         channel-id: ${{ secrets.SLACK_CHANNEL_ID }}
         slack-message: "${{ env.ISSUE_EMOJI }} ${{ env.MSG_TITLE }} An issue became stale: <${{ github.event.issue.html_url }}|${{ github.event.issue.title }}>"
@@ -71,7 +71,7 @@ jobs:
     name: Notify Slack - New PR Created
     runs-on: ubuntu-latest
     steps:
-    - uses: slackapi/slack-github-action@v1.25.0
+    - uses: slackapi/slack-github-action@v3.0.1
       with:
         channel-id: ${{ secrets.SLACK_CHANNEL_ID }}
         slack-message: "${{ env.PR_EMOJI }} ${{ env.MSG_TITLE }} New PR: <${{ github.event.pull_request.html_url }}|${{ github.event.pull_request.title }}>"
@@ -87,7 +87,7 @@ jobs:
     name: Notify Slack - New PR Comment
     runs-on: ubuntu-latest
     steps:
-    - uses: slackapi/slack-github-action@v1.25.0
+    - uses: slackapi/slack-github-action@v3.0.1
       with:
         channel-id: ${{ secrets.SLACK_CHANNEL_ID }}
         slack-message: "${{ env.PR_EMOJI }} ${{ env.MSG_TITLE }} New PR Comment: <${{ github.event.issue.pull_request.html_url }}|${{ github.event.issue.pull_request.title }}>"
