@@ -177,7 +177,7 @@ jobs:
           - name: Create Public Website PR
             if: inputs.create_pr && steps.commit_changes.outputs.committed == 'true'
             id: create-public-website-pr
-            uses: actions/github-script@v8.0.0
+            uses: actions/github-script@v9.0.0
             with:
               github-token: ${{ secrets.STAGING_GH_TOKEN }}
               result-encoding: string
