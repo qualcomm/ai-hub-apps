@@ -3,7 +3,8 @@ id: image_classification_android
 license_url: https://github.com/qualcomm/ai-hub-apps/blob/main/LICENSE
 license_type: bsd-3-clause
 models: ['mobilenet_v2']
-model_file_path: 'src/main/assets/classifier.tflite'
+model_file_paths:
+  - 'src/main/assets/classifier.tflite'
 runtime: tflite
 status: published
 domain: 'Computer Vision'

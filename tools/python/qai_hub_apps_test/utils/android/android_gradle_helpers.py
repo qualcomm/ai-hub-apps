@@ -73,7 +73,7 @@ def build_android_app(
     install_model(
         app_root,
         app_info,
-        app_info.model_file_path,
+        app_info.model_file_paths,
         model_id,
         app_info.runtime,
         precision,

@@ -3,7 +3,8 @@ id: object_detection_windows_cpp
 license_url: https://github.com/qualcomm/ai-hub-apps/blob/main/LICENSE
 license_type: bsd-3-clause
 models: ['yolox']
-model_file_path: '/assets/models/detection.onnx'
+model_file_paths:
+  - '/assets/models/detection.onnx'
 runtime: onnx
 status: published
 domain: 'Computer Vision'

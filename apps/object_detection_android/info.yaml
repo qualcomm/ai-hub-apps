@@ -3,7 +3,8 @@ id: object_detection_android
 license_url: https://github.com/qualcomm/ai-hub-apps/blob/main/LICENSE
 license_type: bsd-3-clause
 models: ['yolox']
-model_file_path: 'src/main/assets/detector.tflite'
+model_file_paths:
+  - 'src/main/assets/detector.tflite'
 runtime: tflite
 status: published
 domain: 'Computer Vision'

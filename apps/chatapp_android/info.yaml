@@ -8,7 +8,8 @@ private_model_s3_paths:
     w4:
       # CI Runs out of disk space with a full model, so we use a 'dummy model' copy. The dummy has context binary files that are empty.
       qualcomm-snapdragon-8gen3: 'qai-hub-models/release-assets/v0.41.0/Llama-v3.2-1B-Instruct/precompiled/qualcomm-snapdragon-8gen3/Llama-v3.2-1B-Instruct_w4_DUMMY_MODELS.genie.zip'
-model_file_path: 'src/main/assets/models/llm'
+model_file_paths:
+  - 'src/main/assets/models/llm'
 runtime: genie
 status: published
 domain: Generative AI

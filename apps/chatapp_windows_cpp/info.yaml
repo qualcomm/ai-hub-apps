@@ -20,7 +20,8 @@ private_model_s3_paths:
   llama_v3_taide_8b_chat:
     w4:
       qualcomm-snapdragon-x-elite: 'qai-hub-models/release-assets/v0.41.0/Llama-v3.2-1B-Instruct/precompiled/qualcomm-snapdragon-8gen3/Llama-v3.2-1B-Instruct_w4_DUMMY_MODELS.genie.zip'
-model_file_path: '/genie_bundle'
+model_file_paths:
+  - '/genie_bundle'
 runtime: genie
 status: published
 domain: Generative AI

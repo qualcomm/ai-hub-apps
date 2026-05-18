@@ -3,7 +3,8 @@ id: super_resolution_windows_cpp
 license_url: https://github.com/qualcomm/ai-hub-apps/blob/main/LICENSE
 license_type: bsd-3-clause
 models: ['esrgan', 'quicksrnetlarge', 'quicksrnetmedium', 'quicksrnetsmall', 'real_esrgan_general_x4v3', 'real_esrgan_x4plus', 'sesr_m5', 'xlsr']
-model_file_path: '/assets/models/super_resolution.onnx'
+model_file_paths:
+  - '/assets/models/super_resolution.onnx'
 runtime: onnx
 status: published
 domain: 'Computer Vision'

@@ -3,7 +3,8 @@ id: semantic_segmentation_android
 license_url: https://github.com/qualcomm/ai-hub-apps/blob/main/LICENSE
 license_type: bsd-3-clause
 models: ['ffnet_40s', 'ffnet_54s', 'ffnet_78s', 'ffnet_78s_lowres', 'ffnet_122ns_lowres']
-model_file_path: 'src/main/assets/segmenter.tflite'
+model_file_paths:
+  - 'src/main/assets/segmenter.tflite'
 runtime: tflite
 status: published
 domain: 'Computer Vision'
