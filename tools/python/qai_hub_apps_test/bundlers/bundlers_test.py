@@ -6,14 +6,13 @@ from __future__ import annotations
 
 import zipfile
 from pathlib import Path
-from unittest.mock import MagicMock
 
 import pytest
 
 import qai_hub_apps_test.bundlers as bundlers_mod
 from qai_hub_apps_test.bundlers import bundle_app
 from qai_hub_apps_test.configs.info_yaml import AppLanguage
-from qai_hub_apps_test.conftest import make_sample_app_info
+from qai_hub_apps_test.conftest import FAKE_VERSIONS, make_sample_app_info
 
 pytestmark = pytest.mark.bundler_unit
 
@@ -36,12 +35,16 @@ def test_bundle_app_by_str_id_resolves_dir(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    def mock_bundle_source(app_root: Path, out_dir: Path, sdk_parent: Path) -> None:
+    def mock_bundle_source(
+        app_root: Path,
+        out_dir: Path,
+        sdk_parent: Path,
+        shared_scripts_root: Path | None = None,
+    ) -> None:
         out_dir.mkdir(parents=True, exist_ok=True)
 
-    monkeypatch.setattr(bundlers_mod, "_bundle_source", mock_bundle_source)
+    monkeypatch.setattr(bundlers_mod, "_bundle_python_source", mock_bundle_source)
     monkeypatch.setattr(bundlers_mod, "find_app_dir", lambda _: dummy_python_app_path)
-    monkeypatch.setattr(bundlers_mod, "_bundle_scripts", MagicMock())
 
     out = tmp_path / "out"
     bundle_app("my_dummy_app", out, sdk_parent=dummy_python_sdk_path)
@@ -114,6 +117,59 @@ def test_bundle_python_app_e2e(
         'source "$(dirname "${BASH_SOURCE[0]}")/scripts/apt_utils.sh"'
         in (bundle / "install_runtime.sh").read_text()
     )
+
+
+def test_bundle_android_app_e2e(
+    dummy_android_app_path: Path,
+    dummy_scripts_path: Path,
+    tmp_path: Path,
+) -> None:
+    """E2E: bundle an Android app with symlinked shared code and version variables.
+
+    Verifies that bundle_app:
+    - resolves symlinks (tflite/ dir, ImageProcessing.java)
+    - copies shared scripts and versions.env to scripts/
+    - rewrites source lines in install_build.sh
+    - inlines version variables in build.gradle
+    - empties common.gradle
+    """
+    out_dir = tmp_path / "out"
+    bundle_app(
+        dummy_android_app_path,
+        out_dir,
+        shared_scripts_root=dummy_scripts_path,
+    )
+
+    bundle = out_dir / "my_dummy_android_app"
+    assert bundle.is_dir()
+
+    # symlinks resolved
+    tflite = bundle / "src" / "main" / "java" / "com" / "quicinc" / "tflite"
+    assert tflite.exists() and not tflite.is_symlink()
+    assert (tflite / "TFLiteHelpers.java").exists()
+    image_proc = (
+        bundle / "src" / "main" / "java" / "com" / "quicinc" / "ImageProcessing.java"
+    )
+    assert image_proc.exists() and not image_proc.is_symlink()
+
+    # versions.env copied by shell bundler
+    assert (bundle / "scripts" / "versions.env").exists()
+
+    # source line in install_build.sh rewritten to bundle-local path
+    install_build = (bundle / "install_build.sh").read_text()
+    assert (
+        'source "$(dirname "${BASH_SOURCE[0]}")/scripts/android_utils.sh"'
+        in install_build
+    )
+
+    # version variables inlined in build.gradle
+    gradle = (bundle / "build.gradle").read_text()
+    assert "${TF_LITE_VERSION}" not in gradle
+    assert FAKE_VERSIONS["TF_LITE_VERSION"] in gradle
+    assert "ANDROID_COMPILE_API" not in gradle
+
+    # common.gradle emptied
+    assert (bundle / "_shared" / "android" / "common.gradle").read_text() == ""
 
 
 def test_bundle_app_make_zip(

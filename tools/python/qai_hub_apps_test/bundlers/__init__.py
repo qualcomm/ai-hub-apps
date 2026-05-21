@@ -9,9 +9,13 @@ import tempfile
 import zipfile
 from pathlib import Path
 
-from qai_hub_apps_test.bundlers.python.bundle import bundle_source as _bundle_source
-from qai_hub_apps_test.bundlers.shell.bundle import bundle_scripts as _bundle_scripts
-from qai_hub_apps_test.configs.info_yaml import AppLanguage, QAIHAAppInfo
+from qai_hub_apps_test.bundlers.android.bundle import (
+    bundle_source as _bundle_android_source,
+)
+from qai_hub_apps_test.bundlers.python.bundle import (
+    bundle_source as _bundle_python_source,
+)
+from qai_hub_apps_test.configs.info_yaml import AppLanguage, AppType, QAIHAAppInfo
 from qai_hub_apps_test.utils.paths import find_app_dir
 
 
@@ -24,13 +28,14 @@ def bundle_app(
 ) -> None:
     """Bundle an app by app ID or directory path.
 
-    Orchestrates three steps inside a temporary directory:
-    1. **bundle_source** — copies app source, shared SDK modules, and merged
-       ``requirements.txt`` (Python bundler).
-    2. **bundle_scripts** — detects ``install_*.sh`` / ``install_*.ps1`` in the
-       bundle, copies referenced shared scripts to ``scripts/``, copy versions.env and rewrites source/dot-source lines.
-    3. **Finalize** — copies the staging directory to ``output_dir/<app_id>/``
-       or zips it to ``output_dir/<app_id>.zip``.
+    - **Android** apps: deep-copy resolving all symlinks, copy shared scripts,
+      then inline ``ext`` version variables into ``build.gradle`` and empty
+      ``common.gradle``.
+    - **Python** apps: copy source + shared SDK modules + merged
+      ``requirements.txt``, then copy and rewrite shared shell scripts.
+
+    All variants stage into a temporary directory, then either copy to
+    ``output_dir/<app_id>/`` or zip to ``output_dir/<app_id>.zip``.
 
     Parameters
     ----------
@@ -41,7 +46,7 @@ def bundle_app(
         Directory where the bundle will be written.
     sdk_parent:
         Path to the directory containing ``qai_hub_apps_utils``. Auto-resolved
-        from the repository structure if None.
+        from the repository structure if None. (Python apps only.)
     shared_scripts_root:
         Path to the shared shell scripts directory (``apps/_shared/scripts/``).
         Auto-resolved from the repository structure if None.
@@ -51,26 +56,26 @@ def bundle_app(
     Raises
     ------
     NotImplementedError
-        If the app does not include Python in its languages.
+        If the app type/language combination is not supported for bundling.
     """
     app_dir: Path = find_app_dir(app) if isinstance(app, str) else app
     app_info, _ = QAIHAAppInfo.from_app(app_dir)
-
-    if AppLanguage.PYTHON not in app_info.languages:
-        raise NotImplementedError(
-            f"App '{app_info.id}' does not support Python bundling "
-            f"(languages={[lang.value for lang in app_info.languages]}). "
-            "Only Python apps can be bundled at this time."
-        )
 
     output_dir.mkdir(parents=True, exist_ok=True)
 
     with tempfile.TemporaryDirectory() as _tmp:
         tmp_dir = Path(_tmp) / app_info.id
 
-        _bundle_source(app_dir, tmp_dir, sdk_parent)
-
-        _bundle_scripts(tmp_dir, shared_scripts_root)
+        if app_info.app_type == AppType.ANDROID:
+            _bundle_android_source(app_dir, tmp_dir, shared_scripts_root)
+        elif AppLanguage.PYTHON in app_info.languages:
+            _bundle_python_source(app_dir, tmp_dir, sdk_parent, shared_scripts_root)
+        else:
+            raise NotImplementedError(
+                f"App '{app_info.id}' (type={app_info.app_type.value}, "
+                f"languages={[lang.value for lang in app_info.languages]}) "
+                "is not supported for bundling."
+            )
 
         if make_zip:
             zip_path = output_dir / f"{app_info.id}.zip"

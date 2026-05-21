@@ -71,11 +71,18 @@ class QAIHACLIAppInfo(BaseQAIHMConfig):
     model_file_paths: list[
         Path
     ] = []  # Destination paths for each downloaded model file
+    model_file_dir: str | None = None  # Directory to unzip all model files into
     url: AppUrl | None = None
 
     @model_validator(mode="after")
-    def _validate_model_file_paths_same_dir(self) -> "QAIHACLIAppInfo":
-        if len(self.model_file_paths) > 1:
+    def _validate_model_location(self) -> "QAIHACLIAppInfo":
+        has_paths = bool(self.model_file_paths)
+        has_dir = self.model_file_dir is not None
+        if has_paths and has_dir:
+            raise ValueError(
+                "model_file_paths and model_file_dir are mutually exclusive; set only one."
+            )
+        if has_paths and len(self.model_file_paths) > 1:
             parents = {Path(p).parent for p in self.model_file_paths}
             if len(parents) > 1:
                 raise ValueError(
@@ -95,6 +102,7 @@ class QAIHAAppInfo(QAIHACLIAppInfo):
     ##########################
 
     skip_test: str | None = None
+    include_in_cli: bool = True
     app_repo_relative_path: str | None = (
         None  # relative path within qualcomm/ai-hub-apps
     )

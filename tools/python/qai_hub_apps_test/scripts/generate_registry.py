@@ -19,6 +19,7 @@ from qai_hub_apps_test.configs.asset_bases_yaml import AssetBases
 from qai_hub_apps_test.configs.info_yaml import (
     AppLanguage,
     AppStatus,
+    AppType,
     AppUrl,
     QAIHAAppInfo,
 )
@@ -113,7 +114,7 @@ def generate_registry(
     min_cli_version:
         Minimum CLI version required to consume this registry.
     build_and_upload:
-        If True, bundle Python apps and upload zips + registry to S3.
+        If True, bundle Python and Android apps and upload zips + registry to S3.
     """
     print(f"Using ref '{ref}' for GitHub URLs (repo base: {repo_base})")
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -125,7 +126,7 @@ def generate_registry(
                 f"Error: app ID '{info.id}' in {app_dir / 'info.yaml'} "
                 f"does not match directory name '{app_dir.name}'."
             )
-        if info.status == AppStatus.PUBLISHED:
+        if info.status == AppStatus.PUBLISHED and info.include_in_cli:
             resolved_url = _resolve_repo_url(info, repo_base, ref)
             public_apps.append(
                 (info.model_copy(update={"app_repo_url": resolved_url}), app_dir)
@@ -158,10 +159,13 @@ def generate_registry(
             build_path = Path(build_dir)
             for info, app_dir in public_apps:
                 print(f"\n{f' {info.id} ':─^60}")
-                if AppLanguage.PYTHON not in info.languages:
+                if (
+                    AppLanguage.PYTHON not in info.languages
+                    and info.app_type != AppType.ANDROID
+                ):
                     print(
-                        f"Skipping: not a Python app "
-                        f"(languages={[l.value for l in info.languages]})"
+                        f"Skipping: unsupported app "
+                        f"(type={info.app_type.value}, languages={[l.value for l in info.languages]})"
                     )
                     continue
                 bundle_app(app_dir, build_path, make_zip=True)
@@ -174,10 +178,13 @@ def generate_registry(
     else:
         for info, _ in public_apps:
             print(f"\n{f' {info.id} ':─^60}")
-            if AppLanguage.PYTHON not in info.languages:
+            if (
+                AppLanguage.PYTHON not in info.languages
+                and info.app_type != AppType.ANDROID
+            ):
                 print(
-                    f"Skipping: not a Python app "
-                    f"(languages={[l.value for l in info.languages]})"
+                    f"Skipping: unsupported app "
+                    f"(type={info.app_type.value}, languages={[l.value for l in info.languages]})"
                 )
                 continue
             bundled_apps.append(info)

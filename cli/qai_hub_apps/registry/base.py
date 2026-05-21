@@ -89,9 +89,9 @@ class App:
                         f"Model '{model_asset.model_id}' is not supported for this app. Supported models: {available}"
                     )
 
-                if not self.model_file_paths:
+                if not self.model_file_paths and not self.model_file_dir:
                     raise AppIncompatibleError(
-                        f"No model_file_paths configured for app '{self.id}'."
+                        f"No model_file_paths or model_file_dir configured for app '{self.id}'."
                     )
 
                 try:
@@ -129,60 +129,67 @@ class App:
                 with open(metadata_path) as f:
                     metadata = json.load(f)
                 src_names = list(metadata["model_files"].keys())
-                dst_paths = self.model_file_paths
-                if len(src_names) != len(dst_paths):
-                    issue_url = make_issue_url(
-                        title=f"Model file count mismatch for app '{self.id}'",
-                        body=(
-                            f"App: {self.id}\n"
-                            f"Model ID: {model_asset.model_id}\n"
-                            f"Expected files: {len(dst_paths)}\n"
-                            f"Downloaded files: {len(src_names)}\n"
-                            f"Downloaded file names: {', '.join(src_names)}"
-                        ),
-                    )
-                    raise AppIncompatibleError(
-                        f"The model '{model_asset.model_id}' downloaded for '{self.id}' has {len(src_names)} "
-                        f"file(s) but {len(dst_paths)} were expected. "
-                        f"This is likely a bug - please file an issue and we'll look into it:\n"
-                        f"  {issue_url}"
-                    )
-                dst_parents = {Path(p).parent for p in dst_paths}
-                if len(dst_parents) > 1:
-                    issue_url = make_issue_url(
-                        title=f"model_file_paths directory mismatch for app '{self.id}'",
-                        body=(
-                            f"App: {self.id}\n"
-                            f"model_file_paths: {[str(p) for p in dst_paths]}"
-                        ),
-                    )
-                    raise AppIncompatibleError(
-                        f"All model_file_paths for '{self.id}' must share the same parent directory. "
-                        f"This is likely a bug - please file an issue and we'll look into it:\n"
-                        f"  {issue_url}"
-                    )
-                # Build rename map: original filename -> desired destination filename
-                rename_map = {
-                    src_name: Path(dst_rel).name
-                    for src_name, dst_rel in zip(src_names, dst_paths, strict=True)
-                }
-                # Copy entire asset into its destination directory
-                models_dest = staged / Path(dst_paths[0]).parent
-                models_dest.mkdir(parents=True, exist_ok=True)
-                for item in model_tmp.iterdir():
-                    dest_name = rename_map.get(item.name, item.name)
-                    if item.name == "metadata.json":
-                        # Update model_files keys to reflect renames, then write
-                        updated_files = {
-                            rename_map.get(k, k): v
-                            for k, v in metadata["model_files"].items()
-                        }
-                        metadata["model_files"] = updated_files
-                        (models_dest / "metadata.json").write_text(
-                            json.dumps(metadata, indent=2)
+                if self.model_file_paths:
+                    dst_paths = self.model_file_paths
+                    if len(src_names) != len(dst_paths):
+                        issue_url = make_issue_url(
+                            title=f"Model file count mismatch for app '{self.id}'",
+                            body=(
+                                f"App: {self.id}\n"
+                                f"Model ID: {model_asset.model_id}\n"
+                                f"Expected files: {len(dst_paths)}\n"
+                                f"Downloaded files: {len(src_names)}\n"
+                                f"Downloaded file names: {', '.join(src_names)}"
+                            ),
                         )
-                    else:
-                        shutil.move(str(item), models_dest / dest_name)
+                        raise AppIncompatibleError(
+                            f"The model '{model_asset.model_id}' downloaded for '{self.id}' has {len(src_names)} "
+                            f"file(s) but {len(dst_paths)} were expected. "
+                            f"This is likely a bug - please file an issue and we'll look into it:\n"
+                            f"  {issue_url}"
+                        )
+                    dst_parents = {Path(p).parent for p in dst_paths}
+                    if len(dst_parents) > 1:
+                        issue_url = make_issue_url(
+                            title=f"model_file_paths directory mismatch for app '{self.id}'",
+                            body=(
+                                f"App: {self.id}\n"
+                                f"model_file_paths: {[str(p) for p in dst_paths]}"
+                            ),
+                        )
+                        raise AppIncompatibleError(
+                            f"All model_file_paths for '{self.id}' must share the same parent directory. "
+                            f"This is likely a bug - please file an issue and we'll look into it:\n"
+                            f"  {issue_url}"
+                        )
+                    # Build rename map: original filename -> desired destination filename
+                    rename_map = {
+                        src_name: Path(dst_rel).name
+                        for src_name, dst_rel in zip(src_names, dst_paths, strict=True)
+                    }
+                    # Copy entire asset into its destination directory
+                    models_dest = staged / Path(dst_paths[0]).parent
+                    models_dest.mkdir(parents=True, exist_ok=True)
+                    for item in model_tmp.iterdir():
+                        dest_name = rename_map.get(item.name, item.name)
+                        if item.name == "metadata.json":
+                            # Update model_files keys to reflect renames, then write
+                            updated_files = {
+                                rename_map.get(k, k): v
+                                for k, v in metadata["model_files"].items()
+                            }
+                            metadata["model_files"] = updated_files
+                            (models_dest / "metadata.json").write_text(
+                                json.dumps(metadata, indent=2)
+                            )
+                        else:
+                            shutil.move(str(item), models_dest / dest_name)
+                else:
+                    # model_file_dir: drop all files as-is into the target directory
+                    models_dest = staged / self.model_file_dir
+                    models_dest.mkdir(parents=True, exist_ok=True)
+                    for item in model_tmp.iterdir():
+                        shutil.move(str(item), models_dest / item.name)
 
             shutil.move(staged, app_dest)
 

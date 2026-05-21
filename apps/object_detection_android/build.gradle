@@ -57,6 +57,6 @@ dependencies {
 }
 
 // Include utilities needed by the AI Hub Apps test suite.
-if (file('../_shared/android/common.gradle').exists()) {
-    apply from: '../_shared/android/common.gradle'
+if (file('_shared/android/common.gradle').exists()) {
+    apply from: '_shared/android/common.gradle'
 }

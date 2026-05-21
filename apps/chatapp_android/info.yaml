@@ -8,14 +8,13 @@ private_model_s3_paths:
     w4:
       # CI Runs out of disk space with a full model, so we use a 'dummy model' copy. The dummy has context binary files that are empty.
       qualcomm-snapdragon-8gen3: 'qai-hub-models/release-assets/v0.41.0/Llama-v3.2-1B-Instruct/precompiled/qualcomm-snapdragon-8gen3/Llama-v3.2-1B-Instruct_w4_DUMMY_MODELS.genie.zip'
-model_file_paths:
-  - 'src/main/assets/models/llm'
+model_file_dir: 'src/main/assets/models/llm'
 runtime: genie
 status: published
 domain: Generative AI
 headline: Run an LLM on Android
 description: A sample Android chat app showcasing how to integrate an on-device LLM with Qualcomm® Gen AI Inference Extensions (Genie) APIs, optimized for Snapdragon® NPU acceleration.
-precisions: [w4]
+precisions: [w4a16]
 app_type: 'android'
 qaihm_version: 'v0.41.0'
 static_img_filename: 'app_screen.png'
@@ -25,4 +24,5 @@ os:
   version: 15+
 languages: ['Java', 'C++']
 use_case: Text Generation
-related_models: ['llama_v3_2_3b_instruct']
+related_models: ['qwen3_4b_instruct_2507', 'llama_v3_2_3b_instruct']
+supported_devices: ["Samsung Galaxy S25"]

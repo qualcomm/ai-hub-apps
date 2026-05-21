@@ -20,3 +20,4 @@ os:
 languages: ['Java']
 use_case: 'Super Resolution'
 related_models: ['xlsr']
+supported_devices: ["Samsung Galaxy S25"]

@@ -28,6 +28,7 @@ _RUNNING_STATES = {
 # Map from hub device names to QDC target device names
 HUB_DEVICE_TO_QDC_DEVICE_MAP = {
     "Dragonwing IQ-9075 EVK": "QCS9075M",
+    "Samsung Galaxy S25": "SM8750",
 }
 
 # Default timeout for job status polling (in seconds)

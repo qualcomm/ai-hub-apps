@@ -1,11 +1,28 @@
-// Used by AI Hub Apps build system to verify API versions match the globally-required API versions (from apps/versions.yaml).
-task printAPIVersions {
+// Load versions from versions.env (relative to this file)
+def versionsEnvFile = new File(buildscript.sourceFile.parentFile, "../../scripts/versions.env").canonicalFile
+if (!versionsEnvFile.exists()) {
+    throw new GradleException("versions.env not found at ${versionsEnvFile}.")
+}
+versionsEnvFile.eachLine { line ->
+    def trimmed = line.trim()
+    if (!trimmed.startsWith('#') && trimmed.contains('=')) {
+        def idx = trimmed.indexOf('=')
+        def key = trimmed.substring(0, idx).trim()
+        def value = trimmed.substring(idx + 1).trim().replaceAll('^"|"$', '')
+        ext.set(key, value)
+    }
+}
+
+ext {
+    ANDROID_COMPILE_API = ext.ANDROID_COMPILE_API.toInteger()
+    ANDROID_MIN_API     = ext.ANDROID_MIN_API.toInteger()
+    ANDROID_TARGET_API  = ext.ANDROID_TARGET_API.toInteger()
+}
+
+task printExtVersions {
     doFirst {
-        println "ndk=${android.ndkVersion}"
-        println "minAPI=${android.defaultConfig.minSdk}"
-        println "targetAPI=${android.defaultConfig.targetSdk}"
-        println "compileAPI=${android.compileSdk}"
-        println "javaSourceCompatibility=${android.compileOptions.sourceCompatibility}"
-        println "javaTargetCompatibility=${android.compileOptions.targetCompatibility}"
+        ext.properties.each { k, v ->
+            println "${k}=${v}"
+        }
     }
 }

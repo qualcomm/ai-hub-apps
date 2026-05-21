@@ -19,4 +19,5 @@ use_case: 'Speech Recognition'
 related_models: ['whisper_base', 'whisper_tiny']
 app_maker: 'ArgMax'
 app_maker_url: '/collaborators/argmax'
+include_in_cli: false
 skip_test: external app; no build artifacts or source available to test

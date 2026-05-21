@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import re
 import shutil
 import tempfile
 import time
@@ -34,8 +35,7 @@ def create_zip(zip_path: str, source_dir: str | os.PathLike) -> None:
             arcname = os.path.relpath(file_path, source_dir)
             files_to_zip.append((file_path, arcname))
 
-    # ZIP_STORED (no compression) for speed — files are model bins and source code is few KBs
-    with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_STORED) as zf:
+    with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
         for file_path, arcname in files_to_zip:
             zf.write(file_path, arcname)
 
@@ -49,7 +49,6 @@ class AppTestArtifactHandler(ABC):
         curr_dirname: os.PathLike | str,
         app_dir: os.PathLike | str,
         dest_dir: os.PathLike | str,
-        run_command: str,
     ) -> str:
         """Create artifact bundle and return path to the zip file."""
         raise NotImplementedError
@@ -73,28 +72,22 @@ class AppTestLinuxArtifactHandler(AppTestArtifactHandler):
         curr_dirname: os.PathLike | str,
         app_dir: os.PathLike | str,
         dest_dir: os.PathLike | str,
-        run_command: str,
     ) -> str:
         """Build the test bundle directory and return the path to the zip archive.
 
         Copies ``run_linux.sh`` and ``ubuntu.dockerfile`` from ``device_scripts/``
-        into ``dest_dir``, substituting ``<<RUN_COMMAND>>`` and ``<<USE_DOCKER>>``
-        placeholders in the shell script. The app directory is copied in as an
-        ``app/`` subdirectory. The whole ``dest_dir`` is then zipped into
-        ``test.zip`` one level above it, which is the artifact uploaded to QDC.
+        into ``dest_dir``, substituting ``<<USE_DOCKER>>`` placeholder in the shell
+        script. The app directory is copied in as an ``app/`` subdirectory. The whole
+        ``dest_dir`` is then zipped into ``test.zip`` one level above it.
 
         Parameters
         ----------
         curr_dirname
-            Directory containing the ``device_scripts/`` folder (typically the
-            directory of this source file).
+            Directory containing the ``device_scripts/`` folder.
         app_dir
             Directory of the fetched app (output of ``qai-hub-apps fetch``).
         dest_dir
             Staging directory where the bundle contents are assembled.
-        run_command
-            Shell command to execute on the device inside the app directory;
-            substituted into ``run_linux.sh``.
 
         Returns
         -------
@@ -110,7 +103,7 @@ class AppTestLinuxArtifactHandler(AppTestArtifactHandler):
             content = f.read()
         with open(dest_script, "w", encoding="utf-8") as f:
             f.write(
-                content.replace("<<RUN_COMMAND>>", run_command).replace(
+                content.replace("<<RUN_COMMAND>>", "bash test.sh").replace(
                     "<<USE_DOCKER>>", "true" if self.use_docker else "false"
                 )
             )
@@ -127,6 +120,79 @@ class AppTestLinuxArtifactHandler(AppTestArtifactHandler):
         return zip_path
 
 
+class AppTestAndroidArtifactHandler(AppTestArtifactHandler):
+    @property
+    def entry_script(self) -> str | None:
+        return None
+
+    def get_instrumentation_runner(self, app_dir: str | os.PathLike) -> str:
+        """Parse applicationId and testInstrumentationRunner from build.gradle."""
+        build_gradle = os.path.join(app_dir, "build.gradle")
+        with open(build_gradle, encoding="utf-8") as f:
+            content = f.read()
+
+        app_id = re.search(r'applicationId\s+"([^"]+)"', content)
+        runner = re.search(r'testInstrumentationRunner\s+"([^"]+)"', content)
+
+        if not app_id or not runner:
+            raise RuntimeError(
+                f"Could not parse applicationId or testInstrumentationRunner from {build_gradle}"
+            )
+        return f"{app_id.group(1)}.test/{runner.group(1)}"
+
+    def create_artifact(
+        self,
+        curr_dirname: os.PathLike | str,
+        app_dir: os.PathLike | str,
+        dest_dir: os.PathLike | str,
+    ) -> str:
+        test_folder = os.path.join(dest_dir, "tests")
+        os.makedirs(test_folder, exist_ok=True)
+
+        # Parse instrumentation runner from build.gradle
+        instrumentation_runner = self.get_instrumentation_runner(app_dir)
+
+        dest_script = os.path.join(test_folder, "test_app.py")
+
+        # Copy 'run_android.py' and rename it to 'test_app.py' since pytest looks for files starting with 'test_'.
+        shutil.copy(
+            os.path.join(curr_dirname, "device_scripts", "run_android.py"),
+            dest_script,
+        )
+
+        with open(dest_script, encoding="utf-8") as f:
+            content = f.read()
+        with open(dest_script, "w", encoding="utf-8") as f:
+            f.write(
+                content.replace("<<INSTRUMENTATION_RUNNER>>", instrumentation_runner)
+            )
+
+        # Create an empty requirements.txt
+        open(os.path.join(dest_dir, "requirements.txt"), "w").close()
+
+        copied_app_dir = os.path.join(dest_dir, "app")
+        shutil.copytree(app_dir, copied_app_dir)
+
+        # Keep only build/outputs/
+        for item in os.listdir(copied_app_dir):
+            item_path = os.path.join(copied_app_dir, item)
+            if item == "build":
+                for build_item in os.listdir(item_path):
+                    if build_item != "outputs":
+                        build_item_path = os.path.join(item_path, build_item)
+                        shutil.rmtree(build_item_path) if os.path.isdir(
+                            build_item_path
+                        ) else os.unlink(build_item_path)
+            else:
+                shutil.rmtree(item_path) if os.path.isdir(item_path) else os.unlink(
+                    item_path
+                )
+
+        zip_path = os.path.join(os.path.dirname(dest_dir), "test.zip")
+        create_zip(zip_path, dest_dir)
+        return zip_path
+
+
 class AppTestQDCJobs(QDCJobs):
     """QDC job handler for generic app on-device testing."""
 
@@ -135,6 +201,8 @@ class AppTestQDCJobs(QDCJobs):
     ) -> AppTestArtifactHandler:
         if qdc_device.iot_platform:
             return AppTestLinuxArtifactHandler(use_docker=use_docker)
+        if qdc_device.mobile_platform:
+            return AppTestAndroidArtifactHandler()
         raise NotImplementedError(
             f"On-device app testing is not yet supported for this platform. "
             f"Device: {qdc_device.device.name!r}"
@@ -144,7 +212,6 @@ class AppTestQDCJobs(QDCJobs):
         self,
         qdc_device: QDCDevice,
         app_dir: str | os.PathLike,
-        run_command: str,
         use_docker: bool = False,
         save_bundle_dir: str | os.PathLike | None = None,
     ) -> tuple[list[str], str | None]:
@@ -156,8 +223,6 @@ class AppTestQDCJobs(QDCJobs):
             QDCDevice instance for the target device.
         app_dir
             Directory of the fetched app (output of ``qai-hub-apps fetch``).
-        run_command
-            Shell command to execute on the device inside the app directory.
         use_docker
             If True, run the app inside a Docker container on the device.
         save_bundle_dir
@@ -178,7 +243,6 @@ class AppTestQDCJobs(QDCJobs):
                 curr_dirname,
                 app_dir,
                 tmpdirname,
-                run_command,
             )
             upload_response = self.upload_file(zip_path, ArtifactType.TESTSCRIPT)
             if save_bundle_dir is not None:
@@ -194,7 +258,6 @@ def submit_app_bundle_to_qdc_device(
     api_token: str,
     device: str,
     app_dir: str | os.PathLike,
-    run_command: str,
     job_name: str = "App Test",
     use_docker: bool = False,
     save_bundle_dir: str | os.PathLike | None = None,
@@ -209,8 +272,6 @@ def submit_app_bundle_to_qdc_device(
         Hub device name to run the job on (must be a key in HUB_DEVICE_TO_QDC_DEVICE_MAP).
     app_dir
         Directory of the fetched app (output of ``qai-hub-apps fetch``).
-    run_command
-        Shell command to execute on the device inside the app directory.
     job_name
         Name for the QDC job.
     use_docker
@@ -231,7 +292,7 @@ def submit_app_bundle_to_qdc_device(
     )
 
     job_artifacts, entry_script = app_job.add_job_artifacts(
-        qdc_device, app_dir, run_command, use_docker, save_bundle_dir
+        qdc_device, app_dir, use_docker, save_bundle_dir
     )
 
     job_id = app_job.submit_automated_job(
@@ -284,12 +345,6 @@ if __name__ == "__main__":
         help="Directory of the fetched app (output of 'qai-hub-apps fetch').",
     )
     parser.add_argument(
-        "--run-command",
-        type=str,
-        required=True,
-        help="Shell command to execute on the device inside the app directory.",
-    )
-    parser.add_argument(
         "--job-name",
         type=str,
         default="App Test",
@@ -321,7 +376,6 @@ if __name__ == "__main__":
         args.api_token,
         args.device,
         args.app_dir,
-        args.run_command,
         args.job_name,
         args.docker,
         args.save_bundle,

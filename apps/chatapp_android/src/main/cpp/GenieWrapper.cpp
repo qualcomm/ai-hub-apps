@@ -9,7 +9,6 @@
 #include <iostream>
 #include <jni.h>
 #include <memory>
-#include <regex>
 
 #include "GenieCommon.h"
 #include "GenieDialog.h"
@@ -75,21 +74,25 @@ std::string LoadModelConfig(const std::string& model_config_path,
                             const std::string& htp_model_config_path,
                             const std::string& tokenizer_path)
 {
-    std::string config;
     if (!std::filesystem::exists(model_config_path))
     {
         __android_log_print(ANDROID_LOG_INFO, "ChatApp", "Genie config file not found.");
         throw std::runtime_error("Genie config file not found.");
     }
 
-    // Read config file into memory
-    std::getline(std::ifstream(model_config_path), config, '\0');
+    std::string content;
+    std::getline(std::ifstream(model_config_path), content, '\0');
 
-    // Replace place-holders in config file with user provided paths
-    config = std::regex_replace(config, std::regex("<models_path>"), models_path);
-    config = std::regex_replace(config, std::regex("<htp_backend_ext_path>"), htp_model_config_path);
-    config = std::regex_replace(config, std::regex("<tokenizer_path>"), tokenizer_path);
-    return config;
+    using namespace nlohmann;
+    json config = json::parse(content);
+
+    config["dialog"]["tokenizer"]["path"] = tokenizer_path;
+    config["dialog"]["engine"]["backend"]["extensions"] = htp_model_config_path;
+
+    for (auto& bin : config["dialog"]["engine"]["model"]["binary"]["ctx-bins"])
+        bin = models_path + "/" + bin.get<std::string>();
+
+    return config.dump();
 }
 
 } // namespace
@@ -98,6 +101,7 @@ GenieWrapper::GenieWrapper(const std::string& model_config_path,
                            const std::string& models_path,
                            const std::string& htp_config_path,
                            const std::string& tokenizer_path)
+    : prompt_handler(models_path)
 {
     // Load model config in-memory
     std::string config = LoadModelConfig(model_config_path, models_path, htp_config_path, tokenizer_path);

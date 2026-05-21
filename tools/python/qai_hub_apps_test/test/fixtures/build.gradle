@@ -1,0 +1,23 @@
+plugins {
+    id 'com.android.application' version '8.13.0'
+}
+
+if (file('_shared/android/common.gradle').exists()) {
+    apply from: '_shared/android/common.gradle'
+}
+
+android {
+    ndkVersion ANDROID_NDK_VERSION
+    compileSdk ANDROID_COMPILE_API
+    defaultConfig {
+        applicationId 'com.quicinc.test'
+        minSdk ANDROID_MIN_API
+        targetSdk ANDROID_TARGET_API
+        testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
+    }
+}
+
+dependencies {
+    api "org.tensorflow:tensorflow-lite:${TF_LITE_VERSION}"
+    implementation "com.qualcomm.qti:qnn-runtime:${QNN_VERSION}"
+}

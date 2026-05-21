@@ -195,7 +195,7 @@ def test_fetch_model_not_in_related_models_raises(monkeypatch, tmp_path):
         app.fetch(tmp_path, model_asset=asset)
 
 
-def test_fetch_no_model_file_path_raises(monkeypatch, tmp_path):
+def test_fetch_no_model_location_raises(monkeypatch, tmp_path):
     monkeypatch.setattr("qai_hub_apps.registry.base.download", fake_download)
     monkeypatch.setattr("qai_hub_apps.registry.base._is_dev", lambda: False)
 
@@ -203,11 +203,39 @@ def test_fetch_no_model_file_path_raises(monkeypatch, tmp_path):
         url=AppUrl(source="https://example.com/app.zip"),
         related_models=["test_model"],
         model_file_paths=[],
+        model_file_dir=None,
     )
     app = App(info)
     asset = ModelAsset(model_id="test_model", chipset=None)
-    with pytest.raises(AppIncompatibleError, match="model_file_paths"):
+    with pytest.raises(
+        AppIncompatibleError, match="model_file_paths or model_file_dir"
+    ):
         app.fetch(tmp_path, model_asset=asset)
+
+
+def test_fetch_model_file_dir_success(monkeypatch, tmp_path):
+    monkeypatch.setattr("qai_hub_apps.registry.base.download", fake_download)
+    monkeypatch.setattr("qai_hub_apps.registry.base._is_dev", lambda: False)
+    monkeypatch.setattr(
+        "qai_hub_apps.registry.base.get_asset_url",
+        MagicMock(return_value="https://example.com/model.zip"),
+    )
+
+    info = make_app_info(
+        url=AppUrl(source="https://example.com/app.zip"),
+        related_models=["test_model"],
+        model_file_paths=[],
+        model_file_dir="models",
+    )
+    app = App(info)
+    asset = ModelAsset(model_id="test_model", chipset=None)
+    result = app.fetch(tmp_path, model_asset=asset)
+
+    assert result == tmp_path / "test_app"
+    assert (result / "models" / "model1.onnx").exists()
+    assert (result / "models" / "model2.onnx").exists()
+    assert (result / "models" / "LICENSE").exists()
+    assert (result / "models" / "metadata.json").exists()
 
 
 def test_fetch_model_asset_not_found_raises(monkeypatch, tmp_path):

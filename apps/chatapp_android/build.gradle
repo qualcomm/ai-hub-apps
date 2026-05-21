@@ -4,11 +4,16 @@ plugins {
     id 'com.android.application' version '8.13.0'
 }
 
+// Load shared versions and utilities — must be before android {} and dependencies {}
+if (file('_shared/android/common.gradle').exists()) {
+    apply from: '_shared/android/common.gradle'
+}
+
 // Path to local QAIRT SDK.
 // Download QAIRT SDK from https://qpm.qualcomm.com/#/main/tools/details/Qualcomm_AI_Runtime_SDK
 // e.g. "/opt/qcom/aistack/qairt/2.33.0.250327"
 //      "C:\\Qualcomm\\AIStack\\QAIRT\\2.33.0.250327"
-def qnnSDKLocalPath= System.getenv("QAIRT_SDK_ROOT") ?: "<UNSET QAIRT SDK PATH>"   // <-- Please add QNN SDK root path
+def qnnSDKLocalPath= System.getenv("QAIRT_PATH") ?: "<UNSET QAIRT SDK PATH>"   // <-- Please add QNN SDK root path
 
 // List of model assets
 def models = ["llm"]
@@ -18,14 +23,14 @@ def buildDir = project.getLayout().getBuildDirectory()
 def libsDir = buildDir.dir("libs")
 
 android {
-    ndkVersion '27.3.13750724'
-    compileSdk 34
+    ndkVersion ANDROID_NDK_VERSION
+    compileSdk ANDROID_COMPILE_API
 
     defaultConfig {
         applicationId "com.quicinc.chatapp"
 
-        minSdk 31
-        targetSdk 34
+        minSdk ANDROID_MIN_API
+        targetSdk ANDROID_TARGET_API
         versionCode 1
         versionName "1.0"
         externalNativeBuild {
@@ -41,6 +46,7 @@ android {
             }
         }
         signingConfig signingConfigs.debug
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
     buildTypes {
         release {
@@ -123,9 +129,10 @@ dependencies {
     implementation "androidx.appcompat:appcompat:1.7.0"
     implementation "com.google.android.material:material:1.12.0"
     implementation "androidx.constraintlayout:constraintlayout:2.2.0"
-}
-
-// Include utilities needed by the AI Hub Apps test suite.
-if (file('../_shared/android/common.gradle').exists()) {
-    apply from: '../_shared/android/common.gradle'
+    androidTestImplementation 'androidx.test:runner:1.6.2'
+    androidTestImplementation 'androidx.test:rules:1.6.1'
+    androidTestImplementation 'androidx.test.uiautomator:uiautomator:2.3.0'
+    androidTestImplementation 'androidx.test.ext:junit:1.2.1'
+    androidTestImplementation 'androidx.test:core:1.6.1'
+    androidTestImplementation 'junit:junit:4.13.2'
 }

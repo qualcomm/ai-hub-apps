@@ -1,9 +1,9 @@
 ARG REGISTRY_PREFIX=""
-ARG INSTALL_QUALCOMM_CA="false"
 
 FROM ${REGISTRY_PREFIX}ubuntu:24.04
 
 ARG INSTALL_QUALCOMM_CA="false"
+ARG BUILD_TYPE="runtime"
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
@@ -32,15 +32,31 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
+ENV NON_INTERACTIVE=true
+
 WORKDIR /app
 
 COPY . /app
 
+# When INSTALL_QUALCOMM_CA is true.
+# Set SSL env vars before install scripts so Python/pip requests use the Qualcomm CA.
+# Keytool runs after install_build.sh so JAVA_HOME is available for the JDK truststore update.
 RUN if [ "$INSTALL_QUALCOMM_CA" = "true" ]; then \
         export SSL_CERT_FILE=/usr/local/share/ca-certificates/qualcomm.com/nscacert.crt; \
         export REQUESTS_CA_BUNDLE=/usr/local/share/ca-certificates/qualcomm.com/nscacert.crt; \
     fi \
-    && if [ -f install_runtime.sh ]; then QAIRT_INSTALL_SKIP=true bash install_runtime.sh; fi
+    && if [ "$BUILD_TYPE" = "build" ] && [ -f install_build.sh ]; then \
+        bash install_build.sh; \
+        elif [ -f install_runtime.sh ]; then \
+            QAIRT_INSTALL_SKIP=true bash install_runtime.sh; \
+    fi \
+    && if [ "$INSTALL_QUALCOMM_CA" = "true" ] && [ -f scripts/android_utils.sh ]; then \
+        source scripts/android_utils.sh; \
+        keytool -import -noprompt -trustcacerts -alias qualcommroot \
+            -file /usr/local/share/ca-certificates/qualcomm.com/nscacert.crt \
+            -keystore "$JAVA_HOME/lib/security/cacerts" \
+            -storepass changeit; \
+    fi
 
-ENTRYPOINT ["bash", "-c", "source /app/scripts/qairt_utils.sh && install_qairt && exec \"$@\"", "--"]
+ENTRYPOINT ["bash", "-c", "if [ -f /app/scripts/qairt_utils.sh ]; then source /app/scripts/qairt_utils.sh && install_qairt; fi && exec \"$@\"", "--"]
 CMD ["bash"]

@@ -40,3 +40,4 @@ related_models: [
       'vit',
       'wideresnet50',
 ]
+supported_devices: ["Samsung Galaxy S25"]

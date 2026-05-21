@@ -119,8 +119,27 @@ public class MainActivity extends AppCompatActivity {
             }
             Path htpExtConfigPath = Paths.get(externalDir, "htp_config", supportedSocModel.get(socModel));
 
+            // Read model name from metadata.json (downloaded alongside model binaries)
+            String modelName = "No Model Found";
+            File metadataFile = new File(Paths.get(externalDir, "models", "llm", "metadata.json").toString());
+            if (metadataFile.exists()) {
+                try {
+                    String content = new String(java.nio.file.Files.readAllBytes(metadataFile.toPath()));
+                    org.json.JSONObject metadata = new org.json.JSONObject(content);
+                    if (metadata.has("model_name")) {
+                        modelName = metadata.getString("model_name");
+                    }
+                } catch (Exception e) {
+                    Log.w("ChatApp", "Could not read model_name from metadata.json: " + e.getMessage());
+                }
+            } else {
+                Log.w("ChatApp", "metadata.json not found at: " + metadataFile.getAbsolutePath());
+            }
+            final String finalModelName = modelName;
+
             setContentView(R.layout.activity_main);
             Button llm = (Button) findViewById(R.id.llm);
+            llm.setText("Chat with " + finalModelName);
             llm.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {

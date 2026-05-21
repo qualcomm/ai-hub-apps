@@ -12,3 +12,7 @@ dependencyResolutionManagement {
         mavenCentral()
     }
 }
+
+// Fix APK output filename to app-debug.apk regardless of the directory name the
+// project is built from (e.g. when fetched via qai-hub-apps and built on-device).
+rootProject.name = 'app'

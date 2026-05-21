@@ -12,6 +12,19 @@ from qai_hub_models.models.common import Precision, TargetRuntime
 
 from qai_hub_apps_test.configs.info_yaml import AppLanguage, AppType, QAIHAAppInfo
 
+_FIXTURES = Path(__file__).parent / "test" / "fixtures"
+
+FAKE_VERSIONS = {
+    "PYTHON_VERSION": "3.10",
+    "TF_LITE_VERSION": "2.17.0",
+    "TF_LITE_SUPPORT_VERSION": "0.5.0",
+    "QNN_VERSION": "2.40.0",
+    "ANDROID_NDK_VERSION": "27.3.13750724",
+    "ANDROID_COMPILE_API": "34",
+    "ANDROID_MIN_API": "31",
+    "ANDROID_TARGET_API": "34",
+}
+
 
 def pytest_configure(config: pytest.Config) -> None:
     config.addinivalue_line(
@@ -65,7 +78,9 @@ def dummy_scripts_path(tmp_path: Path) -> Path:
     """
     scripts_root = tmp_path / "apps" / "_shared" / "scripts"
     scripts_root.mkdir(parents=True)
-    (scripts_root / "versions.env").write_text('PYTHON_VERSION="3.10"\n')
+    (scripts_root / "versions.env").write_text(
+        "".join(f'{k}="{v}"\n' for k, v in FAKE_VERSIONS.items())
+    )
     load_sh = scripts_root / "load_versions.sh"
     load_sh.write_text("# load versions\n")
     (scripts_root / "apt_utils.sh").write_text(
@@ -80,6 +95,7 @@ def dummy_scripts_path(tmp_path: Path) -> Path:
         f'. "{load_ps1}"\nfunction Install-PipDeps {{ param($R) }}\n'
     )
     (scripts_root / "unreferenced.sh").write_text("# unused\n")
+    (scripts_root / "android_utils.sh").write_text("# android utils\n")
     return scripts_root
 
 
@@ -103,6 +119,58 @@ def dummy_python_app_path(tmp_path: Path) -> Path:
         "from qai_hub_apps_utils.helper import do_something\ndo_something()\n"
     )
     (app_dir / "requirements.txt").write_text("Pillow>=9.0\n")
+    return app_dir
+
+
+@pytest.fixture
+def dummy_android_app_path(tmp_path: Path) -> Path:
+    """Minimal dummy Android app with version variables and symlinked shared code.
+
+    Returns the app root directory::
+
+        tmp_path/my_dummy_android_app/
+          info.yaml
+          build.gradle          # version variables (${TF_LITE_VERSION}, etc.)
+          install_build.sh      # sources android_utils.sh
+          _shared/android/
+            common.gradle       # should be emptied in bundle
+          src/main/java/com/quicinc/
+            tflite/             # symlink → tmp_path/_shared/tflite_helpers/
+            ImageProcessing.java  # symlink → tmp_path/_shared/ImageProcessing.java
+    """
+    app_dir = tmp_path / "my_dummy_android_app"
+    app_dir.mkdir()
+    make_sample_app_info(
+        id="my_dummy_android_app",
+        app_type=AppType.ANDROID,
+        languages=[AppLanguage.JAVA],
+        runtime=TargetRuntime.TFLITE,
+    ).to_yaml(app_dir / "info.yaml", write_if_empty=True)
+
+    (app_dir / "build.gradle").write_text((_FIXTURES / "build.gradle").read_text())
+
+    (app_dir / "install_build.sh").write_text(
+        "#!/usr/bin/env bash\n"
+        "source ../../_shared/scripts/android_utils.sh\n"
+        "install_android_sdk\n"
+    )
+
+    shared_android = app_dir / "_shared" / "android"
+    shared_android.mkdir(parents=True)
+    (shared_android / "common.gradle").write_text("// common gradle content\n")
+
+    shared_tflite = tmp_path / "_shared" / "tflite_helpers"
+    shared_tflite.mkdir(parents=True)
+    (shared_tflite / "TFLiteHelpers.java").write_text("// TFLite helpers\n")
+
+    shared_img = tmp_path / "_shared" / "ImageProcessing.java"
+    shared_img.write_text("// image processing\n")
+
+    java_dir = app_dir / "src" / "main" / "java" / "com" / "quicinc"
+    java_dir.mkdir(parents=True)
+    (java_dir / "tflite").symlink_to(shared_tflite)
+    (java_dir / "ImageProcessing.java").symlink_to(shared_img)
+
     return app_dir
 
 

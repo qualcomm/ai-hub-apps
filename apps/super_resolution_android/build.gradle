@@ -2,14 +2,19 @@ plugins {
     id 'com.android.application' version '8.13.0'
 }
 
+// Load shared versions and utilities — must be before android {} and dependencies {}
+if (file('_shared/android/common.gradle').exists()) {
+    apply from: '_shared/android/common.gradle'
+}
+
 android {
-    ndkVersion '27.3.13750724'
-    compileSdk 34
+    ndkVersion ANDROID_NDK_VERSION
+    compileSdk ANDROID_COMPILE_API
 
     defaultConfig {
         applicationId "com.quicinc.superresolution"
-        minSdk 31
-        targetSdk 34
+        minSdk ANDROID_MIN_API
+        targetSdk ANDROID_TARGET_API
         versionCode 1
         versionName "1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
@@ -50,16 +55,17 @@ dependencies {
     implementation 'androidx.appcompat:appcompat:1.7.0'
     implementation 'com.google.android.material:material:1.12.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
-    api 'org.tensorflow:tensorflow-lite:2.17.0'
-    api 'org.tensorflow:tensorflow-lite-support:0.5.0'
-    implementation "org.tensorflow:tensorflow-lite-gpu:2.17.0"
-    implementation "org.tensorflow:tensorflow-lite-gpu-api:2.17.0"
+    api "org.tensorflow:tensorflow-lite:${TF_LITE_VERSION}"
+    api "org.tensorflow:tensorflow-lite-support:${TF_LITE_SUPPORT_VERSION}"
+    implementation "org.tensorflow:tensorflow-lite-gpu:${TF_LITE_VERSION}"
+    implementation "org.tensorflow:tensorflow-lite-gpu-api:${TF_LITE_VERSION}"
     implementation 'org.tensorflow:tensorflow-lite-gpu-delegate-plugin:0.4.4'
-    implementation "com.qualcomm.qti:qnn-runtime:2.40.0"
-    implementation "com.qualcomm.qti:qnn-litert-delegate:2.40.0"
-}
-
-// Include utilities needed by the AI Hub Apps test suite.
-if (file('../_shared/android/common.gradle').exists()) {
-    apply from: '../_shared/android/common.gradle'
+    implementation "com.qualcomm.qti:qnn-runtime:${QNN_VERSION}"
+    implementation "com.qualcomm.qti:qnn-litert-delegate:${QNN_VERSION}"
+    androidTestImplementation 'androidx.test:runner:1.6.2'
+    androidTestImplementation 'androidx.test:rules:1.6.1'
+    androidTestImplementation 'androidx.test.uiautomator:uiautomator:2.3.0'
+    androidTestImplementation 'androidx.test.ext:junit:1.2.1'
+    androidTestImplementation 'androidx.test:core:1.6.1'
+    androidTestImplementation 'junit:junit:4.13.2'
 }

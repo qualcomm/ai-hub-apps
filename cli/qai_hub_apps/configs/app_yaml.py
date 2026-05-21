@@ -51,5 +51,6 @@ class AppInfo(BaseConfig):
     precisions: list[Precision]
     languages: list[AppLanguage] = []
     model_file_paths: list[str] = []
+    model_file_dir: str | None = None
     environment: EnvironmentConfig | None = None
     url: AppUrl | None = None

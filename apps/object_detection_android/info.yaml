@@ -1,5 +1,6 @@
 name: Object Detection Android
 id: object_detection_android
+include_in_cli: false
 license_url: https://github.com/qualcomm/ai-hub-apps/blob/main/LICENSE
 license_type: bsd-3-clause
 models: ['yolox']

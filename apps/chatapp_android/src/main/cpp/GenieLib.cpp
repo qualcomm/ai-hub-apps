@@ -30,6 +30,7 @@ extern "C" JNIEXPORT jlong JNICALL Java_com_quicinc_chatapp_GenieWrapper_loadMod
     {
         jclass exception_cls = env->FindClass("java/lang/RuntimeException");
         env->ThrowNew(exception_cls, e.what());
+        return 0;
     }
 }
 
