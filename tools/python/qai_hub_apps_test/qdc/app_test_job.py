@@ -318,7 +318,10 @@ def submit_app_bundle_to_qdc_device(
                 app_job.download_job_log_files(job_log.filename, target_path)
                 print(f"Downloaded log: {job_log.filename}")
 
-    return job_status == "Completed"
+    # check if the job test failed or not
+    job = app_job.get_job(job_id)
+    print(f"QDC job {job_id} test finished with status: {job.result.value}")
+    return job.result == "Successful"
 
 
 if __name__ == "__main__":

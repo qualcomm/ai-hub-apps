@@ -4,9 +4,13 @@
 # ---------------------------------------------------------------------
 from __future__ import annotations
 
+import os
+import random
 import time
+import uuid
 
 import qai_hub as hub
+import requests
 from qualcomm_device_cloud_sdk.api import qdc_api
 from qualcomm_device_cloud_sdk.models import (
     ArtifactType,
@@ -16,6 +20,7 @@ from qualcomm_device_cloud_sdk.models import (
     JobType,
     TestFramework,
 )
+from qualcomm_device_cloud_sdk.models.job_type_0 import JobType0 as Job
 
 # States in which a job is still in progress (not yet terminal)
 _RUNNING_STATES = {
@@ -31,21 +36,34 @@ HUB_DEVICE_TO_QDC_DEVICE_MAP = {
     "Samsung Galaxy S25": "SM8750",
 }
 
+QDC_REST_BASE_URL = "https://api.qualcomm.com/deviceloud/v1"
+
 # Default timeout for job status polling (in seconds)
 DEFAULT_JOB_TIMEOUT = 7200  # 2 hours
 # Polling interval for job status checks (in seconds)
 POLL_INTERVAL = 30
 # QDC submission fail if name exceeds this
 QDC_JOB_NAME_LIMIT = 32
+# QDC job limit
+QDC_JOB_LIMIT = int(os.getenv("QDC_JOB_LIMIT", "1"))
 
 
 class QDCDevice:
+    """Wraps a QAI Hub device and exposes QDC-specific properties."""
+
     def __init__(self, device: str) -> None:
+        """
+        Parameters
+        ----------
+        device
+            QAI Hub device name. The latest matching device is selected.
+        """
         self.device = hub.get_devices(device)[-1]
         self.device_attributes = getattr(self.device, "attributes", [])
 
     @property
     def hexagon_version(self) -> str:
+        """Hexagon DSP version string parsed from the device's hub attributes."""
         htp_version = None
         for attr in self.device_attributes:
             if "hexagon" in attr:
@@ -59,6 +77,7 @@ class QDCDevice:
 
     @property
     def windows_platform(self) -> bool:
+        """True if the device runs Windows, based on hub attributes."""
         for attr in self.device_attributes:
             if "os" in attr and attr.endswith("windows"):
                 return True
@@ -66,6 +85,7 @@ class QDCDevice:
 
     @property
     def mobile_platform(self) -> bool:
+        """True if the device is a phone form factor, based on hub attributes."""
         for attr in self.device_attributes:
             if "format" in attr and attr.endswith("phone"):
                 return True
@@ -73,6 +93,7 @@ class QDCDevice:
 
     @property
     def iot_platform(self) -> bool:
+        """True if the device is an IoT form factor, based on hub attributes."""
         for attr in self.device_attributes:
             if "format" in attr and attr.endswith("iot"):
                 return True
@@ -80,10 +101,12 @@ class QDCDevice:
 
     @property
     def qdc_name(self) -> str:
+        """QDC target device name corresponding to the hub device name."""
         return HUB_DEVICE_TO_QDC_DEVICE_MAP[self.device.name]
 
     @property
     def test_framework(self) -> TestFramework:
+        """QDC test framework appropriate for this device's platform."""
         if self.windows_platform:
             return TestFramework.POWERSHELL
         if self.iot_platform:
@@ -120,6 +143,46 @@ class QDCJobs:
             on_behalf_of_header="ai_hub_models",
             client_type_header="Python",
         )
+        self._api_key = api_key
+        self._app_name_header = app_name_header
+        self._session = requests.Session()
+        self._session.headers.update(
+            {
+                "accept": "application/json",
+                "Authorization": api_key,
+                "X-QCOM-TokenType": "apikey",
+                "X-QCOM-AppName": app_name_header,
+                "X-QCOM-ClientType": "appName",
+            }
+        )
+
+    def get_job(self, job_id: str) -> Job:
+        """Fetch job details from the QDC REST API.
+
+        Parameters
+        ----------
+        job_id
+            ID of the job to retrieve.
+
+        Returns
+        -------
+        job : Job
+            Job object constructed from the ``GET /jobs/{job_id}`` response.
+
+        Raises
+        ------
+        requests.HTTPError
+            If the API returns a non-2xx status code.
+        """
+        # Currently there is no support for get_job in the QDC Python API
+        # This is an interim solution until QDC-5417 is resolved
+        # https://jira-dc.qualcomm.com/jira/browse/QDC-5417
+        response = self._session.get(
+            f"{QDC_REST_BASE_URL}/jobs/{job_id}",
+            headers={"X-QCOM-TracingId": str(uuid.uuid4())},
+        )
+        response.raise_for_status()
+        return Job.from_dict(response.json())
 
     def status(self, job_id: str, timeout: int = DEFAULT_JOB_TIMEOUT) -> str:
         """
@@ -131,11 +194,11 @@ class QDCJobs:
             ID of the job to monitor.
         timeout
             Maximum time to wait for job completion in seconds.
-            Defaults to DEFAULT_JOB_TIMEOUT (1 hour).
+            Defaults to DEFAULT_JOB_TIMEOUT (2 hours).
 
         Returns
         -------
-        job_status: str
+        job_status : str
             Final status of the job.
 
         Raises
@@ -162,12 +225,31 @@ class QDCJobs:
             f"Last status: {job_status}"
         )
 
+    def get_active_jobs(self) -> list[Job]:
+        """Return all currently active (non-terminal) jobs for this user.
+
+        Returns
+        -------
+        active_jobs : list[Job]
+            Jobs whose state is in ``_RUNNING_STATES``.
+        """
+        # get_jobs_list returns all submitted jobs (latest first). The service allows at most
+        # 3 concurrent jobs; we fetch 10 as a safety buffer to ensure we don't miss any active ones.
+        jobs = qdc_api.get_jobs_list(self.client, 0, 10)
+        if jobs is None:
+            raise ValueError(
+                "Failure in `get_jobs_list`. Could not get job lists for user"
+            )
+
+        return [job for job in jobs.data if job.state in _RUNNING_STATES]
+
     def submit_automated_job(
         self,
         qdc_device: QDCDevice,
         job_artifacts: list[str],
         entry_script: str | None,
         job_name: str = "QDC Automated Job",
+        timeout: int = DEFAULT_JOB_TIMEOUT,
     ) -> str:
         """
         Submit an automated application job to QDC and return its job_id.
@@ -182,12 +264,34 @@ class QDCJobs:
             Optional entry script path for the job.
         job_name
             Name of the job to submit.
+        timeout
+            Maximum time to wait for a job slot to become available in seconds.
+            Defaults to DEFAULT_JOB_TIMEOUT (2 hours).
 
         Returns
         -------
-        job_id: str
+        job_id : str
             The submitted job's ID.
         """
+        elapsed = 0
+        while elapsed < timeout:
+            active_jobs = self.get_active_jobs()
+            if len(active_jobs) < QDC_JOB_LIMIT:
+                # jitter: wait POLL_INTERNAL + random(0, 10) to avoid TOCTOU race condition
+                time.sleep(POLL_INTERVAL + random.randint(0, 10))
+                break
+            print(
+                f"Job is waiting as the service is at capacity, "
+                f"waiting for {POLL_INTERVAL} seconds."
+            )
+            time.sleep(POLL_INTERVAL)
+            elapsed += POLL_INTERVAL
+
+        if elapsed >= timeout:
+            raise TimeoutError(
+                f"Job {job_name} did not start within {timeout}s because the service is at capacity (>={QDC_JOB_LIMIT} active jobs). "
+            )
+
         return qdc_api.submit_job(
             public_api_client=self.client,
             target_id=qdc_api.get_target_id(self.client, qdc_device.qdc_name),
@@ -216,7 +320,7 @@ class QDCJobs:
             ID of the job to monitor.
         timeout
             Maximum time to wait for log upload in seconds.
-            Defaults to DEFAULT_JOB_TIMEOUT (1 hour).
+            Defaults to DEFAULT_JOB_TIMEOUT (2 hours).
 
         Raises
         ------
