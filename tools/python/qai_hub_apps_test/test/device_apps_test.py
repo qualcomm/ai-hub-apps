@@ -188,6 +188,7 @@ def test_3_on_device_app(
         api_token=qdc_token,
         device=device,
         app_dir=app_dir,
+        use_docker=True,
         job_name=f"{app_info.id}-{model_id}",
     )
     assert success, f"QDC job failed for {app_info.id} with model {model_id}"
