@@ -32,6 +32,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
+SHELL ["/bin/bash", "-c"]
+
 ENV NON_INTERACTIVE=true
 
 WORKDIR /app

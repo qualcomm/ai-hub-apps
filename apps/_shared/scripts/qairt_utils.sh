@@ -21,6 +21,7 @@ source "$_QAIRT_UTILS_DIR/apt_utils.sh"
 
 QAIRT_ROOT="/opt/qcom/aistack/qairt"
 QAIRT_PATH="${QAIRT_ROOT}/${QAIRT_SDK_FULL_VERSION}"
+export QAIRT_ROOT QAIRT_PATH
 
 install_qairt() {
     if [ "${QAIRT_INSTALL_SKIP:-}" = "true" ]; then

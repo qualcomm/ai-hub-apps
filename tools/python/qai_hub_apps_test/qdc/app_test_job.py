@@ -304,19 +304,19 @@ def submit_app_bundle_to_qdc_device(
     print(f"Submitted QDC job with ID: {job_id}")
     job_status = app_job.status(job_id)
     print(f"QDC job {job_id} completed with status: {job_status}")
-    app_job.log_upload_status(job_id)
-    job_log_files = app_job.get_job_log_files(job_id)
-    time.sleep(POLL_INTERVAL)
-
-    if job_log_files:
-        with tempfile.TemporaryDirectory() as tmpdirname:
-            for job_log in job_log_files:
-                target_path = os.path.join(
-                    tmpdirname, "logs", f"{job_log.filename}.zip"
-                )
-                os.makedirs(os.path.dirname(target_path), exist_ok=True)
-                app_job.download_job_log_files(job_log.filename, target_path)
-                print(f"Downloaded log: {job_log.filename}")
+    if job_status == "Completed":
+        app_job.log_upload_status(job_id)
+        job_log_files = app_job.get_job_log_files(job_id)
+        time.sleep(POLL_INTERVAL)
+        if job_log_files:
+            with tempfile.TemporaryDirectory() as tmpdirname:
+                for job_log in job_log_files:
+                    target_path = os.path.join(
+                        tmpdirname, "logs", f"{job_log.filename}.zip"
+                    )
+                    os.makedirs(os.path.dirname(target_path), exist_ok=True)
+                    app_job.download_job_log_files(job_log.filename, target_path)
+                    print(f"Downloaded log: {job_log.filename}")
 
     # check if the job test failed or not
     job = app_job.get_job(job_id)

@@ -33,7 +33,7 @@ _RUNNING_STATES = {
 # Map from hub device names to QDC target device names
 HUB_DEVICE_TO_QDC_DEVICE_MAP = {
     "Dragonwing IQ-9075 EVK": "QCS9075M",
-    "Samsung Galaxy S25": "SM8750",
+    "Snapdragon 8 Elite QRD": "SM8750",
 }
 
 QDC_REST_BASE_URL = "https://api.qualcomm.com/deviceloud/v1"
@@ -275,11 +275,11 @@ class QDCJobs:
         """
         elapsed = 0
         while elapsed < timeout:
-            active_jobs = self.get_active_jobs()
-            if len(active_jobs) < QDC_JOB_LIMIT:
+            if len(self.get_active_jobs()) < QDC_JOB_LIMIT:
                 # jitter: wait POLL_INTERNAL + random(0, 10) to avoid TOCTOU race condition
                 time.sleep(POLL_INTERVAL + random.randint(0, 10))
-                break
+                if len(self.get_active_jobs()) < QDC_JOB_LIMIT:
+                    break
             print(
                 f"Job is waiting as the service is at capacity, "
                 f"waiting for {POLL_INTERVAL} seconds."

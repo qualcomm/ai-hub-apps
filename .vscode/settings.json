@@ -3,7 +3,8 @@
         "python/qai_hub_apps"
     ],
     "python.analysis.extraPaths": [
-        "./python",
+        "./tools/python",
+        "./cli"
     ],
     "python.testing.unittestEnabled": false,
     "python.testing.pytestEnabled": true,

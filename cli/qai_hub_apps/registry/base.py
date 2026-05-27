@@ -15,7 +15,8 @@ from qai_hub_models_cli.fetch import get_asset_url
 from qai_hub_models_cli.utils import download, get_next_free_path
 from qai_hub_models_cli.versions import CURRENT_VERSION as QAIHM_VERSION
 
-from qai_hub_apps import _is_dev
+from qai_hub_apps import __version__, _is_dev
+from qai_hub_apps.registry.remote import ensure_registry
 
 try:
     from qai_hub_apps_test.bundlers import bundle_app as _bundle_app
@@ -236,8 +237,30 @@ class Registry:
         self._apps = {a.id: _make_app(a) for a in raw.apps}
 
     @classmethod
-    def load(cls, path: str | Path) -> Registry:
+    def load(cls, path: str | Path | None = None) -> Registry:
+        """Load and return the singleton Registry instance.
+
+        Parameters
+        ----------
+        path:
+            Path to registry.yaml. If None, resolves via ensure_registry()
+            (bundled file -> local cache -> S3 download).
+
+        Returns
+        -------
+        Registry
+            The singleton Registry instance.
+
+        Note
+        ----
+        This is a process-level singleton. If called a second time with a
+        different path, the cached instance is returned unchanged. In practice
+        load() is called exactly once per process — either with no path (default
+        registry) or with an explicit path from ``--registry`` CLI arg.
+        """
         if cls._instance is None:
+            if path is None:
+                path = ensure_registry(__version__)
             cls._instance = cls(AppRegistry.from_yaml(Path(path)))
         return cls._instance
 

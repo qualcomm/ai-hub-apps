@@ -12,7 +12,6 @@ from qai_hub_apps.commands.list_apps import run_info, run_list
 from qai_hub_apps.configs.model_asset import ModelAsset
 from qai_hub_apps.errors import QAIHubAppsError, RegistryNotFoundError
 from qai_hub_apps.registry import Registry
-from qai_hub_apps.registry.remote import ensure_registry
 
 
 def main() -> None:
@@ -90,19 +89,15 @@ def main() -> None:
     if args.command == "fetch" and args.chipset and not args.model:
         fetch_parser.error("--chipset requires --model")
 
-    registry = getattr(args, "registry", None)
+    registry_path = getattr(args, "registry", None)
 
     if args.command not in ("list", "info", "fetch"):
         parser.print_help()
         return
 
     try:
-        if registry is not None:
-            registry_path = registry
-            if not registry_path.exists():
-                raise RegistryNotFoundError(registry_path)
-        else:
-            registry_path = ensure_registry(__version__)
+        if registry_path is not None and not registry_path.exists():
+            raise RegistryNotFoundError(registry_path)
 
         registry = Registry.load(registry_path)
 

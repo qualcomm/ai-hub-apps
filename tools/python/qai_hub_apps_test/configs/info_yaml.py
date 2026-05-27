@@ -6,7 +6,7 @@ import os
 from enum import Enum, unique
 from pathlib import Path
 
-from pydantic import ConfigDict, Field, model_validator
+from pydantic import ConfigDict, Field, field_validator, model_validator
 from qai_hub_models.configs.info_yaml import MODEL_LICENSE as LICENSE
 from qai_hub_models.models.common import Precision, TargetRuntime
 from qai_hub_models.scorecard.device import ScorecardDevice, cs_8_gen_3, cs_x_elite
@@ -103,9 +103,15 @@ class QAIHAAppInfo(QAIHACLIAppInfo):
 
     skip_test: str | None = None
     include_in_cli: bool = True
+    supported_devices: list[ScorecardDevice] = Field(default_factory=list)
     app_repo_relative_path: str | None = (
         None  # relative path within qualcomm/ai-hub-apps
     )
+
+    @field_validator("supported_devices", mode="before")
+    @classmethod
+    def _parse_devices(cls, v: list) -> list[ScorecardDevice]:
+        return [ScorecardDevice.parse(d) if isinstance(d, str) else d for d in v]
 
     @model_validator(mode="after")
     def _validate_repo(self) -> "QAIHAAppInfo":

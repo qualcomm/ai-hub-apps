@@ -1,5 +1,6 @@
 pytest
 pytest-mock
+pytest-json-report
 qai_hub_models==0.42.0
 typed-argument-parser
 boto3 # for fetching test assets

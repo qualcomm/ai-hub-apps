@@ -17,6 +17,8 @@ $_QairtUtilsDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 
 $QAIRT_ROOT = "C:\Qualcomm\AIStack\QAIRT"
 $QAIRT_PATH = "$QAIRT_ROOT\$QAIRT_SDK_FULL_VERSION"
+$env:QAIRT_ROOT = $QAIRT_ROOT
+$env:QAIRT_PATH = $QAIRT_PATH
 
 function Install-Qairt {
     param([switch]$Force)

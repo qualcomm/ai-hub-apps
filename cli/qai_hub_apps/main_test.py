@@ -165,7 +165,7 @@ def test_no_command_does_not_crash(monkeypatch, capsys):
 
 def test_default_registry_calls_ensure_registry(monkeypatch, sample_registry_yaml):
     mock_ensure = MagicMock(return_value=sample_registry_yaml)
-    monkeypatch.setattr("qai_hub_apps.main.ensure_registry", mock_ensure)
+    monkeypatch.setattr("qai_hub_apps.registry.base.ensure_registry", mock_ensure)
     mock_run_list = MagicMock()
     monkeypatch.setattr("qai_hub_apps.main.run_list", mock_run_list)
 

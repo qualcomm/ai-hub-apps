@@ -6,7 +6,7 @@
 # Create a Python virtual environment and install qai_hub_apps_test.
 #
 # Usage:
-#   bash tools/setup_env.sh [--venv <path>] [--python <exe>] [--extras <extra>] [--with-cli]
+#   bash tools/setup_env.sh [--venv <path>] [--python <exe>] [--extras <extra>] [--with-cli] [--with-qdc-sdk]
 #
 # Defaults:
 #   --venv    qaiha-dev
@@ -18,7 +18,8 @@
 #   precommit  Light install: pre-commit + mypy only (for CI lint checks)
 #
 # Flags:
-#   --with-cli  Also install the qai-hub-apps CLI package (cli/)
+#   --with-cli      Also install the qai-hub-apps CLI package (cli/)
+#   --with-qdc-sdk  Download and install the Qualcomm Device Cloud SDK wheel
 
 set -euo pipefail
 
@@ -26,16 +27,18 @@ VENV_PATH="qaiha-dev"
 PYTHON="python3"
 EXTRAS="dev"
 WITH_CLI=false
+WITH_QDC_SDK=false
 
 while [ $# -gt 0 ]; do
     case $1 in
-        --venv=*)    VENV_PATH="${1##--venv=}" ;;
-        --venv)      VENV_PATH="$2"; shift ;;
-        --python=*)  PYTHON="${1##--python=}" ;;
-        --python)    PYTHON="$2"; shift ;;
-        --extras=*)  EXTRAS="${1##--extras=}" ;;
-        --extras)    EXTRAS="$2"; shift ;;
-        --with-cli)  WITH_CLI=true ;;
+        --venv=*)        VENV_PATH="${1##--venv=}" ;;
+        --venv)          VENV_PATH="$2"; shift ;;
+        --python=*)      PYTHON="${1##--python=}" ;;
+        --python)        PYTHON="$2"; shift ;;
+        --extras=*)      EXTRAS="${1##--extras=}" ;;
+        --extras)        EXTRAS="$2"; shift ;;
+        --with-cli)      WITH_CLI=true ;;
+        --with-qdc-sdk)  WITH_QDC_SDK=true ;;
         *) echo "Unknown option: $1" >&2; exit 1 ;;
     esac
     shift
@@ -76,6 +79,19 @@ if [ "$WITH_CLI" = true ]; then
     else
         "$VENV_PATH/bin/pip" install -e "$REPO_ROOT/cli/"
     fi
+fi
+
+if [ "$WITH_QDC_SDK" = true ]; then
+    echo "Downloading and installing QDC SDK wheel..."
+    QDC_TMP_DIR="$(mktemp -d)"
+    bash "$REPO_ROOT/tools/ci/download-qdc-wheel.sh" "$QDC_TMP_DIR"
+    wheel=("$QDC_TMP_DIR"/*.whl)
+    if command -v uv &>/dev/null; then
+        uv pip install --python "$VENV_PATH/bin/python" "${wheel[0]}"
+    else
+        "$VENV_PATH/bin/pip" install "${wheel[0]}"
+    fi
+    rm -rf "$QDC_TMP_DIR"
 fi
 
 echo ""

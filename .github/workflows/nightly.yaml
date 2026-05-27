@@ -8,11 +8,6 @@ on:
     # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
     inputs:
-      platform:
-        description: Application Platform to Test
-        required: false
-        type: string
-        default: all
       notify_failure:
         description: Notify Slack Channel
         required: false
@@ -29,25 +24,13 @@ jobs:
       do_all: true
       scheduled: true
 
-  test_android_app:
+  test_on_device_apps:
     secrets: inherit
-    name: "Test All Android Apps"
-    if: ${{ (inputs.platform || 'all') == 'all' || (inputs.platform || 'all') == 'android' }}
-    uses: ./.github/workflows/android.yaml
+    name: "Test AIHA Apps On-Device"
+    uses: ./.github/workflows/test_aiha_apps.yaml
     with:
-      run_tests: true
-      build_docker: true
-      docker_tag: commit_sha
-
-  test_windows_app:
-    secrets: inherit
-    name: "Test All Windows Apps"
-    if: ${{ (inputs.platform || 'all') == 'all' || (inputs.platform || 'all') == 'windows' }}
-    uses: ./.github/workflows/windows.yaml
-    with:
-      run_tests: true
-      build_docker: true
-      docker_tag: commit_sha
+      model_selection: first
+      test_stage: all
 
   test_website_import:
     secrets: inherit
@@ -63,7 +46,7 @@ jobs:
   notify_failure:
     if: ${{ failure() && (github.event_name == 'schedule' || inputs.notify_failure) }}
     name: Notify Failure
-    needs: [precommit_check, test_android_app, test_windows_app, test_website_import]
+    needs: [precommit_check, test_website_import, test_on_device_apps]
     runs-on: [tetra-ubuntu-2204, self-hosted]
     permissions:
         contents: read
@@ -85,19 +68,14 @@ jobs:
                 result: '${{ needs.precommit_check.result }}',
                 url: '${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/job/'
               },
-              'test_android_app': {
-                name: 'Test Android App',
-                result: '${{ needs.test_android_app.result }}',
-                url: '${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/job/'
-              },
-              'test_windows_app': {
-                name: 'Test Windows App',
-                result: '${{ needs.test_windows_app.result }}',
-                url: '${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/job/'
-              },
               'test_website_import': {
                 name: 'Test Website Import',
                 result: '${{ needs.test_website_import.result }}',
+                url: '${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/job/'
+              },
+              'test_on_device_apps': {
+                name: 'Test AIHA Apps On-Device',
+                result: '${{ needs.test_on_device_apps.result }}',
                 url: '${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/job/'
               },
             };
@@ -166,3 +144,5 @@ jobs:
               🚨 QAI Hub Apps Nightly Failed
               Workflow: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}
               GitHub Issue: ${{ steps.create-github-issue.outputs.issue_url }}
+              App Results: ✅ ${{ fromJson(needs.test_on_device_apps.outputs.result_payload).summary.passed }} passed | ❌ ${{ fromJson(needs.test_on_device_apps.outputs.result_payload).summary.failed }} failed | ⏭ ${{ fromJson(needs.test_on_device_apps.outputs.result_payload).summary.skipped }} skipped
+              See full results table in the workflow summary.
