@@ -15,6 +15,11 @@ on:
         description: "How far to run: fetch, build, or all (includes on-device QDC)"
         type: string
         default: all
+      app_filter:
+        description: "Comma-separated app IDs to test, e.g. chatapp_android,image_classification_android. Empty = all registered apps."
+        type: string
+        required: false
+        default: ""
     secrets:
       QDC_API_TOKEN:
         required: false
@@ -37,6 +42,11 @@ on:
         type: choice
         options: [fetch, build, all]
         default: all
+      app_filter:
+        description: "Comma-separated app IDs to test, e.g. chatapp_android,image_classification_android. Empty = all registered apps."
+        required: false
+        type: string
+        default: ""
 
 env:
   VENV_PATH: qaiha-dev
@@ -72,7 +82,11 @@ jobs:
         name: Group apps by type and verify coverage
         run: |
           source ${{ env.VENV_PATH }}/bin/activate
-          python tools/ci/list_and_verify_apps.py >> $GITHUB_OUTPUT
+          if [ -n "${{ inputs.app_filter }}" ]; then
+            python tools/ci/list_and_verify_apps.py --only '${{ inputs.app_filter }}' >> $GITHUB_OUTPUT
+          else
+            python tools/ci/list_and_verify_apps.py >> $GITHUB_OUTPUT
+          fi
 
 
   test_ubuntu_apps:

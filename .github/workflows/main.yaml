@@ -38,8 +38,8 @@ jobs:
 
           paths_ignore: '["**/*.md", "playgrounds/**"]'
 
-          # always include tools and github
-          paths: '["tools/**", ".github/**"]'
+          # always include tools, github, and apps
+          paths: '["tools/**", ".github/**", "apps/**"]'
 
   build-and-test-workflow:
     name: B&T
@@ -50,3 +50,50 @@ jobs:
       do_all: ${{ github.event_name == 'push' || (contains(github.event.pull_request.body, '%FORCE_ALL_CI%') && !contains(github.event.pull_request.body, '%SKIP_ALL_CI%')) }}
       do_precommit: true # never skippable
       changed_files: ${{ needs.determine_ci_steps.outputs.changed_files }}
+
+  detect_changed_apps:
+    name: "Detect Changed Apps"
+    needs: [determine_ci_steps]
+    runs-on: [tetra-ubuntu-2204, self-hosted]
+    env:
+      VENV_PATH: qaiha-dev
+      PYTHON_VERSION: '3.10'
+    outputs:
+      has_app_changes: ${{ steps.detect.outputs.has_app_changes }}
+      app_filter: ${{ steps.detect.outputs.app_filter }}
+    steps:
+      - uses: actions/checkout@v6
+      - id: setup_python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Set up environment (with CLI)
+        run: |
+          bash tools/setup_env.sh \
+            --python="${{ steps.setup_python.outputs.python-path }}" \
+            --venv="${{ env.VENV_PATH }}" \
+            --with-cli
+
+      - id: detect
+        name: Find updated registered app IDs
+        run: |
+          source ${{ env.VENV_PATH }}/bin/activate
+          # convert JSON list to a diff file
+          python - > changed.txt << 'EOF'
+          import json
+          data = json.loads('${{ needs.determine_ci_steps.outputs.changed_files }}') or []
+          print('\n'.join(f for group in data for f in group))
+          EOF
+          python tools/ci/find_updated_apps.py --diff-file changed.txt >> $GITHUB_OUTPUT
+
+  build-changed-apps:
+    name: "Build Changed Apps"
+    needs: [detect_changed_apps]
+    if: ${{ needs.detect_changed_apps.outputs.has_app_changes == 'true' }}
+    secrets: inherit
+    uses: ./.github/workflows/test_aiha_apps.yaml
+    with:
+      test_stage: build
+      model_selection: first
+      app_filter: ${{ needs.detect_changed_apps.outputs.app_filter }}
