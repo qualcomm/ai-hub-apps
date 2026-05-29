@@ -93,144 +93,54 @@ jobs:
     name: "Test ${{ matrix.app }} (ubuntu)"
     needs: list_apps
     if: ${{ needs.list_apps.outputs.ubuntu != '[]' }}
-    runs-on: [tetra-ubuntu-2204, self-hosted]
     strategy:
       fail-fast: false
       max-parallel: 2
       matrix:
         app: ${{ fromJson(needs.list_apps.outputs.ubuntu) }}
-
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          lfs: true
-      - id: setup_python
-        uses: actions/setup-python@v6
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-
-      - name: Set up environment (with CLI + QDC SDK)
-        run: |
-          bash tools/setup_env.sh \
-            --python="${{ steps.setup_python.outputs.python-path }}" \
-            --venv="${{ env.VENV_PATH }}" \
-            --with-cli \
-            --with-qdc-sdk
-
-      - name: Run tests for ${{ matrix.app }}
-        run: |
-          source ${{ env.VENV_PATH }}/bin/activate
-          cd tools/python/qai_hub_apps_test/ && pytest \
-            -vv -ra -s \
-            -m device_test \
-            --model-selection "${{ inputs.model_selection }}" \
-            --test-stage "${{ inputs.test_stage }}" \
-            --qdc-token "$QDC_TOKEN" \
-            --json-report --json-report-file="${{ matrix.app }}-results.json" \
-            -k "${{ matrix.app }}"
-
-      - name: Upload results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: results-${{ matrix.app }}
-          path: tools/python/qai_hub_apps_test/${{ matrix.app }}-results.json
+    uses: ./.github/workflows/test-app.yaml
+    with:
+      app: ${{ matrix.app }}
+      model_selection: ${{ inputs.model_selection }}
+      test_stage: ${{ inputs.test_stage }}
+    secrets:
+      QDC_API_TOKEN: ${{ secrets.QDC_API_TOKEN }}
 
 
   test_android_apps:
     name: "Test ${{ matrix.app }} (android)"
     needs: list_apps
     if: ${{ needs.list_apps.outputs.android != '[]' }}
-    runs-on: [tetra-ubuntu-2204, self-hosted]
     strategy:
       fail-fast: false
       max-parallel: 2
       matrix:
         app: ${{ fromJson(needs.list_apps.outputs.android) }}
-
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          lfs: true
-      - id: setup_python
-        uses: actions/setup-python@v6
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-
-      - name: Set up environment (with CLI + QDC SDK)
-        run: |
-          bash tools/setup_env.sh \
-            --python="${{ steps.setup_python.outputs.python-path }}" \
-            --venv="${{ env.VENV_PATH }}" \
-            --with-cli \
-            --with-qdc-sdk
-
-      - name: Run tests for ${{ matrix.app }}
-        run: |
-          source ${{ env.VENV_PATH }}/bin/activate
-          cd tools/python/qai_hub_apps_test/ && pytest \
-            -vv -ra -s \
-            -m device_test \
-            --model-selection "${{ inputs.model_selection }}" \
-            --test-stage "${{ inputs.test_stage }}" \
-            --qdc-token "$QDC_TOKEN" \
-            --json-report --json-report-file="${{ matrix.app }}-results.json" \
-            -k "${{ matrix.app }}"
-
-      - name: Upload results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: results-${{ matrix.app }}
-          path: tools/python/qai_hub_apps_test/${{ matrix.app }}-results.json
+    uses: ./.github/workflows/test-app.yaml
+    with:
+      app: ${{ matrix.app }}
+      model_selection: ${{ inputs.model_selection }}
+      test_stage: ${{ inputs.test_stage }}
+    secrets:
+      QDC_API_TOKEN: ${{ secrets.QDC_API_TOKEN }}
 
 
   test_windows_apps:
     name: "Test ${{ matrix.app }} (windows)"
     needs: list_apps
     if: ${{ needs.list_apps.outputs.windows != '[]' }}
-    runs-on: [tetra-ubuntu-2204, self-hosted]
     strategy:
       fail-fast: false
       max-parallel: 2
       matrix:
         app: ${{ fromJson(needs.list_apps.outputs.windows) }}
-
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          lfs: true
-      - id: setup_python
-        uses: actions/setup-python@v6
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-
-      - name: Set up environment (with CLI + QDC SDK)
-        run: |
-          bash tools/setup_env.sh \
-            --python="${{ steps.setup_python.outputs.python-path }}" \
-            --venv="${{ env.VENV_PATH }}" \
-            --with-cli \
-            --with-qdc-sdk
-
-      - name: Run tests for ${{ matrix.app }}
-        run: |
-          source ${{ env.VENV_PATH }}/bin/activate
-          cd tools/python/qai_hub_apps_test/ && pytest \
-            -vv -ra -s \
-            -m device_test \
-            --model-selection "${{ inputs.model_selection }}" \
-            --test-stage "${{ inputs.test_stage }}" \
-            --qdc-token "$QDC_TOKEN" \
-            --json-report --json-report-file="${{ matrix.app }}-results.json" \
-            -k "${{ matrix.app }}"
-
-      - name: Upload results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: results-${{ matrix.app }}
-          path: tools/python/qai_hub_apps_test/${{ matrix.app }}-results.json
+    uses: ./.github/workflows/test-app.yaml
+    with:
+      app: ${{ matrix.app }}
+      model_selection: ${{ inputs.model_selection }}
+      test_stage: ${{ inputs.test_stage }}
+    secrets:
+      QDC_API_TOKEN: ${{ secrets.QDC_API_TOKEN }}
 
 
   report:
