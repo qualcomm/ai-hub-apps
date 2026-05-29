@@ -42,10 +42,11 @@ __NOTE: Some of these apps will run without NPU acceleration on non-Snapdragon®
 
 ## Getting Started with Apps
 
-1. Search for your desired OS & app in [this folder](apps), or in the tables at the bottom of this file.
+1. Search for your desired OS & app in the tables at the bottom of this file.
 
 2. The README of the selected app will contain build & installation instructions.
 
+<!-- ANDROID_APPS -->
 ## _Android_ App Directory
 
 | Task | Language | Inference API | Special Tags |
@@ -56,7 +57,9 @@ __NOTE: Some of these apps will run without NPU acceleration on non-Snapdragon®
 | [Semantic Segmentation](apps/semantic_segmentation_android) |  Java | TensorFlow Lite | OpenCV, Live Camera Feed |
 | [Super Resolution](apps/super_resolution_android) | Java | TensorFlow Lite |
 | [WhisperKit (Speech to Text)](https://github.com/argmaxinc/WhisperKitAndroid) | Various | TensorFlow Lite |
+<!-- /ANDROID_APPS -->
 
+<!-- WINDOWS_APPS -->
 ## _Windows_ App Directory
 
 | Task | Language | Inference API | Special Tags |
@@ -67,19 +70,24 @@ __NOTE: Some of these apps will run without NPU acceleration on non-Snapdragon®
 | [Super Resolution](apps/super_resolution_windows_cpp) | C++ | ONNX | OpenCV |
 | [Whisper Speech-to-Text](apps/whisper_windows_py) | Python | ONNX |
 | [Stable Diffusion Image Generation](apps/stable_diffusion_windows_py) | Python | ONNX |
+<!-- /WINDOWS_APPS -->
 
+<!-- UBUNTU_APPS -->
 ## _Ubuntu_ App Directory
 
 | Task | Language | Inference API | Special Tags |
 | -- | -- | -- | -- |
 | [Hand Gesture Recognition](apps/mediapipe_hand_gesture_ubuntu_py) | Python | TensorFlow Lite | GStreamer |
+<!-- /UBUNTU_APPS -->
 
+<!-- TUTORIALS -->
 ## _Tutorials_ Directory
 
 | Tutorial | Topic |
 | --- | --- |
 | [LLM on-device deployment](tutorials/llm_on_genie) | Exporting and deploying Large Language Model (LLM) using Genie SDK |
+<!-- /TUTORIALS -->
 
 ## LICENSE
 
-Qualcomm® AI Hub Apps is licensed under BSD-3. See the [LICENSE file](../LICENSE).
+Qualcomm® AI Hub Apps is licensed under BSD-3. See the [LICENSE file](LICENSE).

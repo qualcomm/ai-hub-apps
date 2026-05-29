@@ -42,6 +42,16 @@ jobs:
       target: ${{ inputs.target }}
       skip_approval: true
 
+  release_apps_branch:
+    name: Fetch Apps & Push to release branch (${{ inputs.target }})
+    secrets: inherit
+    needs: [approve, release_pypi]
+    if: ${{ !cancelled() && (needs.approve.result == 'success' || needs.approve.result == 'skipped') && needs.release_pypi.result == 'success' }}
+    uses: ./.github/workflows/release_apps_branch.yaml
+    with:
+      target: ${{ inputs.target }}
+      skip_approval: true
+
   sync_public_website:
     name: Sync Public Website & Create Public Website PR
     secrets: inherit

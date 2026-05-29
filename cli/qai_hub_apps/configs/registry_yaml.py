@@ -68,17 +68,27 @@ class AppRegistry(BaseConfig):
             return self
 
         cli = Version(__version__)
-        for required, reason in [
-            (self.min_cli_version, f"requires qai-hub-apps >= {self.min_cli_version}"),
-            (self.version, f"was released with qai-hub-apps {self.version}"),
-        ]:
-            if cli < Version(required):
-                msg = (
-                    f"This registry {reason}, "
-                    f"but you have {__version__}. Please upgrade: pip install -U qai-hub-apps"
-                )
-                if _is_dev():
-                    warnings.warn(msg, stacklevel=2)
-                else:
-                    raise ValueError(msg)
+
+        # CLI is new enough to support the schema changes bundled in this registry.
+        if cli <= Version(self.min_cli_version):
+            msg = (
+                f"This registry requires qai-hub-apps > {self.min_cli_version}, "
+                f"but you have {__version__}. Please upgrade: pip install -U qai-hub-apps"
+            )
+            if _is_dev():
+                warnings.warn(msg, stacklevel=2)
+            else:
+                raise ValueError(msg)
+
+        # CLI is not loading a newer registry.
+        if cli < Version(self.version):
+            msg = (
+                f"This registry was released with qai-hub-apps {self.version}, "
+                f"but you have {__version__}. Please upgrade: pip install -U qai-hub-apps"
+            )
+            if _is_dev():
+                warnings.warn(msg, stacklevel=2)
+            else:
+                raise ValueError(msg)
+
         return self

@@ -1,0 +1,161 @@
+# ---------------------------------------------------------------------
+# Copyright (c) 2025 Qualcomm Technologies, Inc. and/or its subsidiaries.
+# SPDX-License-Identifier: BSD-3-Clause
+# ---------------------------------------------------------------------
+name: Release - Apps Branch
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        required: true
+        type: choice
+        default: staging
+        description: Release Target
+        options:
+        - staging
+        - prod
+  workflow_call:
+    inputs:
+      target:
+        required: true
+        type: string
+      skip_approval:
+        required: false
+        type: boolean
+        default: false
+
+env:
+  PYTHON_VERSION: '3.10'
+  APPS_DIR: dist/apps
+
+jobs:
+  approve:
+    if: ${{ !inputs.skip_approval && inputs.target == 'prod' }}
+    name: Approve Release
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: release
+    steps:
+      - run: echo "Release approved"
+
+  push_apps_branch:
+    name: Fetch Apps & Push to release branch (${{ inputs.target }})
+    needs: [approve]
+    if: ${{ !cancelled() && (needs.approve.result == 'success' || needs.approve.result == 'skipped') }}
+    runs-on: [tetra-ubuntu-2204, self-hosted]
+
+    steps:
+      - name: Verify running on a tag
+        run: |
+          if [[ "${{ github.ref }}" != refs/tags/* ]]; then
+            echo "Error: This workflow must be run from a tag, got ${{ github.ref }}"
+            exit 1
+          fi
+
+      - uses: actions/checkout@v6
+        with:
+          lfs: true
+
+      - id: setup_python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Set Variables (Staging)
+        if: ${{ inputs.target == 'staging' }}
+        shell: bash
+        run: |
+          echo "QAIHA_REMOTE_URL=${{ vars.STAGING_REPO_URL }}" >> $GITHUB_ENV
+          echo "QAIHA_REPO_ABS_URL=${{ vars.STAGING_REPO_URL }}" >> $GITHUB_ENV
+          echo "QAIHA_REPO_GH_TOKEN=${{ secrets.STAGING_GH_TOKEN }}" >> $GITHUB_ENV
+          echo "QAIHA_GIT_NAME=${{ vars.STAGING_GH_SIGN_OFF_NAME }}" >> $GITHUB_ENV
+          echo "QAIHA_REPO_GH_EMAIL=${{ vars.STAGING_GH_EMAIL }}" >> $GITHUB_ENV
+
+      - name: Set Variables (Prod)
+        if: ${{ inputs.target == 'prod' }}
+        shell: bash
+        run: |
+          echo "QAIHA_REMOTE_URL=${{ vars.PROD_REPO_URL }}" >> $GITHUB_ENV
+          echo "QAIHA_REPO_ABS_URL=${{ vars.PROD_REPO_URL }}" >> $GITHUB_ENV
+          echo "QAIHA_REPO_GH_TOKEN=${{ secrets.PROD_GH_TOKEN }}" >> $GITHUB_ENV
+          echo "QAIHA_GIT_NAME=${{ vars.PROD_GH_SIGN_OFF_NAME }}" >> $GITHUB_ENV
+          echo "QAIHA_REPO_GH_EMAIL=${{ vars.PROD_GH_EMAIL }}" >> $GITHUB_ENV
+
+      - name: Install CLI from PyPI (with retry)
+        shell: bash
+        run: |
+          VERSION="${{ github.ref_name }}"
+          VERSION="${VERSION#v}"
+
+          if [ "${{ inputs.target }}" == "prod" ]; then
+            INDEX_URL="https://pypi.org/simple/"
+          else
+            INDEX_URL="https://test.pypi.org/simple/"
+          fi
+
+          echo "Installing qai-hub-apps==$VERSION from $INDEX_URL"
+          for i in {1..10}; do
+            pip install \
+              --index-url "$INDEX_URL" \
+              --extra-index-url "https://pypi.org/simple/" \
+              "qai-hub-apps==$VERSION" && break
+            echo "Attempt $i failed, retrying in 60s..."
+            sleep 60
+            if [ "$i" -eq 10 ]; then
+              echo "ERROR: Failed to install qai-hub-apps==$VERSION after 10 attempts"
+              exit 1
+            fi
+          done
+
+          qai-hub-apps --version
+
+      - name: Fetch all apps
+        shell: bash
+        run: bash tools/ci/fetch_all_apps.sh ${{ env.APPS_DIR }}
+
+      - name: Copy README and LICENSE
+        shell: bash
+        run: |
+          cp LICENSE ${{ env.APPS_DIR }}/LICENSE
+          # sed syntax:
+          #   /START/,/END/d          — delete all lines between START and END (inclusive)
+          #   /START/,/END/s|a|b|g   — within START..END, replace all occurrences of 'a' with 'b'
+          sed \
+            -e '/<!-- TUTORIALS -->/,/<!-- \/TUTORIALS -->/d' \
+            -e '/<!-- ANDROID_APPS -->/,/<!-- \/ANDROID_APPS -->/s|](apps/|](|g' \
+            -e '/<!-- WINDOWS_APPS -->/,/<!-- \/WINDOWS_APPS -->/s|](apps/|](|g' \
+            -e '/<!-- UBUNTU_APPS -->/,/<!-- \/UBUNTU_APPS -->/s|](apps/|](|g' \
+            README.md > ${{ env.APPS_DIR }}/README.md
+
+      - name: Set Commit Message
+        shell: bash
+        run: |
+          TAG="${{ github.ref_name }}"
+          {
+            echo "QAIHA_COMMIT_MESSAGE<<EOF"
+            echo "$TAG"
+            echo "See $QAIHA_REPO_ABS_URL/releases/$TAG for changelog."
+            echo ""
+            echo "Signed-off-by: $QAIHA_GIT_NAME <$QAIHA_REPO_GH_EMAIL>"
+            echo "EOF"
+          } >> $GITHUB_ENV
+
+      - name: Push to release branch and tag
+        shell: bash
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          git init ${{ env.APPS_DIR }}
+          git -C ${{ env.APPS_DIR }} config user.email "$QAIHA_REPO_GH_EMAIL"
+          git -C ${{ env.APPS_DIR }} config user.name "$QAIHA_GIT_NAME"
+          git -C ${{ env.APPS_DIR }} add -A
+          git -C ${{ env.APPS_DIR }} commit -m "$QAIHA_COMMIT_MESSAGE"
+          git -C ${{ env.APPS_DIR }} tag "apps/$TAG"
+
+          git -C ${{ env.APPS_DIR }} config credential.helper \
+            '!f() { echo "username=x-access-token"; echo "password='"$QAIHA_REPO_GH_TOKEN"'"; }; f'
+          git -C ${{ env.APPS_DIR }} remote add public "$QAIHA_REMOTE_URL"
+
+          git -C ${{ env.APPS_DIR }} push --force public HEAD:release
+          git -C ${{ env.APPS_DIR }} push public "apps/$TAG"

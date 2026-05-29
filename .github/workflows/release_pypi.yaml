@@ -58,6 +58,8 @@ jobs:
           fi
 
       - uses: actions/checkout@v6
+        with:
+          lfs: true
       - id: setup_python
         uses: actions/setup-python@v6
         with:
