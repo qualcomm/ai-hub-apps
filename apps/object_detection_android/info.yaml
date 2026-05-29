@@ -13,6 +13,7 @@ headline: On-device object detection with TFLite
 description: 'A sample Android app that detects and localizes objects in real time using live camera input, demonstrating best practices for integrating streaming camera, TFLite, and OpenCV for on-device AI inference.'
 precisions: [float]
 app_type: 'android'
+base_docker: ubuntu.dockerfile
 static_img_filename: 'app_screen.png'
 app_repo_relative_path: 'object_detection_android'
 os:

@@ -12,6 +12,7 @@ headline: On-device image recognition with TFLite
 description: 'A sample app that classifies images and displays the top three predicted ImageNet classes, demonstrating the best practices for TFLite model inference on Android devices.'
 precisions: [float]
 app_type: 'android'
+base_docker: ubuntu.dockerfile
 static_img_filename: 'app_screen.png'
 app_repo_relative_path: 'image_classification_android'
 os:

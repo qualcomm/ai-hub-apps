@@ -26,7 +26,7 @@ if [ "$USE_DOCKER" = "true" ]; then
 
     echo "Building Docker image ..."
     docker build \
-        -f /data/local/tmp/TestContent/ubuntu.dockerfile \
+        --build-arg BUILD_TYPE=runtime \
         -t "$IMAGE_NAME" "$APP_DIR"
 
     echo "Running inside container ..."

@@ -196,3 +196,58 @@ def test_bundle_app_overwrites_existing_dest(
     (dummy_python_app_path / "main.py").write_text("# v2\n")
     bundle_app(dummy_python_app_path, out_dir, sdk_parent=dummy_python_sdk_path)
     assert "v2" in (out_dir / "my_dummy_app" / "main.py").read_text()
+
+
+def test_bundle_app_includes_dockerfile(
+    dummy_python_app_path: Path,
+    dummy_python_sdk_path: Path,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    make_sample_app_info(id="my_dummy_app", base_docker="ubuntu.dockerfile").to_yaml(
+        dummy_python_app_path / "info.yaml", write_if_empty=True
+    )
+
+    fake_root = tmp_path / "fakerepo"
+    (fake_root / "tools" / "docker").mkdir(parents=True)
+    (fake_root / "tools" / "docker" / "ubuntu.dockerfile").write_text(
+        "FROM ubuntu:24.04\n"
+    )
+    monkeypatch.setattr(bundlers_mod, "REPOSITORY_ROOT", fake_root)
+
+    out_dir = tmp_path / "out"
+    bundle_app(dummy_python_app_path, out_dir, sdk_parent=dummy_python_sdk_path)
+
+    dockerfile = out_dir / "my_dummy_app" / "Dockerfile"
+    assert dockerfile.is_file()
+    assert "FROM ubuntu:24.04" in dockerfile.read_text()
+
+
+def test_bundle_app_no_dockerfile_when_base_docker_unset(
+    dummy_python_app_path: Path,
+    dummy_python_sdk_path: Path,
+    tmp_path: Path,
+) -> None:
+    out_dir = tmp_path / "out"
+    bundle_app(dummy_python_app_path, out_dir, sdk_parent=dummy_python_sdk_path)
+    assert not (out_dir / "my_dummy_app" / "Dockerfile").exists()
+
+
+def test_bundle_app_missing_dockerfile_raises(
+    dummy_python_app_path: Path,
+    dummy_python_sdk_path: Path,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    make_sample_app_info(
+        id="my_dummy_app", base_docker="nonexistent.dockerfile"
+    ).to_yaml(dummy_python_app_path / "info.yaml", write_if_empty=True)
+
+    fake_root = tmp_path / "fakerepo"
+    fake_root.mkdir()
+    monkeypatch.setattr(bundlers_mod, "REPOSITORY_ROOT", fake_root)
+
+    with pytest.raises(FileNotFoundError, match=r"nonexistent.dockerfile"):
+        bundle_app(
+            dummy_python_app_path, tmp_path / "out", sdk_parent=dummy_python_sdk_path
+        )

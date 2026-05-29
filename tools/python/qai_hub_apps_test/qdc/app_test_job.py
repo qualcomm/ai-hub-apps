@@ -75,10 +75,11 @@ class AppTestLinuxArtifactHandler(AppTestArtifactHandler):
     ) -> str:
         """Build the test bundle directory and return the path to the zip archive.
 
-        Copies ``run_linux.sh`` and ``ubuntu.dockerfile`` from ``device_scripts/``
-        into ``dest_dir``, substituting ``<<USE_DOCKER>>`` placeholder in the shell
-        script. The app directory is copied in as an ``app/`` subdirectory. The whole
-        ``dest_dir`` is then zipped into ``test.zip`` one level above it.
+        Copies ``run_linux.sh`` from ``device_scripts/`` into ``dest_dir``,
+        substituting placeholders in the shell script. The app directory (which
+        must contain a ``Dockerfile`` when ``use_docker=True``) is copied in as
+        an ``app/`` subdirectory. The whole ``dest_dir`` is then zipped into
+        ``test.zip`` one level above it.
 
         Parameters
         ----------
@@ -108,12 +109,16 @@ class AppTestLinuxArtifactHandler(AppTestArtifactHandler):
                 )
             )
 
-        shutil.copy(
-            os.path.join(curr_dirname, "device_scripts", "ubuntu.dockerfile"),
-            dest_dir,
-        )
-
         shutil.copytree(app_dir, os.path.join(dest_dir, "app"))
+
+        if self.use_docker and not os.path.isfile(
+            os.path.join(dest_dir, "app", "Dockerfile")
+        ):
+            raise FileNotFoundError(
+                "use_docker=True but no 'Dockerfile' found in the app bundle. "
+                "Ensure the app declares 'base_docker' in info.yaml and was "
+                "bundled with bundle_app() before submission."
+            )
 
         zip_path = os.path.join(os.path.dirname(dest_dir), "test.zip")
         create_zip(zip_path, dest_dir)
@@ -359,7 +364,7 @@ if __name__ == "__main__":
         default=False,
         help=(
             "Run the app inside a Docker container on the device using the "
-            "bundled ubuntu.dockerfile base image."
+            "Dockerfile bundled with the app."
         ),
     )
     parser.add_argument(

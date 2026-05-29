@@ -131,6 +131,8 @@ class QAIHAAppInfo(QAIHACLIAppInfo):
     # Build System Information
     ##########################
 
+    base_docker: str | None = None  # Dockerfile filename relative to tools/docker/
+
     # Supported AI Hub Models version
     # If None, assumes any version is supported.
     qaihm_version: str | None = None

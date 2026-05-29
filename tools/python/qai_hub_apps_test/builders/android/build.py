@@ -6,30 +6,32 @@
 
 from __future__ import annotations
 
-import shutil
 import subprocess
 from pathlib import Path
-
-_DOCKERFILE_SRC = (
-    Path(__file__).parents[2] / "qdc" / "device_scripts" / "ubuntu.dockerfile"
-)
 
 
 def build_app(app_dir: Path) -> None:
     """Build Android debug and test APKs using Docker.
 
-    Copies ubuntu.dockerfile, builds a Docker image with BUILD_TYPE=build
-    (which runs install_build.sh to install the Android SDK), runs
-    gradle assembleDebug assembleAndroidTest inside the container, then
-    copies build/outputs/ back to app_dir on the host via docker cp.
+    Expects a ``Dockerfile`` to already exist in ``app_dir`` (injected by
+    ``bundle_app()`` from the app's ``base_docker`` field). Builds a Docker
+    image with BUILD_TYPE=build (which runs install_build.sh to install the
+    Android SDK), runs gradle assembleDebug assembleAndroidTest inside the
+    container, then copies build/outputs/ back to app_dir on the host via
+    docker cp.
 
     Parameters
     ----------
     app_dir:
-        Root directory of the fetched Android app (must contain install_build.sh
-        and scripts/ from the bundle).
+        Root directory of the fetched Android app (must contain install_build.sh,
+        scripts/ from the bundle, and a Dockerfile).
     """
-    shutil.copy(_DOCKERFILE_SRC, app_dir / "ubuntu.dockerfile")
+    if not (app_dir / "Dockerfile").is_file():
+        raise FileNotFoundError(
+            f"No 'Dockerfile' found in '{app_dir}'. "
+            "Ensure the app declares 'base_docker' in info.yaml and was bundled "
+            "with bundle_app() before building."
+        )
 
     image_tag = f"aiha-build-{app_dir.name}"
     container_name = f"aiha-build-container-{app_dir.name}"
@@ -46,8 +48,6 @@ def build_app(app_dir: Path) -> None:
             "INSTALL_QUALCOMM_CA=true",
             "-t",
             image_tag,
-            "-f",
-            "ubuntu.dockerfile",
             ".",
         ],
         cwd=app_dir,
