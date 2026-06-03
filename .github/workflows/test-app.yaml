@@ -98,7 +98,7 @@ jobs:
 
       - name: Upload results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: results-${{ inputs.app }}
           path: tools/python/qai_hub_apps_test/${{ inputs.app }}-results.json
