@@ -158,7 +158,7 @@ jobs:
           python-version: ${{ env.PYTHON_VERSION }}
 
       - name: Download all results
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           pattern: results-*
           merge-multiple: true
