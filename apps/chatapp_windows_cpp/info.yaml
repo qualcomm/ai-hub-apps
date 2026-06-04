@@ -38,7 +38,6 @@ os:
 languages: ['C++']
 use_case: Text Generation
 related_models: [
-      'llama_v2_7b_chat',
       'llama_v3_8b_instruct',
       'llama_v3_1_8b_instruct',
       'llama_v3_2_3b_instruct',
