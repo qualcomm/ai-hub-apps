@@ -42,10 +42,12 @@ __NOTE: Some of these apps will run without NPU acceleration on non-Snapdragon®
 
 ## Getting Started with Apps
 
-1. Search for your desired OS & app in the tables at the bottom of this file.
+1. Search for your desired OS & app in the tables below.
 
 2. The README of the selected app will contain build & installation instructions.
 
+
+> **Contributors:** See [CONTRIBUTING.md](https://github.com/qualcomm/ai-hub-apps/blob/main/CONTRIBUTING.md) for dev setup, repo architecture, and how to add new apps.
 <!-- ANDROID_APPS -->
 ## _Android_ App Directory
 
@@ -53,7 +55,7 @@ __NOTE: Some of these apps will run without NPU acceleration on non-Snapdragon®
 | -- | -- | -- | -- |
 | [ChatApp](apps/chatapp_android) | Java/C++ | Genie SDK | LLM, GenAI |
 | [Image Classification](apps/image_classification_android) | Java | TensorFlow Lite |
-| [Object Detection](apps/object_detection_android) | Java | TensorFlow Lite | OpenCV, Live Camera Feed |
+| [Object Detection](https://github.com/qualcomm/ai-hub-apps/tree/main/apps/object_detection_android)* | Java | TensorFlow Lite | OpenCV, Live Camera Feed |
 | [Semantic Segmentation](apps/semantic_segmentation_android) |  Java | TensorFlow Lite | OpenCV, Live Camera Feed |
 | [Super Resolution](apps/super_resolution_android) | Java | TensorFlow Lite |
 | [WhisperKit (Speech to Text)](https://github.com/argmaxinc/WhisperKitAndroid) | Various | TensorFlow Lite |
@@ -64,10 +66,10 @@ __NOTE: Some of these apps will run without NPU acceleration on non-Snapdragon®
 
 | Task | Language | Inference API | Special Tags |
 | -- | -- | -- | -- |
-| [ChatApp](apps/chatapp_windows_cpp) | C++ | Genie SDK | LLM, GenAI |
-| [Image Classification](apps/image_classification_windows_cpp) | C++ | ONNX | OpenCV |
-| [Object Detection](apps/object_detection_windows_cpp) | C++ | ONNX | OpenCV |
-| [Super Resolution](apps/super_resolution_windows_cpp) | C++ | ONNX | OpenCV |
+| [ChatApp](https://github.com/qualcomm/ai-hub-apps/tree/main/apps/chatapp_windows_cpp)* | C++ | Genie SDK | LLM, GenAI |
+| [Image Classification](https://github.com/qualcomm/ai-hub-apps/tree/main/apps/image_classification_windows_cpp)* | C++ | ONNX | OpenCV |
+| [Object Detection](https://github.com/qualcomm/ai-hub-apps/tree/main/apps/object_detection_windows_cpp)* | C++ | ONNX | OpenCV |
+| [Super Resolution](https://github.com/qualcomm/ai-hub-apps/tree/main/apps/super_resolution_windows_cpp)* | C++ | ONNX | OpenCV |
 | [Whisper Speech-to-Text](apps/whisper_windows_py) | Python | ONNX |
 | [Stable Diffusion Image Generation](apps/stable_diffusion_windows_py) | Python | ONNX |
 <!-- /WINDOWS_APPS -->
@@ -80,12 +82,14 @@ __NOTE: Some of these apps will run without NPU acceleration on non-Snapdragon®
 | [Hand Gesture Recognition](apps/mediapipe_hand_gesture_ubuntu_py) | Python | TensorFlow Lite | GStreamer |
 <!-- /UBUNTU_APPS -->
 
+_\* Source available on GitHub; not included in the CLI release._
+
 <!-- TUTORIALS -->
 ## _Tutorials_ Directory
 
 | Tutorial | Topic |
 | --- | --- |
-| [LLM on-device deployment](tutorials/llm_on_genie) | Exporting and deploying Large Language Model (LLM) using Genie SDK |
+| [LLM on-device deployment](https://github.com/qualcomm/ai-hub-apps/tree/main/tutorials/llm_on_genie) | Exporting and deploying Large Language Model (LLM) using Genie SDK |
 <!-- /TUTORIALS -->
 
 ## LICENSE

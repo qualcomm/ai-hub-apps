@@ -18,4 +18,4 @@ Get-Content $_VersionsFile |
     Where-Object { $_ -match '=' -and $_ -notmatch '^\s*#' } |
     ConvertFrom-StringData |
     ForEach-Object { $_.GetEnumerator() } |
-    ForEach-Object { Set-Variable -Name $_.Key -Value ($_.Value.Trim('"').Trim("'")) -Scope 1 }
+    ForEach-Object { Set-Variable -Name $_.Key -Value ($_.Value.Trim('"').Trim("'")) }

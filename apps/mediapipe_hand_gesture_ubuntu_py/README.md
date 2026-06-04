@@ -3,22 +3,43 @@
 A Python app using GStreamer, OpenCV, and LiteRT that performs hand detection
 and gesture analysis on a live camera stream.
 
+## Requirements
+
+- ARM64 Ubuntu 22.04+ or compatible Linux
+- Docker
+
 ## Setup
 
-### 1. Install Python 3.10+
+### Option A: Using the CLI (Recommended)
+
+Install the CLI and fetch the app with the model:
 
 ```bash
-sudo apt-get update
-sudo apt-get install python3 python3-venv
+pip install qai-hub-apps
+qai-hub-apps fetch mediapipe_hand_gesture_ubuntu_py --model mediapipe_hand_gesture --output-dir ~
+cd ~/mediapipe_hand_gesture_ubuntu_py
 ```
 
-### 2. Install Docker
+### Option B: Cloning the Repo
+
+If you cloned the release branch, the app directory is already self-contained — but **model weights are not included**. Download a compatible model from [AI Hub Models](https://aihub.qualcomm.com/mobile/models), unzip the bundle and copy the tflite model to the following paths before building:
+- `models/palm_detector.tflite`
+- `models/hand_landmark_detector.tflite`
+- `models/canned_gesture_classifier.tflite`
+
+## Build
+
+### Install Docker
 
 Follow [these instructions](https://docs.docker.com/engine/install/ubuntu/#install-using-the-repository) to install Docker.
 
-### 3. Install Ubuntu host packages *(skip if not on Ubuntu OS)*
+### Install Ubuntu host packages (Dragonwing devices)
+
+Add the Qualcomm PPA and install the required host packages:
 
 ```bash
+sudo apt-add-repository -y ppa:ubuntu-qcom-iot/qcom-ppa
+sudo apt-get update
 sudo apt-get install qcom-fastrpc1 qcom-fastrpc-dev
 ```
 
@@ -30,37 +51,26 @@ sudo apt-get install qcom-camera-server
 
 After installing, reboot the device.
 
-### 4. Create the dev environment
+### Using Docker
+From the app directory, build our Docker image with all required runtime dependencies, including the supported QAIRT SDK.
+```bash
+docker build --build-arg BUILD_TYPE=runtime -t aiha-gesture .
+```
 
-From the repo root, create a virtual environment and install the CLI:
+## Run
 
 ```bash
-bash tools/setup_env.sh --with-cli
-source qaiha-dev/bin/activate
+./run_docker.sh --interactive
 ```
-
-### 5. Fetch the app
-
+Inside the container:
 ```bash
-qai-hub-apps fetch mediapipe_hand_gesture_ubuntu_py --model mediapipe_hand_gesture -o <APP_DIR>
-cd <APP_DIR>/mediapipe_hand_gesture_ubuntu_py
+bash test.sh
 ```
 
-### 6. Build the Docker image
+`test.sh` downloads a test video and runs the app against it using the QAIRT runtime.
 
-```bash
-./build_docker.sh
-```
 
-## Running the app
-
-All run commands are issued through `run_docker.sh`.
-To list available options:
-```
-./run_docker.sh --help
-```
-
-### List available camera sources
+### List available cameras
 
 ```bash
 ./run_docker.sh --list-devices
@@ -81,9 +91,3 @@ To list available options:
 
 This serves the camera feed on port 8080. Open a browser and navigate to
 `http://<device-ip>:8080` to view the stream.
-
-### Interactive / debug mode
-
-```bash
-./run_docker.sh --interactive
-```

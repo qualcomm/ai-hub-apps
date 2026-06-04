@@ -5,8 +5,8 @@
 # ---------------------------------------------------------------------
 set -euo pipefail
 
-source ../../_shared/scripts/android_utils.sh
-source ../../_shared/scripts/qairt_utils.sh
+source ../_shared/scripts/android_utils.sh
+source ../_shared/scripts/qairt_utils.sh
 
 install_qairt
 install_android_sdk

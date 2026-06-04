@@ -6,7 +6,7 @@
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-source ../../_shared/scripts/qairt_utils.sh
+source ../_shared/scripts/qairt_utils.sh
 
 TEST_VIDEO_URL="https://qaihub-public-assets.s3.us-west-2.amazonaws.com/qai-hub-apps/apps/mediapipe_hand_gesture_ubuntu_py/test/gesture.MP4"
 TEST_VIDEO="$SCRIPT_DIR/gesture.mp4"

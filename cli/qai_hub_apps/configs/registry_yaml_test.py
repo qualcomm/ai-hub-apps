@@ -33,7 +33,8 @@ def test_old_schema_version_unknown_gives_generic_message():
         _make_registry(schema_version="0.9")
 
 
-def test_unique_ids_ok():
+def test_unique_ids_ok(monkeypatch):
+    monkeypatch.setattr("qai_hub_apps.configs.registry_yaml._is_dev", lambda: True)
     app_a = make_app_info(id="app_a", name="App A")
     app_b = make_app_info(id="app_b", name="App B")
     registry = AppRegistry(

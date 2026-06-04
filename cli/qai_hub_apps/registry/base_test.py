@@ -483,7 +483,7 @@ def test_registry_apps_returns_all(sample_registry_yaml):
 
 def test_fetch_app_unsupported_platform_warns(monkeypatch, tmp_path, capsys):
     monkeypatch.setattr("qai_hub_apps.registry.base.download", fake_download)
-    monkeypatch.setattr("qai_hub_apps.registry.base._is_dev", lambda: False)
+    monkeypatch.setattr("qai_hub_apps.configs.registry_yaml._is_dev", lambda: True)
     monkeypatch.setattr(
         "qai_hub_apps.registry.base.is_app_supported", lambda app: False
     )

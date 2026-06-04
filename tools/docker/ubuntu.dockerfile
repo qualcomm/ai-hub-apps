@@ -44,8 +44,9 @@ COPY . /app
 # Set SSL env vars before install scripts so Python/pip requests use the Qualcomm CA.
 # Keytool runs after install_build.sh so JAVA_HOME is available for the JDK truststore update.
 RUN if [ "$INSTALL_QUALCOMM_CA" = "true" ]; then \
-        export SSL_CERT_FILE=/usr/local/share/ca-certificates/qualcomm.com/nscacert.crt; \
-        export REQUESTS_CA_BUNDLE=/usr/local/share/ca-certificates/qualcomm.com/nscacert.crt; \
+        export SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt; \
+        export REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt; \
+        export PIP_CERT=/etc/ssl/certs/ca-certificates.crt; \
     fi \
     && if [ "$BUILD_TYPE" = "build" ] && [ -f install_build.sh ]; then \
         bash install_build.sh; \

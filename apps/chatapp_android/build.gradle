@@ -13,7 +13,7 @@ if (file('_shared/android/common.gradle').exists()) {
 // Download QAIRT SDK from https://qpm.qualcomm.com/#/main/tools/details/Qualcomm_AI_Runtime_SDK
 // e.g. "/opt/qcom/aistack/qairt/2.33.0.250327"
 //      "C:\\Qualcomm\\AIStack\\QAIRT\\2.33.0.250327"
-def qnnSDKLocalPath= System.getenv("QAIRT_PATH") ?: "<UNSET QAIRT SDK PATH>"   // <-- Please add QNN SDK root path
+def qnnSDKLocalPath= System.getenv("QAIRT_PATH") ?: "<SET QAIRT SDK PATH>"   // <-- Please add QNN SDK root path
 
 // List of model assets
 def models = ["llm"]

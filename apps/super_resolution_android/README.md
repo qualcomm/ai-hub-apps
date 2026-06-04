@@ -10,17 +10,68 @@ The app aims to showcase best practices for using **TF Lite** for model inferenc
 <img src="https://qaihub-public-assets.s3.us-west-2.amazonaws.com/qai-hub-apps/android/SuperResolution/v1/app_screenshot.jpg" height="400" />
 </p>
 
-## Prerequisites
-1. Clone this repository **with [Git-LFS](https://git-lfs.com) enabled.**
-2. Download [Android Studio](https://developer.android.com/studio). **Version 2023.1.1 or newer** is required.
-3. [Enable USB debugging](https://developer.android.com/studio/debug/dev-options) on your Android device.
+## Requirements
 
+- Android device with [USB debugging enabled](https://developer.android.com/studio/debug/dev-options) (Android 14+)
+- A Windows/MacOS/Linux host machine with Docker installed
 
-## Build the APK
+## Setup
 
-1. Download or export a [compatible model](#compatible-ai-hub-models) from [AI Hub Models](https://aihub.qualcomm.com/mobile/models).
-2. Copy the `.tflite` file to `src/main/assets/superres.tflite`
-3. Open this folder in Android Studio, run gradle sync, and build the `SuperResolution` target.
+### Option A: Using the CLI (Recommended)
+
+Install the CLI and fetch the app with the model:
+
+```bash
+pip install qai-hub-apps
+qai-hub-apps fetch super_resolution_android --model xlsr --output-dir ~
+cd ~/super_resolution_android
+```
+
+This downloads the app source and places the model asset in the correct location automatically.
+
+### Option B: Cloning the Repo
+
+If you cloned the release branch, the app directory is already self-contained — but **model weights are not included**. Download a compatible model from [AI Hub Models](https://aihub.qualcomm.com/mobile/models), unzip the bundle and copy the tflite model to `src/main/assets/superres.tflite` before building.
+
+## Build
+
+From the app directory (after either option above):
+
+### Option A: Using Android Studio
+To build APK using Android studio:
+- Open this folder in Android Studio
+- Run gradle sync
+- Build and run the `app` target
+    - Click on `Build` -> `Generate App Bundles or APKs` -> `Generate APKs`
+    - Click on `Run` -> `Run 'app'`
+
+The APKs will be at:
+- `build/outputs/apk/debug/app-debug.apk`
+- `build/outputs/apk/androidTest/debug/app-debug-androidTest.apk`
+
+### Option B: Using Docker
+Build our Docker image with all required dependencies, including the supported Android and QAIRT SDKs.
+```bash
+docker build --build-arg BUILD_TYPE=build -t aiha-superres .
+```
+Build the APK:
+```bash
+docker run --name superres-container aiha-superres bash -c "source /app/scripts/android_utils.sh && cd /app && gradle assembleDebug assembleAndroidTest"
+
+mkdir ./build
+
+docker cp superres-container:/app/build/outputs ./build/outputs
+```
+
+#### Install & Run
+
+Connect your Android device via USB, then:
+
+```bash
+adb install build/outputs/apk/debug/app-debug.apk
+```
+
+Launch the app from your device's app drawer.
 
 ## Supported Hardware (TF Lite Delegates)
 
@@ -29,7 +80,7 @@ By default, this app supports the following hardware:
 * [GPU -- via GPUv2](https://github.com/tensorflow/tensorflow/tree/master/tensorflow/lite/delegates/gpu)
 * [CPU -- via XNNPack](https://github.com/tensorflow/tensorflow/blob/master/tensorflow/lite/delegates/xnnpack/README.md)
 
-Comments have been left in [TFLiteHelpers.java](../tflite_helpers/TFLiteHelpers.java) and [AIHubDefaults.java](../tflite_helpers/AIHubDefaults.java) to guide you on how to add support for additional TF Lite delegates that could target other hardware.
+Comments have been left in [TFLiteHelpers.java](src/main/java/com/quicinc/tflite/TFLiteHelpers.java) and [AIHubDefaults.java](src/main/java/com/quicinc/tflite/AIHubDefaults.java) to guide you on how to add support for additional TF Lite delegates that could target other hardware.
 
 
 ## AI Model Requirements
@@ -73,7 +124,7 @@ balance between speed and numerical performance.
 
 Each AI Hub profile or inference job, once completed, will contain a `Runtime Configuration` section.
 
-Modify [TFLiteHelpers.java](../tflite_helpers/TFLiteHelpers.java) according to the runtime configuration applied to the job. **Comment stubs are included** to help guide you (search for `TO REPLICATE AN AI HUB JOB...`)
+Modify [TFLiteHelpers.java](src/main/java/com/quicinc/tflite/TFLiteHelpers.java) according to the runtime configuration applied to the job. **Comment stubs are included** to help guide you (search for `TO REPLICATE AN AI HUB JOB...`)
 
 Note that if your job uses delegates other than QNN NPU, GPUv2, and TFLite, then you will also need to add support for those delegates to the app.
 
@@ -88,7 +139,7 @@ Note that if your job uses delegates other than QNN NPU, GPUv2, and TFLite, then
 
 ## License
 
-This app is released under the [BSD-3 License](../../../LICENSE) found at the root of this repository.
+This app is released under the [BSD-3 License](../../LICENSE) found at the root of this repository.
 
 All models from [AI Hub Models](https://github.com/qualcomm/ai-hub-models) are released under separate license(s). Refer to the [AI Hub Models repository](https://github.com/qualcomm/ai-hub-models) for details on each model.
 

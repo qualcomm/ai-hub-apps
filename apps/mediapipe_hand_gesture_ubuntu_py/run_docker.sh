@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # ---------------------------------------------------------------------
 # shellcheck disable=SC2086
-IMAGE="aiha-hand-gesture"
+IMAGE="aiha-gesture"
 source "$(dirname "${BASH_SOURCE[0]}")/scripts/qairt_utils.sh"
 
 LIBCDSPRPC_SRC=""
