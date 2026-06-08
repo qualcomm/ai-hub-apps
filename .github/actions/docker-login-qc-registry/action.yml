@@ -1,0 +1,15 @@
+name: Docker login - Qualcomm internal registry
+
+description: Authenticates with the Qualcomm internal Docker registry (docker-registry.qualcomm.com)
+
+inputs:
+  token:
+    description: Application token for docker-registry.qualcomm.com (use secrets.DOCKER_QC_REGISTRY_TOKEN)
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Log in to Qualcomm Docker registry
+      shell: bash
+      run: echo "${{ inputs.token }}" | docker login -u='$app' --password-stdin docker-registry.qualcomm.com

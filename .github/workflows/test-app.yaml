@@ -22,6 +22,8 @@ on:
     secrets:
       QDC_API_TOKEN:
         required: false
+      DOCKER_QC_REGISTRY_TOKEN:
+        required: false
 
   workflow_dispatch:
     inputs:
@@ -71,6 +73,12 @@ jobs:
             --venv="${{ env.VENV_PATH }}" \
             --with-cli \
             --with-qdc-sdk
+
+      - name: Log in to Qualcomm Docker registry
+        if: ${{ inputs.test_stage != 'fetch' }}
+        uses: ./.github/actions/docker-login-qc-registry
+        with:
+          token: ${{ secrets.DOCKER_QC_REGISTRY_TOKEN }}
 
       - name: Run tests for ${{ inputs.app }}
         run: |
