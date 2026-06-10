@@ -7,7 +7,10 @@ from __future__ import annotations
 from pathlib import Path
 
 from qai_hub_apps_test.builders.android.build import build_app as _build_android_app
-from qai_hub_apps_test.configs.info_yaml import AppType, QAIHAAppInfo
+from qai_hub_apps_test.builders.windows.build import (
+    build_cpp_app as _build_windows_cpp_app,
+)
+from qai_hub_apps_test.configs.info_yaml import AppLanguage, AppType, QAIHAAppInfo
 
 
 def build_app(app_info: QAIHAAppInfo, app_dir: Path) -> None:
@@ -24,6 +27,15 @@ def build_app(app_info: QAIHAAppInfo, app_dir: Path) -> None:
         _build_android_app(app_dir)
     elif app_info.app_type == AppType.UBUNTU:
         pass  # Ubuntu Python apps: nothing to build
+    elif app_info.app_type == AppType.WINDOWS:
+        if AppLanguage.PYTHON in app_info.languages:
+            pass  # Windows Python apps: nothing to build
+        elif AppLanguage.CPP in app_info.languages:
+            _build_windows_cpp_app(app_dir)
+        else:
+            raise NotImplementedError(
+                f"Build not implemented for Windows app with languages={[l.value for l in app_info.languages]}"
+            )
     else:
         raise NotImplementedError(
             f"Build not implemented for app_type={app_info.app_type.value}"

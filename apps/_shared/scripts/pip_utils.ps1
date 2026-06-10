@@ -5,11 +5,12 @@
 # Windows pip/venv installation utilities.
 #
 # Functions:
-#   Install-PipDeps [-VenvDir <path>] [-Packages <string[]>] [-ExtraArgs <string[]>]
+#   Install-PipDeps [-VenvDir <path>] [-Python <exe>] [-Packages <string[]>] [-ExtraArgs <string[]>]
 #       Create a .venv (if needed) and install packages or requirements files via uv.
-#       -VenvDir <path>       : venv directory (default: $PWD\.venv)
-#       -Packages <string[]>  : package specs or -r requirements.txt entries
-#       -ExtraArgs <string[]> : extra flags passed directly to uv pip install
+#       -VenvDir <path>  : venv directory (default: $PWD\.venv)
+#       -Python <exe>    : Python executable to use for venv creation (default: py -<version>)
+#       -Packages <str[]>: package specs or -r requirements.txt entries
+#       -ExtraArgs <str[]>: extra flags passed directly to uv pip install
 #
 # Usage: . pip_utils.ps1
 # ---------------------------------------------------------------------
@@ -19,6 +20,7 @@ $_PipUtilsDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 function Install-PipDeps {
     param(
         [string]$VenvDir = "",
+        [string]$Python = "",
         [string[]]$Packages = @(),
         [string[]]$ExtraArgs = @()
     )
@@ -27,17 +29,19 @@ function Install-PipDeps {
     }
     $ver = $PYTHON_VERSION
     $majorMinor = ($ver -split "\.")[ 0..1] -join "."
+    if ($Python -eq "") { $Python = "py -$majorMinor" }
     $VenvPython = Join-Path $VenvDir "Scripts\python.exe"
 
     if (-not (Test-Path $VenvPython)) {
         Write-Host "::step::Creating virtual environment at $VenvDir"
-        py -$majorMinor -m venv $VenvDir
+        Invoke-Expression "$Python -m venv `"$VenvDir`""
         Write-Host "::step::Installing uv"
         & $VenvPython -m pip install --quiet uv
         Write-Host "::done::virtual environment"
     }
 
+    $uvExe = Join-Path (Split-Path $VenvPython) "uv.exe"
     Write-Host "::step::Installing Python dependencies"
-    uv pip install --python $VenvPython @Packages @ExtraArgs
+    & $uvExe pip install --python $VenvPython @Packages @ExtraArgs
     Write-Host "::done::pip install"
 }

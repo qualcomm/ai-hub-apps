@@ -15,6 +15,12 @@
 $_WingetUtilsDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 . "$_WingetUtilsDir\load_versions.ps1"
 
+# add winget to PATH if installed but not yet on PATH
+if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
+    Write-Error "winget not found. Please install it from https://learn.microsoft.com/en-us/windows/package-manager/winget/ and re-run."
+    exit 1
+}
+
 function Install-WingetPackage {
     param(
         [string]$Id,

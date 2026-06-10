@@ -81,7 +81,7 @@ def main() -> None:
     print("Generating image...")
     image = sdapp.generate_image(args.prompt, args.num_steps, args.seed)
     pil_img = Image.fromarray(to_uint8(np.asarray(image))[0])
-    display_or_save_image(pil_img, args.output_dir)
+    display_or_save_image(pil_img, args.output_dir, filename="output.png")
 
 
 if __name__ == "__main__":

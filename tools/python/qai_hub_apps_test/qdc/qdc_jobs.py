@@ -34,6 +34,7 @@ _RUNNING_STATES = {
 HUB_DEVICE_TO_QDC_DEVICE_MAP = {
     "Dragonwing IQ-9075 EVK": "QCS9075M",
     "Snapdragon 8 Elite QRD": "SM8750",
+    "Snapdragon X Elite CRD": "SC8380XP",
 }
 
 QDC_REST_BASE_URL = "https://api.qualcomm.com/deviceloud/v1"

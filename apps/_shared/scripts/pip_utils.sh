@@ -6,11 +6,12 @@
 # Ubuntu/Linux pip/venv installation utilities.
 #
 # Functions:
-#   install_pip_deps [--venv <dir>] <pkg_or_req> [<pkg_or_req> ...] [-- <extra_uv_args>]
+#   install_pip_deps [--venv <dir>] [--python <exe>] <pkg_or_req> [<pkg_or_req> ...] [-- <extra_uv_args>]
 #       Create a .venv (if needed) and install packages or requirements files via uv.
-#       --venv <dir>  : venv directory (default: $PWD/.venv)
-#       <pkg_or_req>  : package spec (e.g. numpy==1.24) or -r requirements.txt
-#       -- <args>     : extra flags passed directly to uv pip install
+#       --venv <dir>    : venv directory (default: $PWD/.venv)
+#       --python <exe>  : Python executable to use for venv creation (default: python$PYTHON_VERSION)
+#       <pkg_or_req>    : package spec (e.g. numpy==1.24) or -r requirements.txt
+#       -- <args>       : extra flags passed directly to uv pip install
 #
 # Usage: source pip_utils.sh
 # ---------------------------------------------------------------------
@@ -20,13 +21,15 @@ source "$_PIP_UTILS_DIR/load_versions.sh"
 
 install_pip_deps() {
     local venv_dir="${PWD}/.venv"
+    local python_exe=""
     local -a install_args=()
     local -a extra_args=()
     local after_sep=0
 
     while [[ $# -gt 0 ]]; do
         case "$1" in
-            --venv) venv_dir="$2"; shift 2 ;;
+            --venv)   venv_dir="$2"; shift 2 ;;
+            --python) python_exe="$2"; shift 2 ;;
             --) after_sep=1; shift ;;
             *) if [[ $after_sep -eq 1 ]]; then
                    extra_args+=("$1")
@@ -37,7 +40,7 @@ install_pip_deps() {
         esac
     done
 
-    local python_bin="python${PYTHON_VERSION}"
+    local python_bin="${python_exe:-python${PYTHON_VERSION}}"
 
     if [ ! -x "$venv_dir/bin/python" ]; then
         echo "::step::Creating virtual environment at $venv_dir"

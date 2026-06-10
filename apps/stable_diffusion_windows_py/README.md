@@ -1,46 +1,28 @@
-## Run Stable Diffusion on Snapdragon X Elite
+# Stable Diffusion on Snapdragon X Elite
 
-Follow instructions to run the demo:
+A Windows Python app that runs Stable Diffusion v2.1 on-device using ONNX Runtime QNN on Snapdragon X Elite.
 
-1. Enable PowerShell Scripts. Open PowerShell in administrator mode, and run:
+## Requirements
 
-```powershell
-Set-ExecutionPolicy -Scope CurrentUser Unrestricted -Force
-```
+- Windows on Snapdragon X Elite
+- PowerShell
 
-2. Open Anaconda PowerShell Prompt in this folder. If you don't have Anaconda PowerShell, use regular PowerShell.
+## Setup
 
-3. Install platform dependencies:
+### Option A: Using the CLI (Recommended)
 
-```powershell
-.\install_platform_deps.ps1
-```
-
-The above script will install:
-  * Anaconda for x86-64. We use x86-64 Python for compatibility with other Python packages. However, inference in ONNX Runtime will, for the most part, run natively with ARM64 code.
-  * Git for Windows. This is required to load the AI Hub Models package, which contains the application code used by this demo.
-
-4. Open (or re-open) Anaconda Powershell Prompt to continue.
-
-5. Create & activate your python environment:
+Install the CLI and fetch the app with the model:
 
 ```powershell
-.\activate_venv.ps1 -name AI_Hub
+pip install qai-hub-apps
+qai-hub-apps fetch stable_diffusion_windows_py --model stable_diffusion_v2_1 --chipset qualcomm-snapdragon-x-elite --output-dir ~
+cd ~\stable_diffusion_windows_py
 ```
 
-6. Install python packages:
+### Option B: Cloning the Repo
 
-```powershell
-.\install_python_deps.ps1 -model stable-diffusion-v2-1
-```
+If you cloned the release branch, the app directory is already self-contained — but **model weights are not included**. Download the `PRECOMPILED_QNN_ONNX` model files from [Qualcomm HuggingFace Repo](https://huggingface.co/qualcomm/Stable-Diffusion-v2.1) for your target device (e.g. `Snapdragon® X Elite`), extract the zip to `<APP ROOT>/model/`. The expected directory structure is:
 
-In your currently active python environment, the above script will install:
-  * AI Hub Models and model dependencies for stable diffusion.
-  * The onnxruntime-qnn package, both to enable native ARM64 ONNX inference, as well as to enable targeting Qualcomm NPUs.
-
-7. Download the `PRECOMPILED_QNN_ONNX` model files from [Qualcomm HuggingFace Repo](https://huggingface.co/qualcomm/Stable-Diffusion-v2.1) based on your target device, e.g., X-Elite users choose `Snapdragon® X Elite`.
-
-8. Extract the zip to `<APP ROOT>/model` directory. The expected directory structure is:
 ```
 model/
   |_ metadata.yaml
@@ -52,8 +34,37 @@ model/
   |_ vae_qairt_context.bin
 ```
 
-9. Run demo:
+## Install Dependencies
+
+First, allow PowerShell scripts to run:
 
 ```powershell
+Set-ExecutionPolicy -Scope CurrentUser Unrestricted -Force
+```
+
+Then install all platform and Python dependencies:
+
+> [!WARNING]
+> This script installs packages at the user scope (Python, Git). These will be available system-wide for the current user after installation.
+
+```powershell
+.\install_runtime.ps1
+```
+
+This installs:
+- x64 Python (required — ARM64 Python is not supported by all dependencies)
+- Git for Windows
+- Python packages including `qai-hub-models` and `onnxruntime-qnn`
+
+> [!NOTE]
+> If you don't want us to install Python for you via winget, open `install_runtime.ps1` and
+> comment out the `Install-WingetPackage -Id "Python.Python.*"` line. Then update the `-Python`
+> argument in the subsequent `Install-PipDeps` calls to point to your own x64 Python executable
+> (e.g. `-Python "C:\Python311\python.exe"`).
+
+## Run
+
+```powershell
+.venv\Scripts\Activate.ps1
 python demo.py --prompt "A girl taking a walk at sunset" --num-steps 20
 ```

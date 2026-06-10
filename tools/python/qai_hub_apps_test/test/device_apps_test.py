@@ -175,7 +175,7 @@ def test_3_on_device_app(
     if not app_info.supported_devices:
         pytest.fail(f"No supported_devices defined in {app_info.id}/info.yaml")
 
-    device = app_info.supported_devices[0].name
+    device = app_info.supported_devices[0].reference_device_name
 
     assert qdc_token is not None
     assert app_dir is not None

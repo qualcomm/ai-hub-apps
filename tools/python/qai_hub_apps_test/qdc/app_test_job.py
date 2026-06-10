@@ -198,6 +198,41 @@ class AppTestAndroidArtifactHandler(AppTestArtifactHandler):
         return zip_path
 
 
+class AppTestWindowsArtifactHandler(AppTestArtifactHandler):
+    def __init__(self, use_docker: bool = False) -> None:
+        self.use_docker = use_docker
+
+    @property
+    def entry_script(self) -> str:
+        return "C:\\Temp\\TestContent\\run_windows.ps1"
+
+    def create_artifact(
+        self,
+        curr_dirname: os.PathLike | str,
+        app_dir: os.PathLike | str,
+        dest_dir: os.PathLike | str,
+    ) -> str:
+        dest_script = os.path.join(dest_dir, "run_windows.ps1")
+        shutil.copy(
+            os.path.join(curr_dirname, "device_scripts", "run_windows.ps1"),
+            dest_script,
+        )
+        with open(dest_script, encoding="utf-8") as f:
+            content = f.read()
+        with open(dest_script, "w", encoding="utf-8") as f:
+            f.write(
+                content.replace(
+                    "<<USE_DOCKER>>", "true" if self.use_docker else "false"
+                ).replace("<<RUN_COMMAND>>", "powershell -File test.ps1")
+            )
+
+        shutil.copytree(app_dir, os.path.join(dest_dir, "app"))
+
+        zip_path = os.path.join(os.path.dirname(dest_dir), "test.zip")
+        create_zip(zip_path, dest_dir)
+        return zip_path
+
+
 class AppTestQDCJobs(QDCJobs):
     """QDC job handler for generic app on-device testing."""
 
@@ -208,6 +243,9 @@ class AppTestQDCJobs(QDCJobs):
             return AppTestLinuxArtifactHandler(use_docker=use_docker)
         if qdc_device.mobile_platform:
             return AppTestAndroidArtifactHandler()
+        if qdc_device.windows_platform:
+            # windows containers are not supported on arm64
+            return AppTestWindowsArtifactHandler(use_docker=False)
         raise NotImplementedError(
             f"On-device app testing is not yet supported for this platform. "
             f"Device: {qdc_device.device.name!r}"

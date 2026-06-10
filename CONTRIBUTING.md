@@ -283,7 +283,7 @@ Testing follows three stages, implemented in `tools/python/qai_hub_apps_test/tes
 # Full setup (CLI + QDC SDK required)
 bash tools/setup_env.sh --with-cli --with-qdc-sdk
 source qaiha-dev/bin/activate
-cd tools/python
+cd tools/python/qai_hub_apps_test
 
 # Stage 1 only — validate fetch works (no QDC needed)
 pytest -m device_test --model-selection first --test-stage fetch
@@ -392,11 +392,11 @@ When satisfied, set `include_in_cli: true` and `status: published` in `info.yaml
 ### 8. Run on-device tests locally
 
 ```bash
-cd tools/python
+cd tools/python/qai_hub_apps_test
 
 # Full on-device test (requires QDC API token)
 pytest -m device_test --model-selection first --test-stage all \
-  --qdc-token $QDC_API_TOKEN \
+  --qdc-token $QDC_API_TOKEN -vv -s \
   -k <your_app_id>
 ```
 
