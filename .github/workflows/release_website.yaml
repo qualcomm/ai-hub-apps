@@ -134,6 +134,10 @@ jobs:
               ref="${{ inputs.source_branch_name }}"
               if [[ -z "$ref" ]]; then
                 echo "ZOO_APP_REF=" >> "$GITHUB_ENV"
+              elif [[ "$ref" == refs/tags/* ]]; then
+                # Release tags are pushed to the public repo "apps/" prefixed, e.g. v0.30.0 -> apps/v0.30.0.
+                version="${ref#refs/tags/}"
+                echo "ZOO_APP_REF=refs/tags/apps/$version" >> "$GITHUB_ENV"
               elif [[ "$ref" == refs/* ]]; then
                 echo "ZOO_APP_REF=$ref" >> "$GITHUB_ENV"
               else

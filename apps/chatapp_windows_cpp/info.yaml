@@ -31,7 +31,7 @@ precisions: [w4]
 app_type: 'windows'
 qaihm_version: 'v0.41.0'
 static_img_filename: 'app_screen.png'
-app_repo_relative_path: 'chatapp_windows_cpp'
+app_repo_url: "https://github.com/qualcomm/ai-hub-apps/tree/main/apps/chatapp_windows_cpp"
 os:
   name: Windows
   version: 11+

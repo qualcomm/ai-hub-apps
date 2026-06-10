@@ -15,7 +15,7 @@ precisions: [float]
 app_type: 'android'
 base_docker: ubuntu.dockerfile
 static_img_filename: 'app_screen.png'
-app_repo_relative_path: 'object_detection_android'
+app_repo_url: "https://github.com/qualcomm/ai-hub-apps/tree/main/apps/object_detection_android"
 os:
   name: Android
   version: 14+
