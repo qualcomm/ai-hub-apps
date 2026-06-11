@@ -1,0 +1,23 @@
+name: GenieX Demo
+id: geniex_chat_android
+license_url: https://github.com/qualcomm/ai-hub-apps/blob/main/LICENSE
+license_type: bsd-3-clause
+headline: Run LLMs and VLMs on Android with GenieX
+description: A sample Android chat app that runs Large Language Models and Vision-Language Models on-device with the Qualcomm® GenieX SDK, using a single pluggable runtime that targets the Snapdragon® NPU, GPU, or CPU.
+runtime: genie
+status: unpublished
+domain: Generative AI
+app_type: 'android'
+use_case: Text Generation
+related_models: ['qwen3_4b_instruct_2507', 'qwen2_5_vl_7b_instruct']
+precisions: [w4a16]
+static_img_filename: 'app_screen.png'
+app_repo_relative_path: 'geniex_chat_android'
+supported_devices: ["Snapdragon 8 Elite QRD"]
+base_docker: ubuntu.dockerfile
+# This app downloads models at runtime via the GenieX SDK rather than bundling
+disable_cli_model_fetch: true
+os:
+  name: Android
+  version: 12+
+languages: ['Kotlin', 'Java']

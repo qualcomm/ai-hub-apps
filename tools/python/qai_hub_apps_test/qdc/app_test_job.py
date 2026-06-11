@@ -136,8 +136,8 @@ class AppTestAndroidArtifactHandler(AppTestArtifactHandler):
         with open(build_gradle, encoding="utf-8") as f:
             content = f.read()
 
-        app_id = re.search(r'applicationId\s+"([^"]+)"', content)
-        runner = re.search(r'testInstrumentationRunner\s+"([^"]+)"', content)
+        app_id = re.search(r"""applicationId\s+["']([^"']+)["']""", content)
+        runner = re.search(r"""testInstrumentationRunner\s+["']([^"']+)["']""", content)
 
         if not app_id or not runner:
             raise RuntimeError(
