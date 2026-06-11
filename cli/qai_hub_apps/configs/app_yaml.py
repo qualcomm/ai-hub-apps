@@ -52,5 +52,6 @@ class AppInfo(BaseConfig):
     languages: list[AppLanguage] = []
     model_file_paths: list[str] = []
     model_file_dir: str | None = None
+    disable_cli_model_fetch: bool = False
     environment: EnvironmentConfig | None = None
     url: AppUrl | None = None

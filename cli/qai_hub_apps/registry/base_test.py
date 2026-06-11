@@ -213,6 +213,37 @@ def test_fetch_no_model_location_raises(monkeypatch, tmp_path):
         app.fetch(tmp_path, model_asset=asset)
 
 
+def test_fetch_disable_cli_model_fetch_with_model_raises(monkeypatch, tmp_path):
+    monkeypatch.setattr("qai_hub_apps.registry.base.download", fake_download)
+    monkeypatch.setattr("qai_hub_apps.registry.base._is_dev", lambda: False)
+
+    info = make_app_info(
+        url=AppUrl(source="https://example.com/app.zip"),
+        related_models=["test_model"],
+        disable_cli_model_fetch=True,
+    )
+    app = App(info)
+    asset = ModelAsset(model_id="test_model", chipset=None)
+    with pytest.raises(AppIncompatibleError, match="downloads its model at runtime"):
+        app.fetch(tmp_path, model_asset=asset)
+
+
+def test_fetch_disable_cli_model_fetch_without_model_succeeds(monkeypatch, tmp_path):
+    monkeypatch.setattr("qai_hub_apps.registry.base.download", fake_download)
+    monkeypatch.setattr("qai_hub_apps.registry.base._is_dev", lambda: False)
+
+    info = make_app_info(
+        url=AppUrl(source="https://example.com/app.zip"),
+        related_models=["test_model"],
+        disable_cli_model_fetch=True,
+    )
+    app = App(info)
+    result = app.fetch(tmp_path)
+
+    assert result == tmp_path / "test_app"
+    assert result.exists()
+
+
 def test_fetch_model_file_dir_success(monkeypatch, tmp_path):
     monkeypatch.setattr("qai_hub_apps.registry.base.download", fake_download)
     monkeypatch.setattr("qai_hub_apps.registry.base._is_dev", lambda: False)

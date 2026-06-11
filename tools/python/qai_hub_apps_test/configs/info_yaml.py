@@ -72,6 +72,8 @@ class QAIHACLIAppInfo(BaseQAIHMConfig):
         Path
     ] = []  # Destination paths for each downloaded model file
     model_file_dir: str | None = None  # Directory to unzip all model files into
+    # Set True for apps that download their model at runtime
+    disable_cli_model_fetch: bool = False
     url: AppUrl | None = None
 
     @model_validator(mode="after")
@@ -81,6 +83,11 @@ class QAIHACLIAppInfo(BaseQAIHMConfig):
         if has_paths and has_dir:
             raise ValueError(
                 "model_file_paths and model_file_dir are mutually exclusive; set only one."
+            )
+        if self.disable_cli_model_fetch and (has_paths or has_dir):
+            raise ValueError(
+                "Apps with disable_cli_model_fetch=True must not set "
+                "model_file_paths or model_file_dir."
             )
         if has_paths and len(self.model_file_paths) > 1:
             parents = {Path(p).parent for p in self.model_file_paths}

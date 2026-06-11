@@ -30,6 +30,10 @@ pytestmark = pytest.mark.device_test
 
 
 def _select_models(app_info: QAIHAAppInfo, mode: str) -> list[str]:
+    # Apps with disable_cli_model_fetch download their model at runtime; the model is
+    # never fetched, so yield a single param to avoid redundant fetch/build/device runs.
+    if app_info.disable_cli_model_fetch:
+        return ["no_model"]
     models = app_info.related_models
     if not models:
         return []
@@ -112,20 +116,23 @@ def test_1_fetch_app(
         pytest.fail(f"No supported_devices defined in {app_info.id}/info.yaml")
 
     out_parent = tmp_path_factory.mktemp(f"{app_info.id}__{model_id}")
-    subprocess.run(
-        [
-            "qai-hub-apps",
-            "fetch",
-            app_info.id,
+    fetch_cmd = [
+        "qai-hub-apps",
+        "fetch",
+        app_info.id,
+        "--output-dir",
+        str(out_parent),
+    ]
+    # Apps with disable_cli_model_fetch download their model at runtime — fetching
+    # with --model errors, so omit it.
+    if not app_info.disable_cli_model_fetch:
+        fetch_cmd += [
             "--model",
             model_id,
-            "--output-dir",
-            str(out_parent),
             "--chipset",
             app_info.supported_devices[0].chipset,
-        ],
-        check=True,
-    )
+        ]
+    subprocess.run(fetch_cmd, check=True)
     fetched_dirs[(app_info.id, model_id)] = out_parent / app_info.id
 
 

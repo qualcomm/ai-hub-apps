@@ -84,6 +84,12 @@ class App:
 
             model_download_url = None
             if model_asset is not None:
+                if self.disable_cli_model_fetch:
+                    raise AppIncompatibleError(
+                        f"App '{self.id}' downloads its model at runtime and bundles no model files. "
+                        f"Re-run without --model:\n  qai-hub-apps fetch {self.id}"
+                    )
+
                 if model_asset.model_id not in self.related_models:
                     available = ", ".join(self.related_models) or "none"
                     raise AppIncompatibleError(
