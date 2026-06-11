@@ -74,6 +74,12 @@ jobs:
             --with-cli \
             --with-qdc-sdk
 
+      - name: Generate test registry (all apps)
+        run: |
+          source ${{ env.VENV_PATH }}/bin/activate
+          python -m qai_hub_apps_test.scripts.generate_registry \
+            --output_dir cli/qai_hub_apps/ --include_all
+
       - name: Log in to Qualcomm Docker registry
         if: ${{ inputs.test_stage != 'fetch' }}
         uses: ./.github/actions/docker-login-qc-registry

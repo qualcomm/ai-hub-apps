@@ -118,6 +118,70 @@ def test_skips_non_python_apps(tmp_path: Path) -> None:
     assert len(registry.apps) == 0
 
 
+def test_include_all_includes_unpublished_and_excluded(tmp_path: Path) -> None:
+    pub_dir = tmp_path / "pub_app"
+    pub_dir.mkdir()
+    unpub_dir = tmp_path / "unpub_app"
+    unpub_dir.mkdir()
+    excluded_dir = tmp_path / "excluded_app"
+    excluded_dir.mkdir()
+    apps = [
+        (make_sample_app_info(id="pub_app", status="published"), pub_dir),
+        (make_sample_app_info(id="unpub_app", status="unpublished"), unpub_dir),
+        (
+            make_sample_app_info(
+                id="excluded_app", status="published", include_in_cli=False
+            ),
+            excluded_dir,
+        ),
+    ]
+    generate_registry(
+        tmp_path, apps, _REPO_BASE, "main", _CLI_VERSION, include_all=True
+    )
+
+    registry = AppRegistry.from_yaml(tmp_path / "registry.yaml")
+    assert {a.id for a in registry.apps} == {"pub_app", "unpub_app", "excluded_app"}
+
+
+def test_default_excludes_unpublished_and_excluded(tmp_path: Path) -> None:
+    pub_dir = tmp_path / "pub_app"
+    pub_dir.mkdir()
+    unpub_dir = tmp_path / "unpub_app"
+    unpub_dir.mkdir()
+    excluded_dir = tmp_path / "excluded_app"
+    excluded_dir.mkdir()
+    apps = [
+        (make_sample_app_info(id="pub_app", status="published"), pub_dir),
+        (make_sample_app_info(id="unpub_app", status="unpublished"), unpub_dir),
+        (
+            make_sample_app_info(
+                id="excluded_app", status="published", include_in_cli=False
+            ),
+            excluded_dir,
+        ),
+    ]
+    generate_registry(tmp_path, apps, _REPO_BASE, "main", _CLI_VERSION)
+
+    registry = AppRegistry.from_yaml(tmp_path / "registry.yaml")
+    assert {a.id for a in registry.apps} == {"pub_app"}
+
+
+def test_include_all_with_build_and_upload_raises(tmp_path: Path) -> None:
+    app_dir = tmp_path / "myapp"
+    app_dir.mkdir()
+    apps = [(make_sample_app_info(id="myapp", status="published"), app_dir)]
+    with pytest.raises(SystemExit, match="include_all cannot be used"):
+        generate_registry(
+            tmp_path,
+            apps,
+            _REPO_BASE,
+            "main",
+            _CLI_VERSION,
+            build_and_upload=True,
+            include_all=True,
+        )
+
+
 def test_raises_on_duplicate_app_ids(tmp_path: Path) -> None:
     app_dir1 = tmp_path / "myapp"
     app_dir1.mkdir()

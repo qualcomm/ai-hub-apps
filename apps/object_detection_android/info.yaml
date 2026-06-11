@@ -22,3 +22,4 @@ os:
 languages: ['Java']
 use_case: Object Detection
 related_models: [yolox]
+skip_test: model cannot be downloaded directly without exporting; needs qai-hub-models CLI support https://github.com/qcom-ai-hub/tetracode/issues/19766

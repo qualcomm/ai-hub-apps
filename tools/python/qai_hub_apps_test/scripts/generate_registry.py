@@ -49,6 +49,7 @@ class GenerateRegistryParser(Tap):
 
     cli_version: str = _read_cli_version()  # CLI version used for S3 path
     build_and_upload: bool = False  # Build app zips and upload to S3; without this, list apps without bundling
+    include_all: bool = False  # Include every app (ignore status + include_in_cli). For testing only; never upload.
 
 
 def _resolve_repo_url(info: QAIHAAppInfo, repo_base: str, ref: str) -> str:
@@ -97,6 +98,7 @@ def generate_registry(
     schema_version: str = "1.0",
     min_cli_version: str = "0.0.1",
     build_and_upload: bool = False,
+    include_all: bool = False,
 ) -> None:
     """Generate registry.yaml from a list of (info, app_dir) pairs.
 
@@ -118,7 +120,13 @@ def generate_registry(
         Minimum CLI version required to consume this registry.
     build_and_upload:
         If True, bundle Python and Android apps and upload zips + registry to S3.
+    include_all:
+        If True, include every app regardless of status / include_in_cli. For testing
+        only (e.g. on-device CI of WIP apps); cannot be combined with build_and_upload.
     """
+    if include_all and build_and_upload:
+        raise SystemExit("include_all cannot be used with build_and_upload.")
+
     print(f"Using ref '{ref}' for GitHub URLs (repo base: {repo_base})")
     output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -129,7 +137,7 @@ def generate_registry(
                 f"Error: app ID '{info.id}' in {app_dir / 'info.yaml'} "
                 f"does not match directory name '{app_dir.name}'."
             )
-        if info.status == AppStatus.PUBLISHED and info.include_in_cli:
+        if include_all or (info.status == AppStatus.PUBLISHED and info.include_in_cli):
             resolved_url = _resolve_repo_url(info, repo_base, ref)
             public_apps.append(
                 (info.model_copy(update={"app_repo_url": resolved_url}), app_dir)
@@ -233,6 +241,7 @@ def main() -> None:
         args.schema_version,
         args.min_cli_version,
         args.build_and_upload,
+        args.include_all,
     )
 
 
