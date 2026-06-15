@@ -1,5 +1,5 @@
-pytest
-pytest-mock
+pytest==9.0.3
+pytest-mock==3.15.1
 pytest-json-report
 qai_hub_models==0.42.0
 typed-argument-parser
