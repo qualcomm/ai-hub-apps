@@ -25,6 +25,11 @@ This guide covers dev environment setup, repo architecture, app conventions, tes
 - [git-lfs](https://git-lfs.com/)
 - Docker
 
+> [!IMPORTANT]
+> The expected contributor environment is a **Linux or macOS host**. Some dev dependencies (e.g. `onnxruntime` via `qai_hub_models`) lack `win-arm64` wheels, so the full tooling — including `generate_registry` — may not install cleanly on native Windows.
+>
+> **On Windows, enable Developer Mode and set `git config --global core.symlinks true` *before cloning*.** Otherwise symlinks are checked out as plain text files and builds will fail.
+
 ### Environment
 
 ```bash
@@ -178,6 +183,9 @@ App directories follow the pattern: `{app_name}_{platform}[_{language}]`
 
 Every app must have an `info.yaml`. Copy from a similar app and adjust.
 
+> [!IMPORTANT]
+> CI validates *every* app's `info.yaml` regardless of `status` / `include_in_cli`, so a half-filled file fails CI even for an unpublished app.
+
 ### Mandatory fields
 
 | Field | Type | Description |
@@ -186,8 +194,10 @@ Every app must have an `info.yaml`. Copy from a similar app and adjust.
 | `name` | string | Human-readable display name |
 | `headline` | string | One-line UI description |
 | `description` | string | Full UI description |
+| `domain` | string | Model domain (e.g. `Computer Vision`) — copy from a similar app |
+| `use_case` | string | Use-case label (e.g. `Image Classification`) — copy from a similar app |
 | `app_type` | `android` \| `windows` \| `ubuntu` | Platform type |
-| `runtime` | `tflite` \| `onnx` \| `genie` \| … | ML runtime |
+| `runtime` | closed enum | `tflite` \| `onnx` \| `genie` \| `precompiled_qnn_onnx` \| … — must be an existing `TargetRuntime` value (a new one needs an upstream `qai_hub_models` change) |
 | `status` | `published` \| `unpublished` | Set `unpublished` until ready |
 | `languages` | list | e.g. `['Java']`, `['Python']`, `['Java', 'C++']` |
 | `related_models` | list | All compatible model IDs (used for CLI fetch + testing) |
@@ -204,6 +214,7 @@ Every app must have an `info.yaml`. Copy from a similar app and adjust.
 | `model_file_paths` | — | **Required** (if not using `model_file_dir`) — relative destination paths for each downloaded model file; all paths must share the same parent directory |
 | `model_file_dir` | — | **Required** (if not using `model_file_paths`) — single directory to extract all model files into; mutually exclusive with `model_file_paths` |
 | `include_in_cli` | `true` | Set `false` to exclude from CLI registry (e.g. external apps) |
+| `disable_cli_model_fetch` | `false` | Set `true` for apps that **download their model at runtime** instead of bundling a model asset. Mutually exclusive with `model_file_paths` / `model_file_dir`. Without it, `fetch` fails trying to download a non-existent asset. |
 | `skip_test` | — | String reason to skip CI testing |
 | `app_repo_url` | — | Explicit GitHub URL (overrides `app_repo_relative_path` — use for external repos) |
 
@@ -264,9 +275,9 @@ Testing follows three stages, implemented in `tools/python/qai_hub_apps_test/tes
 
 #### Android apps
 
-- **Build:** Docker container with `BUILD_TYPE=build` runs `install_build.sh` (installs Android SDK) then `gradle assembleDebug assembleAndroidTest`. APKs are copied back via `docker cp`.
+- **Build:** Docker container with `BUILD_TYPE=build` runs `install_build.sh` (installs Android SDK) then `gradle assembleDebug assembleAndroidTest`. APKs are copied back via `docker cp`. Note the instrumented test only compiles under `assembleAndroidTest` — a green `assembleDebug` does **not** mean the test compiles, so always build both locally.
 - **Tests:** UI Automator instrumented tests in `src/androidTest/java/`. The test runner (`run_android.py`) installs the APKs via `adb` and runs the instrumentation suite.
-- **Test content:** Tests should wake the device, dismiss the keyguard, exercise the main inference flow, and assert on results. See `image_classification_android` as the reference implementation.
+- **Test content:** Tests should wake the device, dismiss the keyguard, exercise the main inference flow, and assert on results. See `apps/chatapp_android/src/androidTest/java/com/quicinc/chatapp/ChatAppTest.java` for a concrete reference (it also asserts on TTFT / tokens-per-sec performance metrics).
 
 #### Ubuntu Python apps
 
@@ -346,6 +357,8 @@ ln -sf "../../../_shared/android/common.gradle" apps/<app>/_shared/android/commo
 # Add rootProject.name to settings.gradle
 echo "rootProject.name = 'app'" >> apps/<app>/settings.gradle
 ```
+> [!IMPORTANT]
+> **On Windows, this symlink is only checked out correctly if `core.symlinks=true` was set before cloning** — see the note in [Development Setup](#development-setup).
 
 ### 4. Add `install_build.sh` (Android)
 
@@ -358,7 +371,7 @@ install_android_sdk
 
 ### 5. Add instrumented tests (Android)
 
-Create `src/androidTest/java/com/quicinc/<app>/<App>Test.java`. See `image_classification_android` as the reference. Tests should:
+Create `src/androidTest/java/com/quicinc/<app>/<App>Test.java`. See `apps/chatapp_android/src/androidTest/java/com/quicinc/chatapp/ChatAppTest.java` as the reference. Note the test only compiles under `gradle assembleAndroidTest` (not `assembleDebug`). Tests should:
 - Wake the device and dismiss the keyguard
 - Launch the app via `Intent`
 - Interact with the UI (select image, tap Run)
@@ -378,16 +391,17 @@ pytest -v
 
 Both test suites must pass before opening a PR.
 
-### 7. Register in CLI
+### 7. Regenerate and commit the registry
 
-Check the app appears in the registry dry-run (requires `--with-cli` from the dev setup):
+Adding (or changing) an app means the bundled registry must be regenerated **and committed** — CI fails if `cli/qai_hub_apps/registry.yaml` is out of date. Run (requires `--with-cli` from the dev setup):
 
 ```bash
-python -m qai_hub_apps_test.scripts.generate_registry \
-  --output_dir /tmp/reg_test
+python -m qai_hub_apps_test.scripts.generate_registry --output_dir cli/qai_hub_apps/
 ```
 
-When satisfied, set `include_in_cli: true` and `status: published` in `info.yaml`.
+Then commit the updated `cli/qai_hub_apps/registry.yaml`. When the app is ready to publish, set `include_in_cli: true` and `status: published` in `info.yaml` and regenerate again.
+
+To inspect the output without touching the bundled file, point `--output_dir` at a scratch path (e.g. `/tmp/reg_test`).
 
 ### 8. Run on-device tests locally
 
