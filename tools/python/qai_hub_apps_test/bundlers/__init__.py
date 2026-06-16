@@ -16,7 +16,7 @@ from qai_hub_apps_test.bundlers.python.bundle import (
     bundle_source as _bundle_python_source,
 )
 from qai_hub_apps_test.configs.info_yaml import AppLanguage, AppType, QAIHAAppInfo
-from qai_hub_apps_test.utils.paths import REPOSITORY_ROOT, find_app_dir
+from qai_hub_apps_test.utils.paths import DOCKER_ROOT, find_app_dir
 
 
 def bundle_app(
@@ -78,7 +78,7 @@ def bundle_app(
             )
 
         if app_info.base_docker is not None:
-            src_dockerfile = REPOSITORY_ROOT / "tools" / "docker" / app_info.base_docker
+            src_dockerfile = DOCKER_ROOT / app_info.base_docker
             if not src_dockerfile.is_file():
                 raise FileNotFoundError(
                     f"Dockerfile '{app_info.base_docker}' not found at '{src_dockerfile}'. "

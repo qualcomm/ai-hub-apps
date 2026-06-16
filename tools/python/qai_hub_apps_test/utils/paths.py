@@ -13,6 +13,7 @@ REPOSITORY_ROOT = Path(os.path.dirname(__file__)).parent.parent.parent.parent
 CACHE_ROOT = Path(user_cache_dir("qaiha"))
 APPS_ROOT = REPOSITORY_ROOT / "apps"
 SHARED_UTILS_ROOT = APPS_ROOT / "_shared"
+DOCKER_ROOT = REPOSITORY_ROOT / "tools" / "docker"
 MAX_APP_SEARCH_DEPTH = 3
 
 _REPO_MARKERS = ("apps", "cli", "tools")

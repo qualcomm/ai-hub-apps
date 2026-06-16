@@ -208,12 +208,10 @@ def test_bundle_app_includes_dockerfile(
         dummy_python_app_path / "info.yaml", write_if_empty=True
     )
 
-    fake_root = tmp_path / "fakerepo"
-    (fake_root / "tools" / "docker").mkdir(parents=True)
-    (fake_root / "tools" / "docker" / "ubuntu.dockerfile").write_text(
-        "FROM ubuntu:24.04\n"
-    )
-    monkeypatch.setattr(bundlers_mod, "REPOSITORY_ROOT", fake_root)
+    fake_docker_root = tmp_path / "fakerepo" / "tools" / "docker"
+    fake_docker_root.mkdir(parents=True)
+    (fake_docker_root / "ubuntu.dockerfile").write_text("FROM ubuntu:24.04\n")
+    monkeypatch.setattr(bundlers_mod, "DOCKER_ROOT", fake_docker_root)
 
     out_dir = tmp_path / "out"
     bundle_app(dummy_python_app_path, out_dir, sdk_parent=dummy_python_sdk_path)
@@ -243,9 +241,9 @@ def test_bundle_app_missing_dockerfile_raises(
         id="my_dummy_app", base_docker="nonexistent.dockerfile"
     ).to_yaml(dummy_python_app_path / "info.yaml", write_if_empty=True)
 
-    fake_root = tmp_path / "fakerepo"
-    fake_root.mkdir()
-    monkeypatch.setattr(bundlers_mod, "REPOSITORY_ROOT", fake_root)
+    fake_docker_root = tmp_path / "fakerepo" / "tools" / "docker"
+    fake_docker_root.mkdir(parents=True)
+    monkeypatch.setattr(bundlers_mod, "DOCKER_ROOT", fake_docker_root)
 
     with pytest.raises(FileNotFoundError, match=r"nonexistent.dockerfile"):
         bundle_app(

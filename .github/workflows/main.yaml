@@ -53,7 +53,6 @@ jobs:
 
   detect_changed_apps:
     name: "Detect Changed Apps"
-    needs: [determine_ci_steps]
     runs-on: [tetra-ubuntu-2204, self-hosted]
     env:
       VENV_PATH: qaiha-dev
@@ -63,6 +62,8 @@ jobs:
       app_filter: ${{ steps.detect.outputs.app_filter }}
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
       - id: setup_python
         uses: actions/setup-python@v6
         with:
@@ -83,14 +84,16 @@ jobs:
 
       - id: detect
         name: Find updated registered app IDs
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
         run: |
           source ${{ env.VENV_PATH }}/bin/activate
-          # convert JSON list to a diff file
-          python - > changed.txt << 'EOF'
-          import json
-          data = json.loads('${{ needs.determine_ci_steps.outputs.changed_files }}') or []
-          print('\n'.join(f for group in data for f in group))
-          EOF
+          if ! git rev-parse --verify --quiet "${BASE_SHA}^{commit}" > /dev/null; then
+            # No usable base (manual run or first push to a new branch): default to main.
+            echo "::notice::No base commit to diff against (BASE_SHA='${BASE_SHA}'); defaulting to origin/main."
+            BASE_SHA="origin/main"
+          fi
+          git diff --name-only "$BASE_SHA"...HEAD > changed.txt
           python tools/ci/find_updated_apps.py --diff-file changed.txt >> $GITHUB_OUTPUT
 
   build-changed-apps:
