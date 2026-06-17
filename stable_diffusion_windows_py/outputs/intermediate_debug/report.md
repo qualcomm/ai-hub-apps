@@ -8,8 +8,8 @@
 - Existing `demo.py` was not modified.
 - QNN 5-step intermediate diagnosis completed successfully.
 - CPU comparison was requested, but skipped because the available ONNX files are precompiled QNN context-wrapper ONNX assets, not portable CPU baseline exports.
-- Existing `demo.py` smoke test was not run after diagnosis because command execution approval was not granted.
-- Draft PR creation is still pending.
+- Existing `demo.py` was left unchanged.
+- Draft PR is open: `https://github.com/qualcomm/ai-hub-apps/pull/154`.
 
 ## Added / Generated Files
 
@@ -204,6 +204,77 @@ The same text embedding delta that reaches the QNN UNet produces a much larger c
 
 This strongly supports the suspicion that the issue is inside `unet_qairt_context.bin` or the UNet QNN conversion settings, rather than TextEncoder output, Python-side `text_emb` quantization, or guidance scale application.
 
+## Cause Report For Qualcomm
+
+### Reproduction Conditions
+
+- Device target: Snapdragon X Elite / Windows ARM64 / Qualcomm QNN.
+- Software stack: `qai_hub_models==0.48.0`, `onnxruntime-qnn==1.24.1`.
+- `v0.56.0` was not used.
+- Existing `demo.py` was not modified.
+- Model assets are the v0.48.0-style precompiled QNN context-wrapper files:
+  - `text_encoder.onnx` + `text_encoder_qairt_context.bin`
+  - `unet.onnx` + `unet_qairt_context.bin`
+  - `vae.onnx` + `vae_qairt_context.bin`
+- Prompt: `A girl taking a walk at sunset`
+- Seed: `47`
+- Step count: `5`
+- Reference comparison timestep: `801`
+
+### Commands Run
+
+```powershell
+& 'C:\Users\hirok\miniconda3\envs\AI_Hub_SD\python.exe' diagnose_intermediate_qnn.py --num-steps 5 --seed 47 --output-dir outputs/intermediate_debug --cpu-compare
+& 'C:\Users\hirok\miniconda3\envs\AI_Hub_SD\python.exe' diagnose_guidance_sensitivity_qnn.py --num-steps 5 --seed 47 --output-dir outputs/intermediate_debug --guidance-scales 0 1 3 7.5 15 30
+& 'C:\Users\hirok\miniconda3\envs\AI_Hub_SD\python.exe' compare_qnn_unet_reference.py --num-steps 5 --seed 47 --timestep-index 0 --output-dir outputs/intermediate_debug --local-files-only
+```
+
+### Comparison Method
+
+The QNN UNet and a PyTorch `UNet2DConditionModel` baseline from `sd2-community/stable-diffusion-2-1` were run with the same:
+
+- QNN TextEncoder conditional and unconditional `text_emb`.
+- Initial latent.
+- Scheduler timestep.
+- Prompt and seed.
+
+The comparison measured the conditional/unconditional noise prediction delta from each UNet path.
+
+### Numerical Result
+
+| path | `noise_cond_minus_uncond` std |
+| --- | --- |
+| QNN UNet | `0.0091155551` |
+| PyTorch reference UNet | `0.17506623` |
+| QNN / PyTorch ratio | `0.05206918` |
+
+The QNN UNet conditioning response is only about `5.2%` of the PyTorch reference response under the same text embedding, latent, and timestep.
+
+### Causes That Look Unlikely
+
+- TextEncoder hard collapse: conditional and unconditional embeddings have healthy variance and no NaN/Inf.
+- Python-side `text_emb` quantization loss: cond/uncond differences survive float32 to uint16 conversion and dequantization.
+- Guidance scale being ignored: changing guidance scale from `0` to `30` changes `noise_pred`, final latent, and final image.
+- VAE hard collapse: VAE output and saved uint8 image are not single-valued, although the image is low-information.
+
+### Remaining Primary Suspect
+
+The primary suspect is weak text-conditioning sensitivity inside the QNN UNet context path, especially:
+
+- `unet_qairt_context.bin`
+- UNet QNN conversion settings
+- cross-attention handling during conversion or context generation
+- text embedding input quantization/scale handling inside the precompiled context
+
+### Questions For Qualcomm
+
+1. Is the v0.48.0 `unet_qairt_context.bin` expected to preserve Stable Diffusion v2.1 cross-attention sensitivity at roughly the same magnitude as the PyTorch UNet baseline?
+2. Are there known issues in the `precompiled_qnn_onnx` / `w8a16` UNet context for Stable Diffusion v2.1 where text conditioning becomes weak while noise output remains active?
+3. What exact UNet conversion command, calibration data, quantization settings, and QAIRT options were used to generate `unet_qairt_context.bin`?
+4. Should `text_emb` be supplied as UINT16 using scale `0.00034632044844329357` and zero point `23638`, or is there any additional preprocessing expected by the QNN context?
+5. Is there a portable non-context ONNX UNet for v0.48.0 that can be used as an ONNXRuntime CPU baseline against the QNN context-wrapper ONNX?
+6. Are cross-attention blocks fully executed on QNN in this context, or can graph partitioning/fallback change the behavior?
+
 ## Most Likely Cause Area
 
 Priority suspicion:
@@ -216,15 +287,14 @@ Priority suspicion:
 
 ## Next Fixes To Try
 
+This PR is currently a cause report, not a fix. Suggested next investigation steps are:
+
 1. Rebuild or reacquire `unet_qairt_context.bin` and compare whether the QNN `cond/uncond` delta approaches the PyTorch baseline.
 2. Verify UNet context generation settings for text embedding input quantization, cross-attention blocks, and any graph partition/fallback behavior.
 3. Obtain non-context ONNX exports for UNet/TextEncoder/VAE, then run an ONNXRuntime CPU/QNN-style comparison outside the precompiled QNN context wrapper files.
 4. Feed synthetic extreme `text_emb` inputs into UNet and confirm output sensitivity.
-5. Run the original `demo.py` smoke test once command approval is available.
 
 ## Remaining Work
 
-- Run existing `demo.py` smoke test.
-- Stage and commit changes.
-- Push the work branch.
-- Open Draft PR.
+- Await Qualcomm guidance on the QNN UNet context generation path.
+- If a rebuilt or alternate `unet_qairt_context.bin` is available, rerun `compare_qnn_unet_reference.py` and compare the QNN/PyTorch delta ratio.
