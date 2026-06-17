@@ -22,6 +22,8 @@
 - `stable_diffusion_windows_py/outputs/intermediate_debug/unet_text_emb.md`
 - `stable_diffusion_windows_py/outputs/intermediate_debug/guidance_sensitivity.md`
 - `stable_diffusion_windows_py/outputs/intermediate_debug/guidance_sensitivity.json`
+- `stable_diffusion_windows_py/outputs/intermediate_debug/unet_reference_compare.md`
+- `stable_diffusion_windows_py/outputs/intermediate_debug/unet_reference_compare.json`
 - `stable_diffusion_windows_py/outputs/intermediate_debug/cpu_compare.md`
 - `stable_diffusion_windows_py/outputs/intermediate_debug/diagnostic_image.png`
 - `stable_diffusion_windows_py/outputs/intermediate_debug/report.md`
@@ -180,11 +182,33 @@ The sweep measured step-1 `noise_pred`, step-1 `cond/uncond` delta, final latent
 
 Guidance scale is not ignored: increasing it does move `noise_pred`, final latent, and the final image. However, the underlying `cond/uncond` delta remains small (`0.0091155551`) relative to the full noise scale (`~1.0`). This points away from a Python-side guidance-scale bug and toward weak text-conditioning sensitivity inside the QNN UNet/context path.
 
+## PyTorch UNet Reference Follow-up
+
+A PyTorch `UNet2DConditionModel` baseline from `sd2-community/stable-diffusion-2-1` was loaded with `diffusers` and compared against the QNN UNet using the same:
+
+- prompt: `A girl taking a walk at sunset`
+- seed: `47`
+- timestep: `801`
+- initial latent
+- QNN TextEncoder `cond` and `uncond` embeddings
+
+Key result:
+
+| tensor | std |
+| --- | --- |
+| QNN `noise_cond_minus_uncond` | `0.0091155551` |
+| PyTorch reference `noise_cond_minus_uncond` | `0.17506623` |
+| QNN / PyTorch ratio | `0.05206918` |
+
+The same text embedding delta that reaches the QNN UNet produces a much larger conditioning response in the PyTorch baseline. QNN is only about `5.2%` of the reference delta magnitude for this one-step comparison.
+
+This strongly supports the suspicion that the issue is inside `unet_qairt_context.bin` or the UNet QNN conversion settings, rather than TextEncoder output, Python-side `text_emb` quantization, or guidance scale application.
+
 ## Most Likely Cause Area
 
 Priority suspicion:
 
-1. UNet text conditioning is weak after the input reaches the QNN context, rather than lost during Python-side quantization or ignored guidance scaling.
+1. UNet text conditioning is weak after the input reaches the QNN context, rather than lost during Python-side quantization or ignored guidance scaling. The PyTorch reference comparison confirms QNN `cond/uncond` delta is only about `5.2%` of the baseline.
 2. UNet model/context may be insensitive to text conditioning because of conversion/export/context-bin issue.
 3. Scheduler/timestep scaling may be dominating or compressing the guidance effect.
 4. Conditional/unconditional batching or input ordering mismatch is less likely because direct prompt A/B calls do change UNet output, but it should still be checked against a known-good reference.
@@ -192,10 +216,10 @@ Priority suspicion:
 
 ## Next Fixes To Try
 
-1. Compare the same initial latent/timestep/text embeddings against a known-good PyTorch or non-context ONNX UNet.
-2. Verify UNet context generation settings for text embedding input quantization and attention blocks.
-3. Feed synthetic extreme `text_emb` inputs into UNet and confirm output sensitivity.
-4. Obtain non-context ONNX exports for UNet/TextEncoder/VAE, then run a meaningful CPUExecutionProvider comparison outside the precompiled QNN context wrapper files.
+1. Rebuild or reacquire `unet_qairt_context.bin` and compare whether the QNN `cond/uncond` delta approaches the PyTorch baseline.
+2. Verify UNet context generation settings for text embedding input quantization, cross-attention blocks, and any graph partition/fallback behavior.
+3. Obtain non-context ONNX exports for UNet/TextEncoder/VAE, then run an ONNXRuntime CPU/QNN-style comparison outside the precompiled QNN context wrapper files.
+4. Feed synthetic extreme `text_emb` inputs into UNet and confirm output sensitivity.
 5. Run the original `demo.py` smoke test once command approval is available.
 
 ## Remaining Work
