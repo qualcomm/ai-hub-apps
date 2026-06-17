@@ -1,0 +1,1656 @@
+{
+  "environment": {
+    "python": "3.11.15 | packaged by Anaconda, Inc. | (main, Jun 11 2026, 15:12:53) [MSC v.1942 64 bit (AMD64)]",
+    "platform_machine": "AMD64",
+    "onnxruntime_version": "1.24.1",
+    "onnxruntime_providers": [
+      "QNNExecutionProvider",
+      "AzureExecutionProvider",
+      "CPUExecutionProvider"
+    ],
+    "prompt": "A girl taking a walk at sunset",
+    "alt_prompt": "A red sports car parked in a snowy mountain at night",
+    "seed": 47,
+    "num_steps": 5,
+    "guidance_scale": 7.5
+  },
+  "stats": [
+    {
+      "name": "text_encoder.input.tokens",
+      "shape": [
+        1,
+        77
+      ],
+      "dtype": "int32",
+      "size": 77,
+      "min": 0.0,
+      "max": 49407.0,
+      "mean": 1421.0,
+      "std": 7855.055744757433,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 68,
+      "zero_ratio": 0.8831168831168831
+    },
+    {
+      "name": "text_encoder.input.uncond_tokens",
+      "shape": [
+        1,
+        77
+      ],
+      "dtype": "int32",
+      "size": 77,
+      "min": 0.0,
+      "max": 49407.0,
+      "mean": 1283.2857142857142,
+      "std": 7858.487985920755,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 75,
+      "zero_ratio": 0.974025974025974
+    },
+    {
+      "name": "text_encoder.input.alt_tokens",
+      "shape": [
+        1,
+        77
+      ],
+      "dtype": "int32",
+      "size": 77,
+      "min": 0.0,
+      "max": 49407.0,
+      "mean": 1824.6363636363637,
+      "std": 8157.207121534474,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 64,
+      "zero_ratio": 0.8311688311688312
+    },
+    {
+      "name": "text_encoder.output.cond_embedding",
+      "shape": [
+        1,
+        77,
+        1024
+      ],
+      "dtype": "float32",
+      "size": 78848,
+      "min": -6.631547451019287,
+      "max": 12.99272346496582,
+      "mean": -0.1697094777299895,
+      "std": 1.0241216664322041,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 9,
+      "zero_ratio": 0.00011414366883116883
+    },
+    {
+      "name": "text_encoder.output.uncond_embedding",
+      "shape": [
+        1,
+        77,
+        1024
+      ],
+      "dtype": "float32",
+      "size": 78848,
+      "min": -5.76962423324585,
+      "max": 12.99272346496582,
+      "mean": -0.16814758681574823,
+      "std": 1.0403696682453543,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 16,
+      "zero_ratio": 0.00020292207792207794
+    },
+    {
+      "name": "text_encoder.output.alt_embedding",
+      "shape": [
+        1,
+        77,
+        1024
+      ],
+      "dtype": "float32",
+      "size": 78848,
+      "min": -6.9817609786987305,
+      "max": 12.99272346496582,
+      "mean": -0.16791664086839295,
+      "std": 1.0214603963153455,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 7,
+      "zero_ratio": 8.87784090909091e-05
+    },
+    {
+      "name": "text_encoder.output.cond_minus_uncond",
+      "shape": [
+        1,
+        77,
+        1024
+      ],
+      "dtype": "float32",
+      "size": 78848,
+      "min": -9.334176063537598,
+      "max": 8.049457550048828,
+      "mean": -0.0015618909458624613,
+      "std": 0.6972978240262022,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 1047,
+      "zero_ratio": 0.013278713474025974
+    },
+    {
+      "name": "text_encoder.output.cond_minus_alt",
+      "shape": [
+        1,
+        77,
+        1024
+      ],
+      "dtype": "float32",
+      "size": 78848,
+      "min": -8.040746688842773,
+      "max": 12.914334297180176,
+      "mean": -0.0017928369232989795,
+      "std": 0.666677734608984,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 2066,
+      "zero_ratio": 0.026202313311688312
+    },
+    {
+      "name": "latent.initial.randn",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -4.133479595184326,
+      "max": 3.8600800037384033,
+      "mean": 0.007470030390738458,
+      "std": 0.9939120004993334,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 0,
+      "zero_ratio": 0.0
+    },
+    {
+      "name": "latent.initial.scaled",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -4.133479595184326,
+      "max": 3.8600800037384033,
+      "mean": 0.007470030390738458,
+      "std": 0.9939120004993334,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 0,
+      "zero_ratio": 0.0
+    },
+    {
+      "name": "unet.text_emb.prompt_a.float32_before_quant",
+      "shape": [
+        1,
+        77,
+        1024
+      ],
+      "dtype": "float32",
+      "size": 78848,
+      "min": -6.631547451019287,
+      "max": 12.99272346496582,
+      "mean": -0.1697094777299895,
+      "std": 1.0241216664322041,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 9,
+      "zero_ratio": 0.00011414366883116883
+    },
+    {
+      "name": "unet.text_emb.prompt_a.uint16_after_quant",
+      "shape": [
+        1,
+        77,
+        1024
+      ],
+      "dtype": "uint16",
+      "size": 78848,
+      "min": 4489.0,
+      "max": 61154.0,
+      "mean": 23147.962751116072,
+      "std": 2957.1508090324037,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 0,
+      "zero_ratio": 0.0
+    },
+    {
+      "name": "unet.text_emb.prompt_a.dequantized_after_quant",
+      "shape": [
+        1,
+        77,
+        1024
+      ],
+      "dtype": "float32",
+      "size": 78848,
+      "min": -6.631690502166748,
+      "max": 12.992557525634766,
+      "mean": -0.16970991983192096,
+      "std": 1.0241217938100002,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 9,
+      "zero_ratio": 0.00011414366883116883
+    },
+    {
+      "name": "unet.text_emb.prompt_a.quantization_abs_error",
+      "shape": [
+        1,
+        77,
+        1024
+      ],
+      "dtype": "float32",
+      "size": 78848,
+      "min": 0.0,
+      "max": 0.000173129141330719,
+      "mean": 8.659996943051384e-05,
+      "std": 4.9936747695282774e-05,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 19,
+      "zero_ratio": 0.00024096996753246753
+    },
+    {
+      "name": "unet.text_emb.prompt_b.float32_before_quant",
+      "shape": [
+        1,
+        77,
+        1024
+      ],
+      "dtype": "float32",
+      "size": 78848,
+      "min": -6.9817609786987305,
+      "max": 12.99272346496582,
+      "mean": -0.16791664086839295,
+      "std": 1.0214603963153455,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 7,
+      "zero_ratio": 8.87784090909091e-05
+    },
+    {
+      "name": "unet.text_emb.prompt_b.uint16_after_quant",
+      "shape": [
+        1,
+        77,
+        1024
+      ],
+      "dtype": "uint16",
+      "size": 78848,
+      "min": 3478.0,
+      "max": 61154.0,
+      "mean": 23153.141221083602,
+      "std": 2949.4664703039653,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 0,
+      "zero_ratio": 0.0
+    },
+    {
+      "name": "unet.text_emb.prompt_b.dequantized_after_quant",
+      "shape": [
+        1,
+        77,
+        1024
+      ],
+      "dtype": "float32",
+      "size": 78848,
+      "min": -6.981820106506348,
+      "max": 12.992557525634766,
+      "mean": -0.1679165097529304,
+      "std": 1.0214605509924222,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 7,
+      "zero_ratio": 8.87784090909091e-05
+    },
+    {
+      "name": "unet.text_emb.prompt_b.quantization_abs_error",
+      "shape": [
+        1,
+        77,
+        1024
+      ],
+      "dtype": "float32",
+      "size": 78848,
+      "min": 0.0,
+      "max": 0.000173129141330719,
+      "mean": 8.680618913473012e-05,
+      "std": 5.007413588938669e-05,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 18,
+      "zero_ratio": 0.00022828733766233766
+    },
+    {
+      "name": "unet.text_emb.prompt_a_minus_b.float32_before_quant",
+      "shape": [
+        1,
+        77,
+        1024
+      ],
+      "dtype": "float32",
+      "size": 78848,
+      "min": -8.040746688842773,
+      "max": 12.914334297180176,
+      "mean": -0.0017928369232989795,
+      "std": 0.666677734608984,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 2066,
+      "zero_ratio": 0.026202313311688312
+    },
+    {
+      "name": "unet.text_emb.prompt_a_minus_b.uint16_after_quant_signed",
+      "shape": [
+        1,
+        77,
+        1024
+      ],
+      "dtype": "int32",
+      "size": 78848,
+      "min": -23218.0,
+      "max": 37291.0,
+      "mean": -5.178469967532467,
+      "std": 1925.0343283201923,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 2066,
+      "zero_ratio": 0.026202313311688312
+    },
+    {
+      "name": "unet.text_emb.prompt_a_minus_b.dequantized_after_quant",
+      "shape": [
+        1,
+        77,
+        1024
+      ],
+      "dtype": "float32",
+      "size": 78848,
+      "min": -8.040867805480957,
+      "max": 12.91463565826416,
+      "mean": -0.0017934100838864616,
+      "std": 0.6666787516584527,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 2066,
+      "zero_ratio": 0.026202313311688312
+    },
+    {
+      "name": "unet.prompt_compare.prompt_a.noise_nhwc",
+      "shape": [
+        1,
+        64,
+        64,
+        4
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -4.171765327453613,
+      "max": 3.893598794937134,
+      "mean": 0.0023330584171734614,
+      "std": 0.998835289881158,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 2,
+      "zero_ratio": 0.0001220703125
+    },
+    {
+      "name": "unet.prompt_compare.prompt_b.noise_nhwc",
+      "shape": [
+        1,
+        64,
+        64,
+        4
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -4.178208827972412,
+      "max": 3.8878917694091797,
+      "mean": 0.006554220233367047,
+      "std": 0.998537571507489,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 0,
+      "zero_ratio": 0.0
+    },
+    {
+      "name": "unet.prompt_compare.prompt_a_minus_b.noise_nchw",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -0.1629236936569214,
+      "max": 0.04657590389251709,
+      "mean": -0.0042211618176892785,
+      "std": 0.017968047605336837,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 90,
+      "zero_ratio": 0.0054931640625
+    },
+    {
+      "name": "step_1.timestep",
+      "shape": [
+        1,
+        1
+      ],
+      "dtype": "float32",
+      "size": 1,
+      "min": 801.0,
+      "max": 801.0,
+      "mean": 801.0,
+      "std": 0.0,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 0,
+      "zero_ratio": 0.0
+    },
+    {
+      "name": "step_1.unet.input.latent_nchw",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -4.133479595184326,
+      "max": 3.8600800037384033,
+      "mean": 0.007470030390738458,
+      "std": 0.9939120004993334,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 0,
+      "zero_ratio": 0.0
+    },
+    {
+      "name": "step_1.unet.input.latent_nhwc",
+      "shape": [
+        1,
+        64,
+        64,
+        4
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -4.133479595184326,
+      "max": 3.8600800037384033,
+      "mean": 0.007470030390738458,
+      "std": 0.9939120004993335,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 0,
+      "zero_ratio": 0.0
+    },
+    {
+      "name": "step_1.unet.input.cond_embedding",
+      "shape": [
+        1,
+        77,
+        1024
+      ],
+      "dtype": "float32",
+      "size": 78848,
+      "min": -6.631547451019287,
+      "max": 12.99272346496582,
+      "mean": -0.1697094777299895,
+      "std": 1.0241216664322041,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 9,
+      "zero_ratio": 0.00011414366883116883
+    },
+    {
+      "name": "step_1.unet.input.uncond_embedding",
+      "shape": [
+        1,
+        77,
+        1024
+      ],
+      "dtype": "float32",
+      "size": 78848,
+      "min": -5.76962423324585,
+      "max": 12.99272346496582,
+      "mean": -0.16814758681574823,
+      "std": 1.0403696682453543,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 16,
+      "zero_ratio": 0.00020292207792207794
+    },
+    {
+      "name": "step_1.unet.text_emb.cond.float32_before_quant",
+      "shape": [
+        1,
+        77,
+        1024
+      ],
+      "dtype": "float32",
+      "size": 78848,
+      "min": -6.631547451019287,
+      "max": 12.99272346496582,
+      "mean": -0.1697094777299895,
+      "std": 1.0241216664322041,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 9,
+      "zero_ratio": 0.00011414366883116883
+    },
+    {
+      "name": "step_1.unet.text_emb.cond.uint16_after_quant",
+      "shape": [
+        1,
+        77,
+        1024
+      ],
+      "dtype": "uint16",
+      "size": 78848,
+      "min": 4489.0,
+      "max": 61154.0,
+      "mean": 23147.962751116072,
+      "std": 2957.1508090324037,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 0,
+      "zero_ratio": 0.0
+    },
+    {
+      "name": "step_1.unet.text_emb.cond.dequantized_after_quant",
+      "shape": [
+        1,
+        77,
+        1024
+      ],
+      "dtype": "float32",
+      "size": 78848,
+      "min": -6.631690502166748,
+      "max": 12.992557525634766,
+      "mean": -0.16970991983192096,
+      "std": 1.0241217938100002,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 9,
+      "zero_ratio": 0.00011414366883116883
+    },
+    {
+      "name": "step_1.unet.text_emb.cond.quantization_abs_error",
+      "shape": [
+        1,
+        77,
+        1024
+      ],
+      "dtype": "float32",
+      "size": 78848,
+      "min": 0.0,
+      "max": 0.000173129141330719,
+      "mean": 8.659996943051384e-05,
+      "std": 4.9936747695282774e-05,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 19,
+      "zero_ratio": 0.00024096996753246753
+    },
+    {
+      "name": "step_1.unet.text_emb.uncond.float32_before_quant",
+      "shape": [
+        1,
+        77,
+        1024
+      ],
+      "dtype": "float32",
+      "size": 78848,
+      "min": -5.76962423324585,
+      "max": 12.99272346496582,
+      "mean": -0.16814758681574823,
+      "std": 1.0403696682453543,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 16,
+      "zero_ratio": 0.00020292207792207794
+    },
+    {
+      "name": "step_1.unet.text_emb.uncond.uint16_after_quant",
+      "shape": [
+        1,
+        77,
+        1024
+      ],
+      "dtype": "uint16",
+      "size": 78848,
+      "min": 6978.0,
+      "max": 61154.0,
+      "mean": 23152.472846489447,
+      "std": 3004.0658694035665,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 0,
+      "zero_ratio": 0.0
+    },
+    {
+      "name": "step_1.unet.text_emb.uncond.dequantized_after_quant",
+      "shape": [
+        1,
+        77,
+        1024
+      ],
+      "dtype": "float32",
+      "size": 78848,
+      "min": -5.769698619842529,
+      "max": 12.992557525634766,
+      "mean": -0.1681479815349015,
+      "std": 1.0403694389018543,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 16,
+      "zero_ratio": 0.00020292207792207794
+    },
+    {
+      "name": "step_1.unet.text_emb.uncond.quantization_abs_error",
+      "shape": [
+        1,
+        77,
+        1024
+      ],
+      "dtype": "float32",
+      "size": 78848,
+      "min": 0.0,
+      "max": 0.000173129141330719,
+      "mean": 8.677831580188196e-05,
+      "std": 5.001664717417617e-05,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 24,
+      "zero_ratio": 0.0003043831168831169
+    },
+    {
+      "name": "step_1.unet.text_emb.cond_minus_uncond.float32_before_quant",
+      "shape": [
+        1,
+        77,
+        1024
+      ],
+      "dtype": "float32",
+      "size": 78848,
+      "min": -9.334176063537598,
+      "max": 8.049457550048828,
+      "mean": -0.0015618909458624613,
+      "std": 0.6972978240262022,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 1047,
+      "zero_ratio": 0.013278713474025974
+    },
+    {
+      "name": "step_1.unet.text_emb.cond_minus_uncond.uint16_after_quant_signed",
+      "shape": [
+        1,
+        77,
+        1024
+      ],
+      "dtype": "int32",
+      "size": 78848,
+      "min": -26952.0,
+      "max": 23243.0,
+      "mean": -4.510095373376624,
+      "std": 2013.4483214401953,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 1047,
+      "zero_ratio": 0.013278713474025974
+    },
+    {
+      "name": "step_1.unet.text_emb.cond_minus_uncond.dequantized_after_quant",
+      "shape": [
+        1,
+        77,
+        1024
+      ],
+      "dtype": "float32",
+      "size": 78848,
+      "min": -9.334029197692871,
+      "max": 8.04952621459961,
+      "mean": -0.001561938252838114,
+      "std": 0.6972983254291539,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 1047,
+      "zero_ratio": 0.013278713474025974
+    },
+    {
+      "name": "step_1.unet.output.noise_cond_nhwc",
+      "shape": [
+        1,
+        64,
+        64,
+        4
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -4.171765327453613,
+      "max": 3.893598794937134,
+      "mean": 0.0023330584171734614,
+      "std": 0.998835289881158,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 2,
+      "zero_ratio": 0.0001220703125
+    },
+    {
+      "name": "step_1.unet.output.noise_uncond_nhwc",
+      "shape": [
+        1,
+        64,
+        64,
+        4
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -4.170476913452148,
+      "max": 3.8877077102661133,
+      "mean": 0.0031742033029509287,
+      "std": 0.9974188255849743,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 2,
+      "zero_ratio": 0.0001220703125
+    },
+    {
+      "name": "step_1.noise_pred.nchw",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -4.180140018463135,
+      "max": 3.9318909645080566,
+      "mean": -0.0031343834964445705,
+      "std": 1.0100011308549621,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 0,
+      "zero_ratio": 0.0
+    },
+    {
+      "name": "step_1.noise_cond_minus_uncond.nchw",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -0.052651166915893555,
+      "max": 0.04915325343608856,
+      "mean": -0.0008411448858716142,
+      "std": 0.009115555124613366,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 144,
+      "zero_ratio": 0.0087890625
+    },
+    {
+      "name": "step_1.latent.after_scheduler",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -3.1270456314086914,
+      "max": 2.9140820503234863,
+      "mean": 0.007972438248055269,
+      "std": 0.751770025266282,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 0,
+      "zero_ratio": 0.0
+    },
+    {
+      "name": "step_2.timestep",
+      "shape": [
+        1,
+        1
+      ],
+      "dtype": "float32",
+      "size": 1,
+      "min": 601.0,
+      "max": 601.0,
+      "mean": 601.0,
+      "std": 0.0,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 0,
+      "zero_ratio": 0.0
+    },
+    {
+      "name": "step_2.unet.input.latent_nchw",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -3.1270456314086914,
+      "max": 2.9140820503234863,
+      "mean": 0.007972438248055269,
+      "std": 0.751770025266282,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 0,
+      "zero_ratio": 0.0
+    },
+    {
+      "name": "step_2.unet.input.latent_nhwc",
+      "shape": [
+        1,
+        64,
+        64,
+        4
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -3.1270456314086914,
+      "max": 2.9140820503234863,
+      "mean": 0.007972438248055269,
+      "std": 0.7517700252662821,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 0,
+      "zero_ratio": 0.0
+    },
+    {
+      "name": "step_2.unet.input.cond_embedding",
+      "shape": [
+        1,
+        77,
+        1024
+      ],
+      "dtype": "float32",
+      "size": 78848,
+      "min": -6.631547451019287,
+      "max": 12.99272346496582,
+      "mean": -0.1697094777299895,
+      "std": 1.0241216664322041,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 9,
+      "zero_ratio": 0.00011414366883116883
+    },
+    {
+      "name": "step_2.unet.input.uncond_embedding",
+      "shape": [
+        1,
+        77,
+        1024
+      ],
+      "dtype": "float32",
+      "size": 78848,
+      "min": -5.76962423324585,
+      "max": 12.99272346496582,
+      "mean": -0.16814758681574823,
+      "std": 1.0403696682453543,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 16,
+      "zero_ratio": 0.00020292207792207794
+    },
+    {
+      "name": "step_2.unet.output.noise_cond_nhwc",
+      "shape": [
+        1,
+        64,
+        64,
+        4
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -3.6693716049194336,
+      "max": 3.338369846343994,
+      "mean": -0.0006192064217405147,
+      "std": 0.8698031790375146,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 3,
+      "zero_ratio": 0.00018310546875
+    },
+    {
+      "name": "step_2.unet.output.noise_uncond_nhwc",
+      "shape": [
+        1,
+        64,
+        64,
+        4
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -3.6500418186187744,
+      "max": 3.342603921890259,
+      "mean": -0.0010572512716837679,
+      "std": 0.8694604464231158,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 1,
+      "zero_ratio": 6.103515625e-05
+    },
+    {
+      "name": "step_2.noise_pred.nchw",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -3.795015335083008,
+      "max": 3.3108482360839844,
+      "mean": 0.002228085164517779,
+      "std": 0.8734602043274354,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 0,
+      "zero_ratio": 0.0
+    },
+    {
+      "name": "step_2.noise_cond_minus_uncond.nchw",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -0.057805679738521576,
+      "max": 0.04123717546463013,
+      "mean": 0.00043804485001963656,
+      "std": 0.007161856007032292,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 201,
+      "zero_ratio": 0.01226806640625
+    },
+    {
+      "name": "step_2.latent.after_scheduler",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -1.880861759185791,
+      "max": 1.8187596797943115,
+      "mean": 0.006972659980114315,
+      "std": 0.46447137530278004,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 0,
+      "zero_ratio": 0.0
+    },
+    {
+      "name": "step_3.timestep",
+      "shape": [
+        1,
+        1
+      ],
+      "dtype": "float32",
+      "size": 1,
+      "min": 401.0,
+      "max": 401.0,
+      "mean": 401.0,
+      "std": 0.0,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 0,
+      "zero_ratio": 0.0
+    },
+    {
+      "name": "step_3.unet.input.latent_nchw",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -1.880861759185791,
+      "max": 1.8187596797943115,
+      "mean": 0.006972659980114315,
+      "std": 0.46447137530278004,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 0,
+      "zero_ratio": 0.0
+    },
+    {
+      "name": "step_3.unet.input.latent_nhwc",
+      "shape": [
+        1,
+        64,
+        64,
+        4
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -1.880861759185791,
+      "max": 1.8187596797943115,
+      "mean": 0.006972659980114315,
+      "std": 0.46447137530278004,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 0,
+      "zero_ratio": 0.0
+    },
+    {
+      "name": "step_3.unet.input.cond_embedding",
+      "shape": [
+        1,
+        77,
+        1024
+      ],
+      "dtype": "float32",
+      "size": 78848,
+      "min": -6.631547451019287,
+      "max": 12.99272346496582,
+      "mean": -0.1697094777299895,
+      "std": 1.0241216664322041,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 9,
+      "zero_ratio": 0.00011414366883116883
+    },
+    {
+      "name": "step_3.unet.input.uncond_embedding",
+      "shape": [
+        1,
+        77,
+        1024
+      ],
+      "dtype": "float32",
+      "size": 78848,
+      "min": -5.76962423324585,
+      "max": 12.99272346496582,
+      "mean": -0.16814758681574823,
+      "std": 1.0403696682453543,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 16,
+      "zero_ratio": 0.00020292207792207794
+    },
+    {
+      "name": "step_3.unet.output.noise_cond_nhwc",
+      "shape": [
+        1,
+        64,
+        64,
+        4
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -3.2363812923431396,
+      "max": 2.8422350883483887,
+      "mean": -0.0011052972864167288,
+      "std": 0.748904680870724,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 1,
+      "zero_ratio": 6.103515625e-05
+    },
+    {
+      "name": "step_3.unet.output.noise_uncond_nhwc",
+      "shape": [
+        1,
+        64,
+        64,
+        4
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -3.230858564376831,
+      "max": 2.854201078414917,
+      "mean": -0.001335909844303984,
+      "std": 0.7485472995976739,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 2,
+      "zero_ratio": 0.0001220703125
+    },
+    {
+      "name": "step_3.noise_pred.nchw",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -3.2722790241241455,
+      "max": 2.8522682189941406,
+      "mean": 0.00039368462472921806,
+      "std": 0.751908562390902,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 0,
+      "zero_ratio": 0.0
+    },
+    {
+      "name": "step_3.noise_cond_minus_uncond.nchw",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -0.033873386681079865,
+      "max": 0.030007407069206238,
+      "mean": 0.0002306125580275875,
+      "std": 0.004595909239361011,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 355,
+      "zero_ratio": 0.02166748046875
+    },
+    {
+      "name": "step_3.latent.after_scheduler",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -0.6755967140197754,
+      "max": 0.7872535586357117,
+      "mean": 0.006437610792470849,
+      "std": 0.18741077285380323,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 0,
+      "zero_ratio": 0.0
+    },
+    {
+      "name": "step_4.timestep",
+      "shape": [
+        1,
+        1
+      ],
+      "dtype": "float32",
+      "size": 1,
+      "min": 201.0,
+      "max": 201.0,
+      "mean": 201.0,
+      "std": 0.0,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 0,
+      "zero_ratio": 0.0
+    },
+    {
+      "name": "step_4.unet.input.latent_nchw",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -0.6755967140197754,
+      "max": 0.7872535586357117,
+      "mean": 0.006437610792470849,
+      "std": 0.18741077285380323,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 0,
+      "zero_ratio": 0.0
+    },
+    {
+      "name": "step_4.unet.input.latent_nhwc",
+      "shape": [
+        1,
+        64,
+        64,
+        4
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -0.6755967140197754,
+      "max": 0.7872535586357117,
+      "mean": 0.006437610792470849,
+      "std": 0.18741077285380323,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 0,
+      "zero_ratio": 0.0
+    },
+    {
+      "name": "step_4.unet.input.cond_embedding",
+      "shape": [
+        1,
+        77,
+        1024
+      ],
+      "dtype": "float32",
+      "size": 78848,
+      "min": -6.631547451019287,
+      "max": 12.99272346496582,
+      "mean": -0.1697094777299895,
+      "std": 1.0241216664322041,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 9,
+      "zero_ratio": 0.00011414366883116883
+    },
+    {
+      "name": "step_4.unet.input.uncond_embedding",
+      "shape": [
+        1,
+        77,
+        1024
+      ],
+      "dtype": "float32",
+      "size": 78848,
+      "min": -5.76962423324585,
+      "max": 12.99272346496582,
+      "mean": -0.16814758681574823,
+      "std": 1.0403696682453543,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 16,
+      "zero_ratio": 0.00020292207792207794
+    },
+    {
+      "name": "step_4.unet.output.noise_cond_nhwc",
+      "shape": [
+        1,
+        64,
+        64,
+        4
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -2.7905044555664062,
+      "max": 2.4326248168945312,
+      "mean": 0.000867752295199864,
+      "std": 0.6193881905426746,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 2,
+      "zero_ratio": 0.0001220703125
+    },
+    {
+      "name": "step_4.unet.output.noise_uncond_nhwc",
+      "shape": [
+        1,
+        64,
+        64,
+        4
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -2.7901363372802734,
+      "max": 2.437411308288574,
+      "mean": 0.000722849531708647,
+      "std": 0.6207042084416255,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 2,
+      "zero_ratio": 0.0001220703125
+    },
+    {
+      "name": "step_4.noise_pred.nchw",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -2.7928972244262695,
+      "max": 2.401512622833252,
+      "mean": 0.0018096202401451933,
+      "std": 0.6116376641821334,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 0,
+      "zero_ratio": 0.0
+    },
+    {
+      "name": "step_4.noise_cond_minus_uncond.nchw",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -0.042157649993896484,
+      "max": 0.04142123460769653,
+      "mean": 0.00014490276352319142,
+      "std": 0.004677927707249065,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 349,
+      "zero_ratio": 0.02130126953125
+    },
+    {
+      "name": "step_4.latent.after_scheduler",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -0.5216211080551147,
+      "max": 0.6899755001068115,
+      "mean": 0.00487526315007436,
+      "std": 0.12272436356581723,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 0,
+      "zero_ratio": 0.0
+    },
+    {
+      "name": "step_5.timestep",
+      "shape": [
+        1,
+        1
+      ],
+      "dtype": "float32",
+      "size": 1,
+      "min": 1.0,
+      "max": 1.0,
+      "mean": 1.0,
+      "std": 0.0,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 0,
+      "zero_ratio": 0.0
+    },
+    {
+      "name": "step_5.unet.input.latent_nchw",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -0.5216211080551147,
+      "max": 0.6899755001068115,
+      "mean": 0.00487526315007436,
+      "std": 0.12272436356581723,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 0,
+      "zero_ratio": 0.0
+    },
+    {
+      "name": "step_5.unet.input.latent_nhwc",
+      "shape": [
+        1,
+        64,
+        64,
+        4
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -0.5216211080551147,
+      "max": 0.6899755001068115,
+      "mean": 0.00487526315007436,
+      "std": 0.12272436356581723,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 0,
+      "zero_ratio": 0.0
+    },
+    {
+      "name": "step_5.unet.input.cond_embedding",
+      "shape": [
+        1,
+        77,
+        1024
+      ],
+      "dtype": "float32",
+      "size": 78848,
+      "min": -6.631547451019287,
+      "max": 12.99272346496582,
+      "mean": -0.1697094777299895,
+      "std": 1.0241216664322041,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 9,
+      "zero_ratio": 0.00011414366883116883
+    },
+    {
+      "name": "step_5.unet.input.uncond_embedding",
+      "shape": [
+        1,
+        77,
+        1024
+      ],
+      "dtype": "float32",
+      "size": 78848,
+      "min": -5.76962423324585,
+      "max": 12.99272346496582,
+      "mean": -0.16814758681574823,
+      "std": 1.0403696682453543,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 16,
+      "zero_ratio": 0.00020292207792207794
+    },
+    {
+      "name": "step_5.unet.output.noise_cond_nhwc",
+      "shape": [
+        1,
+        64,
+        64,
+        4
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -2.628685474395752,
+      "max": 2.6412038803100586,
+      "mean": 0.0018551249930887082,
+      "std": 0.5571090801876201,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 2,
+      "zero_ratio": 0.0001220703125
+    },
+    {
+      "name": "step_5.unet.output.noise_uncond_nhwc",
+      "shape": [
+        1,
+        64,
+        64,
+        4
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -2.6507768630981445,
+      "max": 2.707293748855591,
+      "mean": 0.0017829773270516824,
+      "std": 0.5611453134680967,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 5,
+      "zero_ratio": 0.00030517578125
+    },
+    {
+      "name": "step_5.noise_pred.nchw",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -2.4850914478302,
+      "max": 2.2116198539733887,
+      "mean": 0.002324084978553742,
+      "std": 0.5355710660710004,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 0,
+      "zero_ratio": 0.0
+    },
+    {
+      "name": "step_5.noise_cond_minus_uncond.nchw",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -0.07345370948314667,
+      "max": 0.08192205429077148,
+      "mean": 7.214766696428399e-05,
+      "std": 0.010911129383390424,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 148,
+      "zero_ratio": 0.009033203125
+    },
+    {
+      "name": "step_5.latent.after_scheduler",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -0.5059695243835449,
+      "max": 0.6630945801734924,
+      "mean": 0.004846709906122015,
+      "std": 0.11700360448638032,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 0,
+      "zero_ratio": 0.0
+    },
+    {
+      "name": "vae.input.latent_nchw",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -0.5059695243835449,
+      "max": 0.6630945801734924,
+      "mean": 0.004846709906122015,
+      "std": 0.11700360448638032,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 0,
+      "zero_ratio": 0.0
+    },
+    {
+      "name": "vae.input.latent_nhwc",
+      "shape": [
+        1,
+        64,
+        64,
+        4
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -0.5059695243835449,
+      "max": 0.6630945801734924,
+      "mean": 0.004846709906122015,
+      "std": 0.11700360448638032,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 0,
+      "zero_ratio": 0.0
+    },
+    {
+      "name": "vae.output.image_float",
+      "shape": [
+        1,
+        512,
+        512,
+        3
+      ],
+      "dtype": "float32",
+      "size": 786432,
+      "min": 0.2659494876861572,
+      "max": 0.582421600818634,
+      "mean": 0.44006878799310317,
+      "std": 0.05410064310044106,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 0,
+      "zero_ratio": 0.0
+    },
+    {
+      "name": "image.before_save.uint8",
+      "shape": [
+        512,
+        512,
+        3
+      ],
+      "dtype": "uint8",
+      "size": 786432,
+      "min": 68.0,
+      "max": 149.0,
+      "mean": 112.21487045288086,
+      "std": 13.800269232809656,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 0,
+      "zero_ratio": 0.0
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+/downloads/
+/model/
+/generated*/
+/__pycache__/
+/outputs/intermediate_debug/*.log
+/outputs/intermediate_debug/*.png

@@ -1,0 +1,7 @@
+# Snapdragon X Elite Stable Diffusion v2.1 / QNN v0.48 baseline.
+#
+# Install order matters because qai_hub_models depends on regular onnxruntime,
+# while this app must use onnxruntime-qnn instead. See docs for the exact
+# install sequence.
+qai_hub_models[stable-diffusion-v2-1]~=0.48.0
+onnxruntime-qnn==1.24.1

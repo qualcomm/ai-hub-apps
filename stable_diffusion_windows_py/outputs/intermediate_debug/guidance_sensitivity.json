@@ -1,0 +1,2512 @@
+{
+  "environment": {
+    "python": "3.11.15 | packaged by Anaconda, Inc. | (main, Jun 11 2026, 15:12:53) [MSC v.1942 64 bit (AMD64)]",
+    "platform_machine": "AMD64",
+    "onnxruntime_version": "1.24.1",
+    "onnxruntime_providers": [
+      "QNNExecutionProvider",
+      "AzureExecutionProvider",
+      "CPUExecutionProvider"
+    ],
+    "prompt": "A girl taking a walk at sunset",
+    "seed": 47,
+    "num_steps": 5,
+    "guidance_scales": [
+      0.0,
+      1.0,
+      3.0,
+      7.5,
+      15.0,
+      30.0
+    ]
+  },
+  "stats": [
+    {
+      "name": "text_encoder.cond_minus_uncond",
+      "shape": [
+        1,
+        77,
+        1024
+      ],
+      "dtype": "float32",
+      "size": 78848,
+      "min": -9.334176063537598,
+      "max": 8.049457550048828,
+      "mean": -0.0015618909458624613,
+      "std": 0.6972978240262022,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 1047,
+      "zero_ratio": 0.013278713474025974
+    },
+    {
+      "name": "initial_latents",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -4.133479595184326,
+      "max": 3.8600800037384033,
+      "mean": 0.007470030390738458,
+      "std": 0.9939120004993334,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 0,
+      "zero_ratio": 0.0
+    },
+    {
+      "name": "guidance_0p0.step_1.cond_uncond_delta",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -0.052651166915893555,
+      "max": 0.04915325343608856,
+      "mean": -0.0008411448858716142,
+      "std": 0.009115555124613366,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 144,
+      "zero_ratio": 0.0087890625
+    },
+    {
+      "name": "guidance_0p0.step_1.noise_pred",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -4.170476913452148,
+      "max": 3.8877077102661133,
+      "mean": 0.0031742033029509287,
+      "std": 0.9974188255849742,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 2,
+      "zero_ratio": 0.0001220703125
+    },
+    {
+      "name": "guidance_0p0.step_1.latent_after_scheduler",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -3.1291441917419434,
+      "max": 2.9236769676208496,
+      "mean": 0.0066024240670881085,
+      "std": 0.7536696624308006,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 0,
+      "zero_ratio": 0.0
+    },
+    {
+      "name": "guidance_0p0.step_2.cond_uncond_delta",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -0.043630391359329224,
+      "max": 0.05504429340362549,
+      "mean": 0.0002808386029027332,
+      "std": 0.01066389372414932,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 120,
+      "zero_ratio": 0.00732421875
+    },
+    {
+      "name": "guidance_0p0.step_2.noise_pred",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -3.684467315673828,
+      "max": 3.3799750804901123,
+      "mean": -0.001103971553900962,
+      "std": 0.8733525606026145,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 0,
+      "zero_ratio": 0.0
+    },
+    {
+      "name": "guidance_0p0.step_2.latent_after_scheduler",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -1.9151898622512817,
+      "max": 1.8077248334884644,
+      "mean": 0.0066367016716597504,
+      "std": 0.46560949400784163,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 0,
+      "zero_ratio": 0.0
+    },
+    {
+      "name": "guidance_0p0.step_3.cond_uncond_delta",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -0.03939622640609741,
+      "max": 0.03516203165054321,
+      "mean": 0.00027315248762249666,
+      "std": 0.0047119607681713575,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 386,
+      "zero_ratio": 0.0235595703125
+    },
+    {
+      "name": "guidance_0p0.step_3.noise_pred",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -3.2682297229766846,
+      "max": 2.8483102321624756,
+      "mean": -0.0012712002843517922,
+      "std": 0.7492953214755814,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 3,
+      "zero_ratio": 0.00018310546875
+    },
+    {
+      "name": "guidance_0p0.step_3.latent_after_scheduler",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -0.7092970609664917,
+      "max": 0.7798513174057007,
+      "mean": 0.006678969636665144,
+      "std": 0.1887957004118166,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 0,
+      "zero_ratio": 0.0
+    },
+    {
+      "name": "guidance_0p0.step_4.cond_uncond_delta",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -0.03626661002635956,
+      "max": 0.03626662492752075,
+      "mean": 0.0001814539833997486,
+      "std": 0.004866340477277702,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 357,
+      "zero_ratio": 0.02178955078125
+    },
+    {
+      "name": "guidance_0p0.step_4.noise_pred",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -2.857330799102783,
+      "max": 2.397462844848633,
+      "mean": 0.0004771018356422019,
+      "std": 0.6266266590223234,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 1,
+      "zero_ratio": 6.103515625e-05
+    },
+    {
+      "name": "guidance_0p0.step_4.latent_after_scheduler",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -0.5674949288368225,
+      "max": 0.6898252964019775,
+      "mean": 0.005704494155971407,
+      "std": 0.12705960841180675,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 0,
+      "zero_ratio": 0.0
+    },
+    {
+      "name": "guidance_0p0.step_5.cond_uncond_delta",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -0.060935281217098236,
+      "max": 0.05909430980682373,
+      "mean": 9.590140709292427e-05,
+      "std": 0.00967637380772672,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 148,
+      "zero_ratio": 0.009033203125
+    },
+    {
+      "name": "guidance_0p0.step_5.noise_pred",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -2.6338400840759277,
+      "max": 2.4907987117767334,
+      "mean": 0.0019225761281109754,
+      "std": 0.5493013404983884,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 2,
+      "zero_ratio": 0.0001220703125
+    },
+    {
+      "name": "guidance_0p0.step_5.latent_after_scheduler",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -0.5506964921951294,
+      "max": 0.659557580947876,
+      "mean": 0.005680750822483205,
+      "std": 0.12110497711654393,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 0,
+      "zero_ratio": 0.0
+    },
+    {
+      "name": "guidance_0p0.final_latent",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -0.5506964921951294,
+      "max": 0.659557580947876,
+      "mean": 0.005680750822483205,
+      "std": 0.12110497711654393,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 0,
+      "zero_ratio": 0.0
+    },
+    {
+      "name": "guidance_0p0.image_float",
+      "shape": [
+        1,
+        512,
+        512,
+        3
+      ],
+      "dtype": "float32",
+      "size": 786432,
+      "min": 0.27718013525009155,
+      "max": 0.583733856678009,
+      "mean": 0.4451448402767255,
+      "std": 0.050817467043098793,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 0,
+      "zero_ratio": 0.0
+    },
+    {
+      "name": "guidance_0p0.image_uint8",
+      "shape": [
+        512,
+        512,
+        3
+      ],
+      "dtype": "uint8",
+      "size": 786432,
+      "min": 71.0,
+      "max": 149.0,
+      "mean": 113.50944010416667,
+      "std": 12.963764352751792,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 0,
+      "zero_ratio": 0.0
+    },
+    {
+      "name": "guidance_1p0.step_1.cond_uncond_delta",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -0.052651166915893555,
+      "max": 0.04915325343608856,
+      "mean": -0.0008411448858716142,
+      "std": 0.009115555124613366,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 144,
+      "zero_ratio": 0.0087890625
+    },
+    {
+      "name": "guidance_1p0.step_1.noise_pred",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -4.171765327453613,
+      "max": 3.893598794937134,
+      "mean": 0.0023330584172747137,
+      "std": 0.9988352898811608,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 2,
+      "zero_ratio": 0.0001220703125
+    },
+    {
+      "name": "guidance_1p0.step_1.latent_after_scheduler",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -3.128864288330078,
+      "max": 2.9223978519439697,
+      "mean": 0.006785093192114289,
+      "std": 0.7533997484581265,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 0,
+      "zero_ratio": 0.0
+    },
+    {
+      "name": "guidance_1p0.step_2.cond_uncond_delta",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -0.045839548110961914,
+      "max": 0.05449187755584717,
+      "mean": 0.0002704450781418899,
+      "std": 0.010860340129144806,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 117,
+      "zero_ratio": 0.00714111328125
+    },
+    {
+      "name": "guidance_1p0.step_2.noise_pred",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -3.6678988933563232,
+      "max": 3.3621180057525635,
+      "mean": -0.0008222454355717446,
+      "std": 0.8722615214156448,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 4,
+      "zero_ratio": 0.000244140625
+    },
+    {
+      "name": "guidance_1p0.step_2.latent_after_scheduler",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -1.9197660684585571,
+      "max": 1.8117225170135498,
+      "mean": 0.006729020679905773,
+      "std": 0.4656313186145715,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 0,
+      "zero_ratio": 0.0
+    },
+    {
+      "name": "guidance_1p0.step_3.cond_uncond_delta",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -0.03755529224872589,
+      "max": 0.0331370085477829,
+      "mean": 0.00025923124198179437,
+      "std": 0.004592597752067934,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 386,
+      "zero_ratio": 0.0235595703125
+    },
+    {
+      "name": "guidance_1p0.step_3.noise_pred",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -3.2822208404541016,
+      "max": 2.8381850719451904,
+      "mean": -0.0010239807897409747,
+      "std": 0.7497423728151691,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 2,
+      "zero_ratio": 0.0001220703125
+    },
+    {
+      "name": "guidance_1p0.step_3.latent_after_scheduler",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -0.7089203596115112,
+      "max": 0.7787002921104431,
+      "mean": 0.006683109730669656,
+      "std": 0.18862590206373567,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 0,
+      "zero_ratio": 0.0
+    },
+    {
+      "name": "guidance_1p0.step_4.cond_uncond_delta",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -0.035714343190193176,
+      "max": 0.036450743675231934,
+      "mean": 0.0001818587628470425,
+      "std": 0.004780483953727292,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 385,
+      "zero_ratio": 0.02349853515625
+    },
+    {
+      "name": "guidance_1p0.step_4.noise_pred",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -2.8604605197906494,
+      "max": 2.3917558193206787,
+      "mean": 0.0006842869504524174,
+      "std": 0.6244643622807675,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 3,
+      "zero_ratio": 0.00018310546875
+    },
+    {
+      "name": "guidance_1p0.step_4.latent_after_scheduler",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -0.5613580346107483,
+      "max": 0.6916041374206543,
+      "mean": 0.005612524285613318,
+      "std": 0.12616118635461618,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 0,
+      "zero_ratio": 0.0
+    },
+    {
+      "name": "guidance_1p0.step_5.cond_uncond_delta",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -0.0568852424621582,
+      "max": 0.055228352546691895,
+      "mean": 9.72160661696364e-05,
+      "std": 0.009796054867260855,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 125,
+      "zero_ratio": 0.00762939453125
+    },
+    {
+      "name": "guidance_1p0.step_5.noise_pred",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -2.622978448867798,
+      "max": 2.4830665588378906,
+      "mean": 0.0020135786831474434,
+      "std": 0.5474963529096989,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 5,
+      "zero_ratio": 0.00030517578125
+    },
+    {
+      "name": "guidance_1p0.step_5.latent_after_scheduler",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -0.5445913672447205,
+      "max": 0.6614301204681396,
+      "mean": 0.005587683724024295,
+      "std": 0.12022568086568268,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 0,
+      "zero_ratio": 0.0
+    },
+    {
+      "name": "guidance_1p0.final_latent",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -0.5445913672447205,
+      "max": 0.6614301204681396,
+      "mean": 0.005587683724024295,
+      "std": 0.12022568086568268,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 0,
+      "zero_ratio": 0.0
+    },
+    {
+      "name": "guidance_1p0.image_float",
+      "shape": [
+        1,
+        512,
+        512,
+        3
+      ],
+      "dtype": "float32",
+      "size": 786432,
+      "min": 0.27570000290870667,
+      "max": 0.5788967609405518,
+      "mean": 0.44450146403301005,
+      "std": 0.05124526010799198,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 0,
+      "zero_ratio": 0.0
+    },
+    {
+      "name": "guidance_1p0.image_uint8",
+      "shape": [
+        512,
+        512,
+        3
+      ],
+      "dtype": "uint8",
+      "size": 786432,
+      "min": 70.0,
+      "max": 148.0,
+      "mean": 113.34564717610677,
+      "std": 13.072959176542142,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 0,
+      "zero_ratio": 0.0
+    },
+    {
+      "name": "guidance_3p0.step_1.cond_uncond_delta",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -0.052651166915893555,
+      "max": 0.04915325343608856,
+      "mean": -0.0008411448858716142,
+      "std": 0.009115555124613366,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 144,
+      "zero_ratio": 0.0087890625
+    },
+    {
+      "name": "guidance_3p0.step_1.noise_pred",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -4.174342155456543,
+      "max": 3.905380964279175,
+      "mean": 0.0006507686944701163,
+      "std": 1.0019110447877757,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 0,
+      "zero_ratio": 0.0
+    },
+    {
+      "name": "guidance_3p0.step_1.latent_after_scheduler",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -3.1283044815063477,
+      "max": 2.919839382171631,
+      "mean": 0.007150430135098418,
+      "std": 0.7528752487789729,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 0,
+      "zero_ratio": 0.0
+    },
+    {
+      "name": "guidance_3p0.step_2.cond_uncond_delta",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -0.03350519388914108,
+      "max": 0.04270992428064346,
+      "mean": 0.0003805489079020674,
+      "std": 0.007087168959903966,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 163,
+      "zero_ratio": 0.00994873046875
+    },
+    {
+      "name": "guidance_3p0.step_2.noise_pred",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -3.7095046043395996,
+      "max": 3.382368564605713,
+      "mean": -8.7968367424196e-05,
+      "std": 0.8735747145141977,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 2,
+      "zero_ratio": 0.0001220703125
+    },
+    {
+      "name": "guidance_3p0.step_2.latent_after_scheduler",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -1.9070663452148438,
+      "max": 1.803355097770691,
+      "mean": 0.006863713249048331,
+      "std": 0.4648476773067747,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 0,
+      "zero_ratio": 0.0
+    },
+    {
+      "name": "guidance_3p0.step_3.cond_uncond_delta",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -0.037187084555625916,
+      "max": 0.03258472681045532,
+      "mean": 0.00024134301230560595,
+      "std": 0.004581539952336062,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 389,
+      "zero_ratio": 0.02374267578125
+    },
+    {
+      "name": "guidance_3p0.step_3.noise_pred",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -3.2759618759155273,
+      "max": 2.82529878616333,
+      "mean": -0.0005787900182170347,
+      "std": 0.7495157508278119,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 0,
+      "zero_ratio": 0.0
+    },
+    {
+      "name": "guidance_3p0.step_3.latent_after_scheduler",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -0.699052095413208,
+      "max": 0.7788575291633606,
+      "mean": 0.00666083395832473,
+      "std": 0.18799366953402435,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 0,
+      "zero_ratio": 0.0
+    },
+    {
+      "name": "guidance_3p0.step_4.cond_uncond_delta",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -0.03497794270515442,
+      "max": 0.03442567586898804,
+      "mean": 0.00020088164254694618,
+      "std": 0.004676725388369691,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 370,
+      "zero_ratio": 0.0225830078125
+    },
+    {
+      "name": "guidance_3p0.step_4.noise_pred",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -2.8435235023498535,
+      "max": 2.379789352416992,
+      "mean": 0.0011306918060132176,
+      "std": 0.6193488288767546,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 1,
+      "zero_ratio": 6.103515625e-05
+    },
+    {
+      "name": "guidance_3p0.step_4.latent_after_scheduler",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -0.5494773387908936,
+      "max": 0.6925394535064697,
+      "mean": 0.00538669090224797,
+      "std": 0.12452759567142924,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 0,
+      "zero_ratio": 0.0
+    },
+    {
+      "name": "guidance_3p0.step_5.cond_uncond_delta",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -0.06296038627624512,
+      "max": 0.05743741989135742,
+      "mean": 7.851875811937248e-05,
+      "std": 0.00968938117786984,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 131,
+      "zero_ratio": 0.00799560546875
+    },
+    {
+      "name": "guidance_3p0.step_5.noise_pred",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -2.5881845951080322,
+      "max": 2.470547914505005,
+      "mean": 0.0021692115250999677,
+      "std": 0.5440529922993188,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 0,
+      "zero_ratio": 0.0
+    },
+    {
+      "name": "guidance_3p0.step_5.latent_after_scheduler",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -0.5328856706619263,
+      "max": 0.6625171899795532,
+      "mean": 0.005359978900374429,
+      "std": 0.11863964594214613,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 0,
+      "zero_ratio": 0.0
+    },
+    {
+      "name": "guidance_3p0.final_latent",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -0.5328856706619263,
+      "max": 0.6625171899795532,
+      "mean": 0.005359978900374429,
+      "std": 0.11863964594214613,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 0,
+      "zero_ratio": 0.0
+    },
+    {
+      "name": "guidance_3p0.image_float",
+      "shape": [
+        1,
+        512,
+        512,
+        3
+      ],
+      "dtype": "float32",
+      "size": 786432,
+      "min": 0.2706035077571869,
+      "max": 0.5796444416046143,
+      "mean": 0.44303988199745464,
+      "std": 0.052148149823154424,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 0,
+      "zero_ratio": 0.0
+    },
+    {
+      "name": "guidance_3p0.image_uint8",
+      "shape": [
+        512,
+        512,
+        3
+      ],
+      "dtype": "uint8",
+      "size": 786432,
+      "min": 69.0,
+      "max": 148.0,
+      "mean": 112.9731216430664,
+      "std": 13.302753915091342,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 0,
+      "zero_ratio": 0.0
+    },
+    {
+      "name": "guidance_7p5.step_1.cond_uncond_delta",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -0.052651166915893555,
+      "max": 0.04915325343608856,
+      "mean": -0.0008411448858716142,
+      "std": 0.009115555124613366,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 144,
+      "zero_ratio": 0.0087890625
+    },
+    {
+      "name": "guidance_7p5.step_1.noise_pred",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -4.180140018463135,
+      "max": 3.9318909645080566,
+      "mean": -0.0031343834964445705,
+      "std": 1.0100011308549621,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 0,
+      "zero_ratio": 0.0
+    },
+    {
+      "name": "guidance_7p5.step_1.latent_after_scheduler",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -3.1270456314086914,
+      "max": 2.9140820503234863,
+      "mean": 0.007972438248055269,
+      "std": 0.751770025266282,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 0,
+      "zero_ratio": 0.0
+    },
+    {
+      "name": "guidance_7p5.step_2.cond_uncond_delta",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -0.057805679738521576,
+      "max": 0.04123717546463013,
+      "mean": 0.00043804485001963656,
+      "std": 0.007161856007032292,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 201,
+      "zero_ratio": 0.01226806640625
+    },
+    {
+      "name": "guidance_7p5.step_2.noise_pred",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -3.795015335083008,
+      "max": 3.3108482360839844,
+      "mean": 0.002228085164517779,
+      "std": 0.8734602043274354,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 0,
+      "zero_ratio": 0.0
+    },
+    {
+      "name": "guidance_7p5.step_2.latent_after_scheduler",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -1.880861759185791,
+      "max": 1.8187596797943115,
+      "mean": 0.006972659980114315,
+      "std": 0.46447137530278004,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 0,
+      "zero_ratio": 0.0
+    },
+    {
+      "name": "guidance_7p5.step_3.cond_uncond_delta",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -0.033873386681079865,
+      "max": 0.030007407069206238,
+      "mean": 0.0002306125580275875,
+      "std": 0.004595909239361011,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 355,
+      "zero_ratio": 0.02166748046875
+    },
+    {
+      "name": "guidance_7p5.step_3.noise_pred",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -3.2722790241241455,
+      "max": 2.8522682189941406,
+      "mean": 0.00039368462472921806,
+      "std": 0.751908562390902,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 0,
+      "zero_ratio": 0.0
+    },
+    {
+      "name": "guidance_7p5.step_3.latent_after_scheduler",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -0.6755967140197754,
+      "max": 0.7872535586357117,
+      "mean": 0.006437610792470849,
+      "std": 0.18741077285380323,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 0,
+      "zero_ratio": 0.0
+    },
+    {
+      "name": "guidance_7p5.step_4.cond_uncond_delta",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -0.042157649993896484,
+      "max": 0.04142123460769653,
+      "mean": 0.00014490276352319142,
+      "std": 0.004677927707249065,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 349,
+      "zero_ratio": 0.02130126953125
+    },
+    {
+      "name": "guidance_7p5.step_4.noise_pred",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -2.7928972244262695,
+      "max": 2.401512622833252,
+      "mean": 0.0018096202401451933,
+      "std": 0.6116376641821334,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 0,
+      "zero_ratio": 0.0
+    },
+    {
+      "name": "guidance_7p5.step_4.latent_after_scheduler",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -0.5216211080551147,
+      "max": 0.6899755001068115,
+      "mean": 0.00487526315007436,
+      "std": 0.12272436356581723,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 0,
+      "zero_ratio": 0.0
+    },
+    {
+      "name": "guidance_7p5.step_5.cond_uncond_delta",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -0.07345370948314667,
+      "max": 0.08192205429077148,
+      "mean": 7.214766696428399e-05,
+      "std": 0.010911129383390424,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 148,
+      "zero_ratio": 0.009033203125
+    },
+    {
+      "name": "guidance_7p5.step_5.noise_pred",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -2.4850914478302,
+      "max": 2.2116198539733887,
+      "mean": 0.002324084978553742,
+      "std": 0.5355710660710004,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 0,
+      "zero_ratio": 0.0
+    },
+    {
+      "name": "guidance_7p5.step_5.latent_after_scheduler",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -0.5059695243835449,
+      "max": 0.6630945801734924,
+      "mean": 0.004846709906122015,
+      "std": 0.11700360448638032,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 0,
+      "zero_ratio": 0.0
+    },
+    {
+      "name": "guidance_7p5.final_latent",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -0.5059695243835449,
+      "max": 0.6630945801734924,
+      "mean": 0.004846709906122015,
+      "std": 0.11700360448638032,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 0,
+      "zero_ratio": 0.0
+    },
+    {
+      "name": "guidance_7p5.image_float",
+      "shape": [
+        1,
+        512,
+        512,
+        3
+      ],
+      "dtype": "float32",
+      "size": 786432,
+      "min": 0.2659494876861572,
+      "max": 0.582421600818634,
+      "mean": 0.44006878799310317,
+      "std": 0.05410064310044106,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 0,
+      "zero_ratio": 0.0
+    },
+    {
+      "name": "guidance_7p5.image_uint8",
+      "shape": [
+        512,
+        512,
+        3
+      ],
+      "dtype": "uint8",
+      "size": 786432,
+      "min": 68.0,
+      "max": 149.0,
+      "mean": 112.21487045288086,
+      "std": 13.800269232809656,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 0,
+      "zero_ratio": 0.0
+    },
+    {
+      "name": "guidance_15p0.step_1.cond_uncond_delta",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -0.052651166915893555,
+      "max": 0.04915325343608856,
+      "mean": -0.0008411448858716142,
+      "std": 0.009115555124613366,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 144,
+      "zero_ratio": 0.0087890625
+    },
+    {
+      "name": "guidance_15p0.step_1.noise_pred",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -4.189803123474121,
+      "max": 4.049895286560059,
+      "mean": -0.00944296997133165,
+      "std": 1.02698990085092,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 0,
+      "zero_ratio": 0.0
+    },
+    {
+      "name": "guidance_15p0.step_1.latent_after_scheduler",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -3.1249470710754395,
+      "max": 2.904486656188965,
+      "mean": 0.009342452773182686,
+      "std": 0.7501594796190695,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 0,
+      "zero_ratio": 0.0
+    },
+    {
+      "name": "guidance_15p0.step_2.cond_uncond_delta",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -0.06793069839477539,
+      "max": 0.08910173177719116,
+      "mean": 0.0005382053278779608,
+      "std": 0.006752606331800859,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 220,
+      "zero_ratio": 0.013427734375
+    },
+    {
+      "name": "guidance_15p0.step_2.noise_pred",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -3.8901028633117676,
+      "max": 3.260683059692383,
+      "mean": 0.007171258862953778,
+      "std": 0.8713051282964318,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 0,
+      "zero_ratio": 0.0
+    },
+    {
+      "name": "guidance_15p0.step_2.latent_after_scheduler",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -1.8510544300079346,
+      "max": 1.840720534324646,
+      "mean": 0.006837576677583002,
+      "std": 0.46589194420721947,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 0,
+      "zero_ratio": 0.0
+    },
+    {
+      "name": "guidance_15p0.step_3.cond_uncond_delta",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -0.0793447494506836,
+      "max": 0.1150590181350708,
+      "mean": 0.0001417674673476199,
+      "std": 0.0065811492716216025,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 208,
+      "zero_ratio": 0.0126953125
+    },
+    {
+      "name": "guidance_15p0.step_3.noise_pred",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -3.321986436843872,
+      "max": 2.9101645946502686,
+      "mean": 0.000925156073044775,
+      "std": 0.7555419202179529,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 0,
+      "zero_ratio": 0.0
+    },
+    {
+      "name": "guidance_15p0.step_3.latent_after_scheduler",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -1.4649561643600464,
+      "max": 1.0804978609085083,
+      "mean": 0.00613224427434389,
+      "std": 0.19501151888963414,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 0,
+      "zero_ratio": 0.0
+    },
+    {
+      "name": "guidance_15p0.step_4.cond_uncond_delta",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -0.06277632713317871,
+      "max": 0.026509523391723633,
+      "mean": 0.00011648597386937354,
+      "std": 0.004964257181505713,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 293,
+      "zero_ratio": 0.01788330078125
+    },
+    {
+      "name": "guidance_15p0.step_4.noise_pred",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -2.859539747238159,
+      "max": 2.568302869796753,
+      "mean": 0.002802979248428983,
+      "std": 0.6255892889516461,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 0,
+      "zero_ratio": 0.0
+    },
+    {
+      "name": "guidance_15p0.step_4.latent_after_scheduler",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -0.9538124203681946,
+      "max": 0.7604280710220337,
+      "mean": 0.004145818216835906,
+      "std": 0.13936657709276978,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 0,
+      "zero_ratio": 0.0
+    },
+    {
+      "name": "guidance_15p0.step_5.cond_uncond_delta",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -0.07345390319824219,
+      "max": 0.055780649185180664,
+      "mean": 7.139512120879488e-05,
+      "std": 0.009898398994235329,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 121,
+      "zero_ratio": 0.00738525390625
+    },
+    {
+      "name": "guidance_15p0.step_5.noise_pred",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -2.292897939682007,
+      "max": 1.928390622138977,
+      "mean": 0.0024537256697101384,
+      "std": 0.49952638967217805,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 0,
+      "zero_ratio": 0.0
+    },
+    {
+      "name": "guidance_15p0.step_5.latent_after_scheduler",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -0.9371753334999084,
+      "max": 0.7450604438781738,
+      "mean": 0.004115746053656721,
+      "std": 0.1345442841354295,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 0,
+      "zero_ratio": 0.0
+    },
+    {
+      "name": "guidance_15p0.final_latent",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -0.9371753334999084,
+      "max": 0.7450604438781738,
+      "mean": 0.004115746053656721,
+      "std": 0.1345442841354295,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 0,
+      "zero_ratio": 0.0
+    },
+    {
+      "name": "guidance_15p0.image_float",
+      "shape": [
+        1,
+        512,
+        512,
+        3
+      ],
+      "dtype": "float32",
+      "size": 786432,
+      "min": 0.2509040832519531,
+      "max": 0.6300602555274963,
+      "mean": 0.4358485494567124,
+      "std": 0.05906987217208962,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 0,
+      "zero_ratio": 0.0
+    },
+    {
+      "name": "guidance_15p0.image_uint8",
+      "shape": [
+        512,
+        512,
+        3
+      ],
+      "dtype": "uint8",
+      "size": 786432,
+      "min": 64.0,
+      "max": 161.0,
+      "mean": 111.13896052042644,
+      "std": 15.066388230189178,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 0,
+      "zero_ratio": 0.0
+    },
+    {
+      "name": "guidance_30p0.step_1.cond_uncond_delta",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -0.052651166915893555,
+      "max": 0.04915325343608856,
+      "mean": -0.0008411448858716142,
+      "std": 0.009115555124613366,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 144,
+      "zero_ratio": 0.0087890625
+    },
+    {
+      "name": "guidance_30p0.step_1.noise_pred",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -4.209129333496094,
+      "max": 4.384027004241943,
+      "mean": -0.022060143170804736,
+      "std": 1.0732959539010658,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 0,
+      "zero_ratio": 0.0
+    },
+    {
+      "name": "guidance_30p0.step_1.latent_after_scheduler",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -3.1207499504089355,
+      "max": 2.88529634475708,
+      "mean": 0.012082482245830306,
+      "std": 0.7478128016188058,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 0,
+      "zero_ratio": 0.0
+    },
+    {
+      "name": "guidance_30p0.step_2.cond_uncond_delta",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -0.21723151206970215,
+      "max": 0.29234200716018677,
+      "mean": 0.0005605983601562059,
+      "std": 0.009430342525430225,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 204,
+      "zero_ratio": 0.012451171875
+    },
+    {
+      "name": "guidance_30p0.step_2.noise_pred",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -5.3205156326293945,
+      "max": 9.247802734375,
+      "mean": 0.01627517332947548,
+      "std": 0.870060494928005,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 0,
+      "zero_ratio": 0.0
+    },
+    {
+      "name": "guidance_30p0.step_2.latent_after_scheduler",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -3.930659294128418,
+      "max": 3.2802395820617676,
+      "mean": 0.006796170376446753,
+      "std": 0.4838728078026266,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 0,
+      "zero_ratio": 0.0
+    },
+    {
+      "name": "guidance_30p0.step_3.cond_uncond_delta",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -0.05191466212272644,
+      "max": 0.03276882320642471,
+      "mean": 0.00027010781665737227,
+      "std": 0.005311177205428362,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 266,
+      "zero_ratio": 0.0162353515625
+    },
+    {
+      "name": "guidance_30p0.step_3.noise_pred",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -3.376110553741455,
+      "max": 2.8442559242248535,
+      "mean": 0.007093523753297859,
+      "std": 0.7636739680452703,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 0,
+      "zero_ratio": 0.0
+    },
+    {
+      "name": "guidance_30p0.step_3.latent_after_scheduler",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -4.0636701583862305,
+      "max": 3.319951295852661,
+      "mean": 0.004026246862338212,
+      "std": 0.2323964781281119,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 0,
+      "zero_ratio": 0.0
+    },
+    {
+      "name": "guidance_30p0.step_4.cond_uncond_delta",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -0.1345731019973755,
+      "max": 0.04768046736717224,
+      "mean": 0.00017266695179074532,
+      "std": 0.007617779223903559,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 208,
+      "zero_ratio": 0.0126953125
+    },
+    {
+      "name": "guidance_30p0.step_4.noise_pred",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -4.563335418701172,
+      "max": 2.982882261276245,
+      "mean": 0.007130552056580086,
+      "std": 0.6939546597787749,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 0,
+      "zero_ratio": 0.0
+    },
+    {
+      "name": "guidance_30p0.step_4.latent_after_scheduler",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -3.683894157409668,
+      "max": 4.1744465827941895,
+      "mean": 0.00027991480681421876,
+      "std": 0.21064458253219623,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 0,
+      "zero_ratio": 0.0
+    },
+    {
+      "name": "guidance_30p0.step_5.cond_uncond_delta",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -0.04491905868053436,
+      "max": 0.05062597990036011,
+      "mean": 7.077701665458846e-05,
+      "std": 0.007291690777016256,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 162,
+      "zero_ratio": 0.0098876953125
+    },
+    {
+      "name": "guidance_30p0.step_5.noise_pred",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -2.1509604454040527,
+      "max": 2.0762202739715576,
+      "mean": 0.002096680582837962,
+      "std": 0.4939666298421178,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 0,
+      "zero_ratio": 0.0
+    },
+    {
+      "name": "guidance_30p0.step_5.latent_after_scheduler",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -3.684938430786133,
+      "max": 4.187066078186035,
+      "mean": 0.0002544584596524402,
+      "std": 0.20763275735325457,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 0,
+      "zero_ratio": 0.0
+    },
+    {
+      "name": "guidance_30p0.final_latent",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": -3.684938430786133,
+      "max": 4.187066078186035,
+      "mean": 0.0002544584596524402,
+      "std": 0.20763275735325457,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 0,
+      "zero_ratio": 0.0
+    },
+    {
+      "name": "guidance_30p0.image_float",
+      "shape": [
+        1,
+        512,
+        512,
+        3
+      ],
+      "dtype": "float32",
+      "size": 786432,
+      "min": 0.21380941569805145,
+      "max": 0.9783321619033813,
+      "mean": 0.43175085054122064,
+      "std": 0.06983111588644554,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 0,
+      "zero_ratio": 0.0
+    },
+    {
+      "name": "guidance_30p0.image_uint8",
+      "shape": [
+        512,
+        512,
+        3
+      ],
+      "dtype": "uint8",
+      "size": 786432,
+      "min": 55.0,
+      "max": 249.0,
+      "mean": 110.09480667114258,
+      "std": 17.810981562962887,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 0,
+      "zero_ratio": 0.0
+    },
+    {
+      "name": "guidance_0p0.noise_pred_absdiff_vs_0",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": 0.0,
+      "max": 0.0,
+      "mean": 0.0,
+      "std": 0.0,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 16384,
+      "zero_ratio": 1.0
+    },
+    {
+      "name": "guidance_0p0.final_latent_absdiff_vs_0",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": 0.0,
+      "max": 0.0,
+      "mean": 0.0,
+      "std": 0.0,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 16384,
+      "zero_ratio": 1.0
+    },
+    {
+      "name": "guidance_0p0.image_absdiff_vs_0",
+      "shape": [
+        512,
+        512,
+        3
+      ],
+      "dtype": "int16",
+      "size": 786432,
+      "min": 0.0,
+      "max": 0.0,
+      "mean": 0.0,
+      "std": 0.0,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 786432,
+      "zero_ratio": 1.0
+    },
+    {
+      "name": "guidance_1p0.noise_pred_absdiff_vs_0",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": 0.0,
+      "max": 0.052651166915893555,
+      "mean": 0.007300587516628099,
+      "std": 0.005522888000036479,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 144,
+      "zero_ratio": 0.0087890625
+    },
+    {
+      "name": "guidance_1p0.final_latent_absdiff_vs_0",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": 7.82310962677002e-08,
+      "max": 0.018096178770065308,
+      "mean": 0.001873403253579653,
+      "std": 0.0017365341050644704,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 0,
+      "zero_ratio": 0.0
+    },
+    {
+      "name": "guidance_1p0.image_absdiff_vs_0",
+      "shape": [
+        512,
+        512,
+        3
+      ],
+      "dtype": "int16",
+      "size": 786432,
+      "min": 0.0,
+      "max": 11.0,
+      "mean": 0.34219614664713544,
+      "std": 0.4931376026719833,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 523937,
+      "zero_ratio": 0.6662203470865885
+    },
+    {
+      "name": "guidance_3p0.noise_pred_absdiff_vs_0",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": 0.0,
+      "max": 0.15795350074768066,
+      "mean": 0.021901762544636938,
+      "std": 0.01656866395463259,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 144,
+      "zero_ratio": 0.0087890625
+    },
+    {
+      "name": "guidance_3p0.final_latent_absdiff_vs_0",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": 6.854534149169922e-07,
+      "max": 0.05165206640958786,
+      "mean": 0.005480312339294358,
+      "std": 0.004926031682885213,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 0,
+      "zero_ratio": 0.0
+    },
+    {
+      "name": "guidance_3p0.image_absdiff_vs_0",
+      "shape": [
+        512,
+        512,
+        3
+      ],
+      "dtype": "int16",
+      "size": 786432,
+      "min": 0.0,
+      "max": 12.0,
+      "mean": 0.6923166910807291,
+      "std": 0.6906621672689212,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 332135,
+      "zero_ratio": 0.4223314921061198
+    },
+    {
+      "name": "guidance_7p5.noise_pred_absdiff_vs_0",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": 0.0,
+      "max": 0.39488375186920166,
+      "mean": 0.05475440639882834,
+      "std": 0.04142165984050313,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 144,
+      "zero_ratio": 0.0087890625
+    },
+    {
+      "name": "guidance_7p5.final_latent_absdiff_vs_0",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": 1.3783574104309082e-06,
+      "max": 0.13639603555202484,
+      "mean": 0.013224191072453095,
+      "std": 0.011985956504163765,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 0,
+      "zero_ratio": 0.0
+    },
+    {
+      "name": "guidance_7p5.image_absdiff_vs_0",
+      "shape": [
+        512,
+        512,
+        3
+      ],
+      "dtype": "int16",
+      "size": 786432,
+      "min": 0.0,
+      "max": 20.0,
+      "mean": 1.6283760070800781,
+      "std": 1.3772330383251603,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 157209,
+      "zero_ratio": 0.19990158081054688
+    },
+    {
+      "name": "guidance_15p0.noise_pred_absdiff_vs_0",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": 0.0,
+      "max": 0.7897675037384033,
+      "mean": 0.1095088127543562,
+      "std": 0.08284332009618413,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 144,
+      "zero_ratio": 0.0087890625
+    },
+    {
+      "name": "guidance_15p0.final_latent_absdiff_vs_0",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": 6.780028343200684e-06,
+      "max": 0.8957149982452393,
+      "mean": 0.04135042733527783,
+      "std": 0.039500448252351814,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 0,
+      "zero_ratio": 0.0
+    },
+    {
+      "name": "guidance_15p0.image_absdiff_vs_0",
+      "shape": [
+        512,
+        512,
+        3
+      ],
+      "dtype": "int16",
+      "size": 786432,
+      "min": 0.0,
+      "max": 48.0,
+      "mean": 5.066318511962891,
+      "std": 3.498016550723344,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 42675,
+      "zero_ratio": 0.054264068603515625
+    },
+    {
+      "name": "guidance_30p0.noise_pred_absdiff_vs_0",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": 0.0,
+      "max": 1.5795350074768066,
+      "mean": 0.21901762550496073,
+      "std": 0.16568664015481818,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 144,
+      "zero_ratio": 0.0087890625
+    },
+    {
+      "name": "guidance_30p0.final_latent_absdiff_vs_0",
+      "shape": [
+        1,
+        4,
+        64,
+        64
+      ],
+      "dtype": "float32",
+      "size": 16384,
+      "min": 5.841255187988281e-06,
+      "max": 4.2368974685668945,
+      "mean": 0.09614828036464473,
+      "std": 0.13022859173089513,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 0,
+      "zero_ratio": 0.0
+    },
+    {
+      "name": "guidance_30p0.image_absdiff_vs_0",
+      "shape": [
+        512,
+        512,
+        3
+      ],
+      "dtype": "int16",
+      "size": 786432,
+      "min": 0.0,
+      "max": 151.0,
+      "mean": 8.755413055419922,
+      "std": 8.177807724273668,
+      "nan_count": 0,
+      "inf_count": 0,
+      "zero_count": 34560,
+      "zero_ratio": 0.0439453125
+    }
+  ],
+  "rows": [
+    {
+      "scale": 0.0,
+      "tag": "0p0",
+      "noise_pred_std": 0.9974188255849742,
+      "cond_uncond_delta_std": 0.009115555124613366,
+      "final_latent_std": 0.12110497711654393,
+      "image_std": 12.963764352751792,
+      "noise_pred_absdiff_vs_0_mean": 0.0,
+      "final_latent_absdiff_vs_0_mean": 0.0,
+      "image_absdiff_vs_0_mean": 0.0
+    },
+    {
+      "scale": 1.0,
+      "tag": "1p0",
+      "noise_pred_std": 0.9988352898811608,
+      "cond_uncond_delta_std": 0.009115555124613366,
+      "final_latent_std": 0.12022568086568268,
+      "image_std": 13.072959176542142,
+      "noise_pred_absdiff_vs_0_mean": 0.007300587370991707,
+      "final_latent_absdiff_vs_0_mean": 0.001873403205536306,
+      "image_absdiff_vs_0_mean": 0.34219614664713544
+    },
+    {
+      "scale": 3.0,
+      "tag": "3p0",
+      "noise_pred_std": 1.0019110447877757,
+      "cond_uncond_delta_std": 0.009115555124613366,
+      "final_latent_std": 0.11863964594214613,
+      "image_std": 13.302753915091342,
+      "noise_pred_absdiff_vs_0_mean": 0.02190176397562027,
+      "final_latent_absdiff_vs_0_mean": 0.005480312276631594,
+      "image_absdiff_vs_0_mean": 0.6923166910807291
+    },
+    {
+      "scale": 7.5,
+      "tag": "7p5",
+      "noise_pred_std": 1.0100011308549621,
+      "cond_uncond_delta_std": 0.009115555124613366,
+      "final_latent_std": 0.11700360448638032,
+      "image_std": 13.800269232809656,
+      "noise_pred_absdiff_vs_0_mean": 0.054754406213760376,
+      "final_latent_absdiff_vs_0_mean": 0.013224191032350063,
+      "image_absdiff_vs_0_mean": 1.6283760070800781
+    },
+    {
+      "scale": 15.0,
+      "tag": "15p0",
+      "noise_pred_std": 1.02698990085092,
+      "cond_uncond_delta_std": 0.009115555124613366,
+      "final_latent_std": 0.1345442841354295,
+      "image_std": 15.066388230189178,
+      "noise_pred_absdiff_vs_0_mean": 0.10950881242752075,
+      "final_latent_absdiff_vs_0_mean": 0.04135042428970337,
+      "image_absdiff_vs_0_mean": 5.066318511962891
+    },
+    {
+      "scale": 30.0,
+      "tag": "30p0",
+      "noise_pred_std": 1.0732959539010658,
+      "cond_uncond_delta_std": 0.009115555124613366,
+      "final_latent_std": 0.20763275735325457,
+      "image_std": 17.810981562962887,
+      "noise_pred_absdiff_vs_0_mean": 0.2190176248550415,
+      "final_latent_absdiff_vs_0_mean": 0.096148282289505,
+      "image_absdiff_vs_0_mean": 8.755413055419922
+    }
+  ]
+}
