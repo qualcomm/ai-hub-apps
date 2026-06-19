@@ -1,5 +1,6 @@
 // Load versions from versions.env (relative to this file)
-def versionsEnvFile = new File(buildscript.sourceFile.parentFile, "../../scripts/versions.env").canonicalFile
+// DONOT CHANGE THE PATH
+def versionsEnvFile = new File(buildscript.sourceFile.parentFile, "../../../_shared/scripts/versions.env").canonicalFile
 if (!versionsEnvFile.exists()) {
     throw new GradleException("versions.env not found at ${versionsEnvFile}.")
 }
