@@ -51,6 +51,6 @@ install_pip_deps() {
     fi
 
     echo "::step::Installing Python dependencies"
-    uv pip install --python "$venv_dir/bin/python" "${install_args[@]}" "${extra_args[@]}" --system-certs
+    "$venv_dir/bin/uv" pip install --python "$venv_dir/bin/python" "${install_args[@]}" "${extra_args[@]}" --system-certs
     echo "::done::pip install"
 }

@@ -69,6 +69,22 @@ apps:
   - models/palm_detector.tflite
   - models/hand_landmark_detector.tflite
   - models/canned_gesture_classifier.tflite
+- name: Posenet Pose Estimation
+  id: posenet_ubuntu_py
+  status: published
+  headline: On-device human pose estimation with TFLite
+  description: A sample app for Ubuntu integrating the Posenet MobileNet pose-estimation model via TFLite Runtime. It uses GStreamer for input video and provides a minimal web interface to stream output frames suitable for embedded applications.
+  domain: Computer Vision
+  use_case: Pose Estimation
+  app_repo_url: https://github.com/qualcomm/ai-hub-apps/tree/main/apps/posenet_ubuntu_py
+  app_type: ubuntu
+  runtime: tflite
+  related_models:
+  - posenet_mobilenet
+  precisions:
+  - w8a8
+  model_file_paths:
+  - models/posenet_mobilenet.tflite
 - name: Semantic Segmentation Android
   id: semantic_segmentation_android
   status: published

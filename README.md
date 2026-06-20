@@ -80,6 +80,7 @@ __NOTE: Some of these apps will run without NPU acceleration on non-Snapdragon®
 | Task | Language | Inference API | Special Tags |
 | -- | -- | -- | -- |
 | [Hand Gesture Recognition](apps/mediapipe_hand_gesture_ubuntu_py) | Python | TensorFlow Lite | GStreamer |
+| [Posenet Pose Estimation](apps/posenet_ubuntu_py) | Python | TensorFlow Lite | GStreamer |
 <!-- /UBUNTU_APPS -->
 
 _\* Source available on GitHub; not included in the CLI release._

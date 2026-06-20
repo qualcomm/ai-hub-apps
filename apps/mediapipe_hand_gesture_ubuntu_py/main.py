@@ -6,7 +6,6 @@ import argparse
 import contextlib
 import queue
 import subprocess
-import time
 import warnings
 from pathlib import Path
 from typing import Any
@@ -21,6 +20,7 @@ from qai_hub_apps_utils.bbox_processing import (
     batched_nms,
     compute_box_affine_crop_resize_matrix,
 )
+from qai_hub_apps_utils.fps import FpsCounter
 from qai_hub_apps_utils.image_processing import (
     apply_affine_to_coordinates,
     apply_batched_affines_to_frame,
@@ -434,8 +434,7 @@ def main(args: argparse.Namespace) -> None:
         "--------------------------- Gstreamer ----------------------------", flush=True
     )
     pipeline.set_state(Gst.State.PLAYING)
-    start_time = time.perf_counter()
-    frame_count = 0
+    fps_counter = FpsCounter()
 
     warnings.filterwarnings("ignore", category=UserWarning, module="numpy")
 
@@ -469,12 +468,7 @@ def main(args: argparse.Namespace) -> None:
                 landmark_connections=C.HAND_LANDMARK_CONNECTIONS,
             )
 
-            cur_time = time.perf_counter()
-            frame_count += 1
-            if cur_time - start_time > 1.0:
-                start_time += 1.0
-                print("FPS:", frame_count, flush=True)
-                frame_count = 0
+            fps_counter.tick()
 
             ui.set_frame(rgb_frame[..., ::-1])
 
