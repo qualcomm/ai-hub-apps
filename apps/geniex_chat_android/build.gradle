@@ -95,8 +95,7 @@ dependencies {
     implementation 'com.geyifeng.immersionbar:immersionbar:3.2.2'
     implementation 'com.geyifeng.immersionbar:immersionbar-ktx:3.2.2'
 
-    // Testing
-    testImplementation 'junit:junit:4.13.2'
+    // Testing (instrumented UI Automator tests under src/androidTest)
     androidTestImplementation 'androidx.test:runner:1.6.2'
     androidTestImplementation 'androidx.test:rules:1.6.1'
     androidTestImplementation 'androidx.test:core:1.6.1'
