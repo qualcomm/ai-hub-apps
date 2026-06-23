@@ -42,7 +42,7 @@ qaiha-dev
 
 # Other auxiliary assets
 apps/android/ObjectDetection/src/main/assets/labels.txt
-apps/android/ChatApp/src/main/cpp/json.hpp
+apps/chatapp_android/src/main/cpp/json.hpp
 
 # Automatically generated when the package is built
 cli/qai_hub_apps/_version.py

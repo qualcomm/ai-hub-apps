@@ -174,7 +174,9 @@ void ClassificationApp::ProcessOutput(const std::string& input_image_path,
     auto max = std::max_element(output_prob, output_prob + output_data_size);
     int max_index = static_cast<int>(std::distance(output_prob, max));
 
-    auto label_table = Utils::ReadLabelFile(label_file, output_data_size);
+    // labels.txt ships with the model
+    std::string label_path = (std::filesystem::path(m_model_path).parent_path() / label_file).string();
+    auto label_table = Utils::ReadLabelFile(label_path, output_data_size);
     std::string class_label = label_table[max_index].c_str();
 
     // Showing Results on terminal

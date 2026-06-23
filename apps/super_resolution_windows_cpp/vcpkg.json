@@ -1,11 +1,14 @@
 {
   "dependencies": [
-    "opencv"
-  ],
-  "overrides": [
     {
-      "name": "liblzma",
-      "version": "5.4.4"
+      "name": "opencv4",
+      "default-features": false,
+      "features": [
+        "jpeg",
+        "png",
+        "highgui",
+        "win32ui"
+      ]
     }
   ]
 }

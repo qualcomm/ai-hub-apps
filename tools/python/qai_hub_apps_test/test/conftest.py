@@ -32,6 +32,12 @@ def pytest_addoption(parser: pytest.Parser) -> None:
         choices=["fetch", "build", "all"],
         help="Furthest stage to run: fetch, build, or all (includes on-device QDC submission)",
     )
+    parser.addoption(
+        "--no-docker",
+        action="store_true",
+        default=False,
+        help="Build natively on the host instead of inside a Docker container",
+    )
 
 
 @pytest.fixture(scope="session")
@@ -47,3 +53,8 @@ def qdc_token(request: pytest.FixtureRequest) -> str | None:
 @pytest.fixture(scope="session")
 def test_stage(request: pytest.FixtureRequest) -> str:
     return request.config.getoption("--test-stage")
+
+
+@pytest.fixture(scope="session")
+def use_docker(request: pytest.FixtureRequest) -> bool:
+    return not request.config.getoption("--no-docker")

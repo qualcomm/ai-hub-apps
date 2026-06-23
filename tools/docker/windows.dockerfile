@@ -27,7 +27,7 @@ WORKDIR C:\\app
 COPY . C:\\app
 
 RUN powershell -Command \
-    "if ('${BUILD_TYPE}' -eq 'build' -and (Test-Path 'install_build.ps1')) { \
+    "if ($env:BUILD_TYPE -eq 'build' -and (Test-Path 'install_build.ps1')) { \
         . .\\install_build.ps1 \
     } elseif (Test-Path 'install_runtime.ps1') { \
         . .\\install_runtime.ps1 \

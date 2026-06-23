@@ -212,7 +212,7 @@ int main(int argc, char* argv[])
         app.RunInference();
 
         // Process output and show results
-        app.ProcessOutput(image_path, output_image_path);
+        app.ProcessOutput(image_path, output_image_path, !output_image_path.has_value());
     }
     catch (const std::exception& e)
     {

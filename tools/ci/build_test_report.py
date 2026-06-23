@@ -27,7 +27,8 @@ def parse_results(results_dir: str) -> dict[tuple[str, str], dict[str, str]]:
     """Parse all pytest-json-report files into a {(app_id, model_id): {stage: outcome}} dict."""
     matrix: dict[tuple[str, str], dict[str, str]] = {}
     for fpath in glob.glob(f"{results_dir}/*.json"):
-        data = json.loads(Path(fpath).read_text())
+        # utf-8-sig for Windows hosts that write a BOM
+        data = json.loads(Path(fpath).read_text(encoding="utf-8-sig"))
         for test in data.get("tests", []):
             nodeid = test["nodeid"]
             if "test_1" in nodeid:

@@ -61,16 +61,6 @@ std::vector<float> LoadImageFile(const std::string& image_path, uint32_t input_i
     return output;
 }
 
-std::string RemoveFirstWord(const std::string& input)
-{
-    size_t pos = input.find(' '); // Find the first space
-    if (pos == std::string::npos)
-    {
-        return ""; // If no space is found, return an empty string
-    }
-    return input.substr(pos + 1); // Return the substring after the first space
-}
-
 std::unordered_map<int, std::string> ReadLabelFile(std::string filepath, const size_t label_size)
 {
     std::fstream label_file(filepath, std::ios::in);
@@ -85,8 +75,8 @@ std::unordered_map<int, std::string> ReadLabelFile(std::string filepath, const s
     std::string line;
     while (std::getline(label_file, line))
     {
-        // Remove the synset ID as it is not the actual class label
-        label_table.emplace(i++, RemoveFirstWord(line));
+        // labels.txt has one class name per line.
+        label_table.emplace(i++, line);
     }
     return label_table;
 }

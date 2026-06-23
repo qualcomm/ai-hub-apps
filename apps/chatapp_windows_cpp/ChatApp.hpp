@@ -19,6 +19,7 @@ class ChatApp
     GenieDialogConfig_Handle_t m_config_handle = nullptr;
     GenieDialog_Handle_t m_dialog_handle = nullptr;
     std::string m_user_name;
+    std::string m_base_dir;
 
   public:
     /**
@@ -27,11 +28,13 @@ class ChatApp
      *    - Creates handle for Genie
      *
      * @param config: JSON string containing Genie configuration
+     * @param base_dir: Base directory of the genie bundle, containing metadata.json
+     *                  from which the prompt format is read.
      *
      * @throws on failure to create handle for Genie config, dialog
      *
      */
-    ChatApp(const std::string& config);
+    ChatApp(const std::string& config, const std::string& base_dir);
     ChatApp() = delete;
     ChatApp(const ChatApp&) = delete;
     ChatApp(ChatApp&&) = delete;

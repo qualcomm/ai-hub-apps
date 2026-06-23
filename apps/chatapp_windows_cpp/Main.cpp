@@ -117,7 +117,9 @@ int main(int argc, char* argv[])
 
         std::string user_name;
 
-        App::ChatApp app(config);
+        // The working directory is now base_dir, so the genie bundle (incl.
+        // metadata.json, from which the prompt format is read) is at ".".
+        App::ChatApp app(config, ".");
 
         // Get user name to chat with
         PrintWelcomeMessage();

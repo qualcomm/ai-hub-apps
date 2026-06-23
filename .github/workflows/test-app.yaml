@@ -11,6 +11,10 @@ on:
         description: "App ID to test"
         type: string
         required: true
+      app_type:
+        description: "App platform: ubuntu, android, or windows"
+        type: string
+        required: true
       model_selection:
         description: "Which models to test per app (first/random/all)"
         type: string
@@ -24,6 +28,8 @@ on:
         required: false
       DOCKER_QC_REGISTRY_TOKEN:
         required: false
+      HUB_USER_TOKEN_PROD:
+        required: false
 
   workflow_dispatch:
     inputs:
@@ -31,6 +37,12 @@ on:
         description: "App ID to test"
         required: true
         type: string
+      app_type:
+        description: "App platform: ubuntu, android, or windows"
+        required: true
+        type: choice
+        options: [ubuntu, android, windows]
+        default: ubuntu
       model_selection:
         description: "Which models to test per app"
         required: false
@@ -46,19 +58,23 @@ on:
 
 env:
   VENV_PATH: qaiha-dev
+  ACTIVATE_VENV: ${{ inputs.app_type == 'windows' && '. qaiha-dev\Scripts\Activate.ps1' || 'source qaiha-dev/bin/activate' }}
   PYTHON_VERSION: '3.10'
   PYTHONUNBUFFERED: 1
+  PYTHONUTF8: '1'
+  PYTEST_DEBUG_TEMPROOT: ${{ inputs.app_type == 'windows' && 'C:\t' || '' }}
   QDC_TOKEN: ${{ secrets.QDC_API_TOKEN }}
   QDC_JOB_LIMIT: ${{ vars.QDC_JOB_LIMIT }}
 
 jobs:
   test:
     name: "Test ${{ inputs.app }}"
-    runs-on: [tetra-ubuntu-2204, self-hosted]
+    runs-on: ${{ inputs.app_type == 'windows' && fromJSON('["windows-latest"]') || fromJSON('["tetra-ubuntu-2204", "self-hosted"]') }}
 
     steps:
       - uses: actions/checkout@v7
         with:
+          fetch-depth: 0
           lfs: true
 
       - id: setup_python
@@ -66,7 +82,8 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
-      - name: Set up environment (with CLI + QDC SDK)
+      - name: Set up environment (Linux)
+        if: ${{ inputs.app_type != 'windows' }}
         run: |
           bash tools/setup_env.sh \
             --python="${{ steps.setup_python.outputs.python-path }}" \
@@ -74,32 +91,45 @@ jobs:
             --with-cli \
             --with-qdc-sdk
 
+      - name: Set up environment (Windows)
+        if: ${{ inputs.app_type == 'windows' }}
+        run: |
+          . tools/setup_env.ps1 `
+            -Python "${{ steps.setup_python.outputs.python-path }}" `
+            -Venv "${{ env.VENV_PATH }}" `
+            -WithCli `
+            -WithQdcSdk
+
       - name: Generate test registry (all apps)
         run: |
-          source ${{ env.VENV_PATH }}/bin/activate
-          python -m qai_hub_apps_test.scripts.generate_registry \
-            --output_dir cli/qai_hub_apps/ --include_all
+          ${{ env.ACTIVATE_VENV }}
+          python -m qai_hub_apps_test.scripts.generate_registry --output_dir cli/qai_hub_apps/ --include_all
+
+      - name: Configure QAI Hub client
+        if: ${{ inputs.app_type == 'windows' }}
+        run: |
+          ${{ env.ACTIVATE_VENV }}
+          qai-hub configure --api_token ${{ secrets.HUB_USER_TOKEN_PROD }}
 
       - name: Log in to Qualcomm Docker registry
-        if: ${{ inputs.test_stage != 'fetch' }}
+        # windows apps are run through GH runners
+        if: ${{ inputs.test_stage != 'fetch'  && inputs.app_type != 'windows'}}
         uses: ./.github/actions/docker-login-qc-registry
         with:
           token: ${{ secrets.DOCKER_QC_REGISTRY_TOKEN }}
 
+      - name: Create short build root (Windows)
+        if: ${{ inputs.app_type == 'windows' }}
+        run: New-Item -ItemType Directory -Path 'C:\t' -Force | Out-Null
+
       - name: Run tests for ${{ inputs.app }}
         run: |
-          source ${{ env.VENV_PATH }}/bin/activate
-          cd tools/python/qai_hub_apps_test/ && pytest \
-            -vv -ra -s \
-            -m device_test \
-            --model-selection "${{ inputs.model_selection }}" \
-            --test-stage "${{ inputs.test_stage }}" \
-            --qdc-token "$QDC_TOKEN" \
-            --json-report --json-report-file="${{ inputs.app }}-results.json" \
-            -k "${{ inputs.app }}"
+          ${{ env.ACTIVATE_VENV }}
+          cd tools/python/qai_hub_apps_test/
+          python -m pytest -vv -ra -s -m device_test --model-selection "${{ inputs.model_selection }}" --test-stage "${{ inputs.test_stage }}" --qdc-token "${{ env.QDC_TOKEN }}" ${{ inputs.app_type == 'windows' && '--no-docker' || '' }} --json-report --json-report-file="${{ inputs.app }}-results.json" -k "${{ inputs.app }}"
 
-      - name: Ensure json-report-file
-        if: always()
+      - name: Ensure json-report-file (Linux)
+        if: ${{ always() && inputs.app_type != 'windows' }}
         run: |
           RESULTS_FILE="tools/python/qai_hub_apps_test/${{ inputs.app }}-results.json"
           if [ ! -f "$RESULTS_FILE" ]; then
@@ -109,6 +139,20 @@ jobs:
               {"nodeid":"test_3_on_device_app[${{ inputs.app }}-setup_failed]","outcome":"failed"}
             ]}' > "$RESULTS_FILE"
           fi
+
+      - name: Ensure json-report-file (Windows)
+        if: ${{ always() && inputs.app_type == 'windows' }}
+        run: |
+          $resultsFile = "tools\python\qai_hub_apps_test\${{ inputs.app }}-results.json"
+          if (-not (Test-Path $resultsFile)) {
+            @'
+          {"tests":[
+            {"nodeid":"test_1_fetch_app[${{ inputs.app }}-setup_failed]","outcome":"failed"},
+            {"nodeid":"test_2_build_app[${{ inputs.app }}-setup_failed]","outcome":"failed"},
+            {"nodeid":"test_3_on_device_app[${{ inputs.app }}-setup_failed]","outcome":"failed"}
+          ]}
+          '@ | Set-Content -Path $resultsFile -Encoding utf8
+          }
 
       - name: Upload results
         if: always()

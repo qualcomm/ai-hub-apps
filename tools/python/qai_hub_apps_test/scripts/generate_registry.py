@@ -32,6 +32,18 @@ from qai_hub_apps_test.utils.aws import (
 from qai_hub_apps_test.utils.paths import REPOSITORY_ROOT, get_all_apps
 
 
+def _is_supported_app(info: QAIHAAppInfo) -> bool:
+    """Whether an app can be bundled/registered by the CLI.
+
+    Supported: Android apps, any Python app, and Windows C++ apps.
+    """
+    if info.app_type == AppType.ANDROID:
+        return True
+    if AppLanguage.PYTHON in info.languages:
+        return True
+    return info.app_type == AppType.WINDOWS and AppLanguage.CPP in info.languages
+
+
 def _read_cli_version() -> str:
     from setuptools_scm import get_version
 
@@ -170,10 +182,7 @@ def generate_registry(
             build_path = Path(build_dir)
             for info, app_dir in public_apps:
                 print(f"\n{f' {info.id} ':─^60}")
-                if (
-                    AppLanguage.PYTHON not in info.languages
-                    and info.app_type != AppType.ANDROID
-                ):
+                if not _is_supported_app(info):
                     print(
                         f"Skipping: unsupported app "
                         f"(type={info.app_type.value}, languages={[l.value for l in info.languages]})"
@@ -189,10 +198,7 @@ def generate_registry(
     else:
         for info, _ in public_apps:
             print(f"\n{f' {info.id} ':─^60}")
-            if (
-                AppLanguage.PYTHON not in info.languages
-                and info.app_type != AppType.ANDROID
-            ):
+            if not _is_supported_app(info):
                 print(
                     f"Skipping: unsupported app "
                     f"(type={info.app_type.value}, languages={[l.value for l in info.languages]})"

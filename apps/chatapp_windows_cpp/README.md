@@ -1,88 +1,64 @@
-# CLI Chat application
+# CLI Chat application on Snapdragon X Elite
 
-Chat application for Windows on Snapdragon® demonstrating a large language model (LLM, e.g., [Llama 3.2 3B](https://aihub.qualcomm.com/compute/models/llama_v3_2_3b_instruct)) using Genie SDK.
-
-The app demonstrates how to use the Genie APIs from [QAIRT SDK](https://qpm.qualcomm.com/#/main/tools/details/Qualcomm_AI_Runtime_SDK) to run and accelerate LLMs using the Snapdragon® Neural Processing Unit (NPU).
+A Windows C++ CLI app that runs an on-device LLM (e.g. [Llama 3.2 3B](https://aihub.qualcomm.com/compute/models/llama_v3_2_3b_instruct)) using the Genie APIs from the [QAIRT SDK](https://qpm.qualcomm.com/#/main/tools/details/Qualcomm_AI_Runtime_SDK), accelerated on the Snapdragon® NPU.
 
 ## Requirements
 
-### Platform
+- Windows on Snapdragon X Elite
+- A Windows host machine (x86-64 or ARM) with Docker installed
 
-- Snapdragon® Platform (e.g. X Elite)
-- Windows 11+
+## Setup
 
-### Tools and SDK
+### Option A: Using the CLI (Recommended)
 
-- Visual Studio 22
-  - Download any variant of [Visual Studio here](https://visualstudio.microsoft.com/vs/)
-  - Make sure Desktop development with C++ tools are selected during installation or installed separately later
-- QAIRT SDK: [Qualcomm AI Runtime SDK](https://qpm.qualcomm.com/#/main/tools/details/Qualcomm_AI_Runtime_SDK) (see [QNN SDK](https://qpm.qualcomm.com/#/main/tools/details/qualcomm_ai_engine_direct) for older versions)
-  - Refer to [Setup QAIRT SDK](#setup-qairt-sdk) to install compatible QAIRT SDK for models downloaded from AI Hub.
-
-## Build App
-
-### Compile to Context Binary via AI Hub and Generate Genie Bundle
-
-1. Clone this repository so that you have a local copy of `ChatApp`.
-
-2. Please follow [this
-tutorial](https://github.com/qualcomm/ai-hub-apps/tree/main/tutorials/llm_on_genie)
-to generate `genie_bundle` required by ChatApp. If you use any of the Llama 3
-models, the app will work without modifications. If you use another model, you
-will need to update the prompt format in `PromptHandler.cpp` first.
-
-3. Copy bundle assets from step 2 to `ChatApp\genie_bundle`. You should see
-`ChatApp\genie_bundle\*.bin` context binary files.
-
-
-### Setup QAIRT SDK
-
-Please ensure that the QAIRT (or QNN) SDK version installed on the system is the same as the one used by AI Hub for generating context binaries.
-You can find the AI Hub QAIRT version in the compile job page as shown in the following screenshot:
-
-![QAIRT version on AI Hub](assets/images/ai-hub-qnn-version.png)
-
-Having different QAIRT versions could result in runtime or load-time failures.
-
-Please follow the following steps to configure QAIRT SDKs for ChatApp:
-
-1. Download and install [Qualcomm AI Runtime SDK](https://qpm.qualcomm.com/#/main/tools/details/Qualcomm_AI_Runtime_SDK) (see [QNN SDK](https://qpm.qualcomm.com/#/main/tools/details/qualcomm_ai_engine_direct) for older versions)
-2. Set global environment variable `QNN_SDK_ROOT` to root path of QAIRT SDK e.g. `C:\Qualcomm\AIStack\QAIRT\2.32.0.250228`
-
-    - Make sure you can run the following command with no error and that it prints the various libraries available with your QAIRT package:
-
-    ```powershell
-    ls ${env:QNN_SDK_ROOT}/lib
-    ```
-
-    ![QNN SDK Verion check](assets/images/sample-qnn-sdk-check.png)
-3. If command from step 2 succeeds, QAIRT SDK is correctly configured to work with ChatApp.
-
-
-### Build project in Visual Studio 22
-
-Make sure `QNN_SDK_ROOT` is set globally pointing to QAIRT SDK before you build the project.
-
-1. Open `ChatApp.sln`
-2. Build project in Visual Studio
-
-## Running App
-
-### Running via Visual Studio
-
-Click on the green play button to build and run.
-
-Visual studio project is configured with the following command arguments:
+Install the CLI and fetch the app with the model:
 
 ```powershell
-.\ARM64\Debug\ChatApp.exe --genie-config .\\genie_bundle\\genie_config.json --base-dir .\\genie_bundle\\
+pip install qai-hub-apps
+qai-hub-apps fetch chatapp_windows_cpp --model qwen3_4b_instruct_2507 --chipset qualcomm-snapdragon-x-elite --output-dir ~
+cd ~\chatapp_windows_cpp
 ```
 
-### Running via CLI
+This downloads the app source and places the Genie bundle into `genie_bundle/`.
+
+### Option B: Cloning the Repo
+
+If you cloned the release branch, the app directory is already self-contained — but **model weights are not included**. Obtain the LLM binaries from [AI Hub Models](https://aihub.qualcomm.com/models?domain=Generative+AI&useCase=Text+Generation) and unzip the bundle to `genie_bundle` before building. See [Exporting an LLM](#exporting-an-llm) for more details. You should see `genie_bundle\*.bin` context binary files.
+
+## Build
+
+### Option A: Using Visual Studio
+In order to build using Visual Studio, you need to first install a supported QAIRT SDK and set the environment variable `QNN_SDK_ROOT` to its root directory.
+You can use our provided helper utility to set up a supported QAIRT SDK.
 
 ```powershell
-cd {Project directory}
-.\ARM64\Debug\ChatApp.exe --genie-config .\\genie_bundle\\genie_config.json --base-dir .\\genie_bundle\\
+. ".\scripts\qairt_utils.ps1"
+
+Install-Qairt
+echo "QAIRT_PATH=$env:QAIRT_PATH"
+```
+Set the global environment variable `QNN_SDK_ROOT` to your QAIRT_PATH obtained from above.
+Open `ChatApp.sln`, and build the `ARM64` configuration. The project downloads `json.hpp` automatically as a pre-build step.
+
+### Option B: Using Docker
+Build our Docker image with all required dependencies, including the supported MS Build Tools and QAIRT SDKs.
+
+```powershell
+docker build --build-arg BUILD_TYPE=build -t aiha-chatapp-win .
+```
+
+Build the EXE:
+```powershell
+docker run --name chatapp-container aiha-chatapp-win powershell -c '. ./install_build.ps1; & $env:MSBUILD_EXE ChatApp.sln /p:Configuration=Debug /p:Platform=ARM64'
+
+mkdir ./ARM64
+
+docker cp chatapp-container:C:\app\ARM64 .
+```
+
+### Install & Run
+```powershell
+.\ARM64\Debug\ChatApp.exe --genie-config ".\genie_bundle\genie_config.json" --base-dir ".\genie_bundle"
 ```
 
 Run `--help` to learn more:
@@ -91,29 +67,39 @@ Run `--help` to learn more:
 .\ARM64\Debug\ChatApp.exe --help
 ```
 
-Make sure to provide paths to local config file and models using `\\` or `/` as a path separator and not `\`
+Type `exit` during the chat to terminate.
 
 
-#### Correct file path examples
+### Unicode characters
 
-```powershell
-1. C:\\Path\\To\\Model\\Config\\llama2_7b.json
-2. C:/Path/To/Model/Config/llama2_7b.json
-```
-
-#### Incorrect file path example
-
-```powershell
-1. C:\Path\To\Model\Config\llama2_7b.json
-```
-
-#### Unicode characters
-
-To use languages that require Unicode, please follow these instructions:
-
-* [UTF-8 support](https://github.com/qualcomm/ai-hub-apps/blob/main/tutorials/llm_on_genie/powershell/README.md#utf-8-support)
-
+To use languages that require Unicode, follow the [UTF-8 support instructions](https://github.com/qualcomm/ai-hub-apps/blob/main/tutorials/llm_on_genie/powershell/README.md#utf-8-support).
 
 ### Sample Output
 
 ![sample_output](assets/images/sample_output.png)
+
+## Exporting an LLM
+
+1. Get QNN context binaries for the LLM of your choice from Qualcomm AI Hub. There are two ways to get these assets:
+
+    - Run the export script to get context binaries for Llama variants. We export these models with context length 4096 by default. You can add the argument `--context-length` with your desired context length value while exporting (recommended to use lower or equal to 4096). Make sure the `size` option in the genie config matches your model's context length.
+
+    - Download directly from our website. Make sure to select the correct device when downloading the context binaries.
+
+    - Read more about [exporting LLMs via AI Hub here](https://github.com/qualcomm/ai-hub-apps/tree/main/tutorials/llm_on_genie#1-generate-genie-compatible-qnn-binaries-from-ai-hub)
+        - You'll have to replace the model name from the above tutorial with `llama_v3_2_3b_instruct` or the model id of your choice and reduce context length for this demo when exporting.
+
+    - The following command exports the Llama 3.2 3B model with context length 4096:
+
+    ```powershell
+    python -m qai_hub_models.models.llama_v3_2_3b_instruct.export --device "Snapdragon X Elite CRD" --output-dir genie_bundle --skip-profiling --skip-inferencing
+    ```
+
+    - Exporting Llama 3.2 models will take a while depending on your internet connectivity.
+    - This takes around 1-2 hours with good internet connectivity.
+
+2. Download and save `tokenizer.json` from the [LLM On-Device Deployment](https://github.com/qualcomm/ai-hub-apps/tree/main/tutorials/llm_on_genie#genie-config) tutorial to `genie_bundle\`.
+
+    - If you would like, you may also go to the [HuggingFace](https://huggingface.co/) repository of your desired model and save `tokenizer.json` from there.
+
+3. The exported context binaries (`genie_bundle\*.bin`) from step 1 are already in `genie_bundle\`. Confirm the directory contains the `*.bin` files, `genie_config.json`, and `tokenizer.json`.

@@ -18,16 +18,17 @@
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <Import Project="versions.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>$(MsvcPlatformToolset)</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>$(MsvcPlatformToolset)</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
@@ -42,7 +43,11 @@
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
-  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Label="UserMacros">
+    <!-- Hexagon DSP arch of the target device. Override via env var or
+         /p:HEXAGON_VERSION=... at build time; defaults to the Snapdragon X Elite arch. -->
+    <HEXAGON_VERSION Condition="'$(HEXAGON_VERSION)'==''">v73</HEXAGON_VERSION>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">
     <IncludePath>$(QNN_SDK_ROOT)\include\Genie;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
     <PublicIncludeDirectories>$(QNN_SDK_ROOT)\include\Genie</PublicIncludeDirectories>
@@ -57,8 +62,8 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(QNN_SDK_ROOT)\include\Genie</AdditionalIncludeDirectories>
-      <LanguageStandard>stdcpp17</LanguageStandard>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(QNN_SDK_ROOT)\include\Genie</AdditionalIncludeDirectories>
+      <LanguageStandard>$(MsvcLanguageStandard)</LanguageStandard>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
@@ -69,7 +74,7 @@
       </DelayLoadDLLs>
     </Link>
     <PostBuildEvent>
-      <Command>powershell "Copy-Item '$(QNN_SDK_ROOT)\lib\hexagon-v73\unsigned\*' '$(OutDir)' -Force"
+      <Command>powershell "Copy-Item '$(QNN_SDK_ROOT)\lib\hexagon-$(HEXAGON_VERSION)\unsigned\*' '$(OutDir)' -Force"
 
 powershell "Copy-Item '$(QNN_SDK_ROOT)\lib\aarch64-windows-msvc\*' '$(OutDir)' -Force"</Command>
     </PostBuildEvent>
@@ -82,10 +87,10 @@ powershell "Copy-Item '$(QNN_SDK_ROOT)\lib\aarch64-windows-msvc\*' '$(OutDir)' -
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(QNN_SDK_ROOT)\include\Genie</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(QNN_SDK_ROOT)\include\Genie</AdditionalIncludeDirectories>
       <AdditionalUsingDirectories>
       </AdditionalUsingDirectories>
-      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard>$(MsvcLanguageStandard)</LanguageStandard>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
@@ -98,7 +103,7 @@ powershell "Copy-Item '$(QNN_SDK_ROOT)\lib\aarch64-windows-msvc\*' '$(OutDir)' -
       </DelayLoadDLLs>
     </Link>
     <PostBuildEvent>
-      <Command>powershell cp $(QNN_SDK_ROOT)\lib\hexagon-v73\unsigned\* $(OutDir)
+      <Command>powershell cp $(QNN_SDK_ROOT)\lib\hexagon-$(HEXAGON_VERSION)\unsigned\* $(OutDir)
 powershell cp $(QNN_SDK_ROOT)\lib\aarch64-windows-msvc\* $(OutDir)</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
@@ -113,8 +118,15 @@ powershell cp $(QNN_SDK_ROOT)\lib\aarch64-windows-msvc\* $(OutDir)</Command>
   </ItemGroup>
   <ItemGroup>
     <None Include="README.md" />
+    <None Include="versions.props" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
+  <!-- Fetch the nlohmann/json single-header used by PromptHandler before compiling,
+       if not already present. -->
+  <Target Name="FetchJsonHeader" BeforeTargets="ClCompile" Condition="!Exists('$(ProjectDir)json.hpp')">
+    <Message Importance="high" Text="Downloading nlohmann/json single-header to $(ProjectDir)json.hpp" />
+    <Exec Command="powershell -NoProfile -ExecutionPolicy Bypass -Command &quot;Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/nlohmann/json/55f93686c01528224f448c19128836e7df245f72/single_include/nlohmann/json.hpp' -OutFile '$(ProjectDir)json.hpp'&quot;" />
+  </Target>
 </Project>

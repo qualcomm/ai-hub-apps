@@ -2,7 +2,7 @@
 # Copyright (c) 2025 Qualcomm Technologies, Inc. and/or its subsidiaries.
 # SPDX-License-Identifier: BSD-3-Clause
 # ---------------------------------------------------------------------
-"""Build Android APKs for a fetched app using Docker."""
+"""Build Android APKs for a fetched app, either via Docker or natively."""
 
 from __future__ import annotations
 
@@ -10,21 +10,11 @@ import subprocess
 from pathlib import Path
 
 
-def build_app(app_dir: Path) -> None:
-    """Build Android debug and test APKs using Docker.
+def _build_docker(app_dir: Path) -> None:
+    """Build the debug + test APKs inside a Docker container, then copy outputs back.
 
-    Expects a ``Dockerfile`` to already exist in ``app_dir`` (injected by
-    ``bundle_app()`` from the app's ``base_docker`` field). Builds a Docker
-    image with BUILD_TYPE=build (which runs install_build.sh to install the
-    Android SDK), runs gradle assembleDebug assembleAndroidTest inside the
-    container, then copies build/outputs/ back to app_dir on the host via
-    docker cp.
-
-    Parameters
-    ----------
-    app_dir:
-        Root directory of the fetched Android app (must contain install_build.sh,
-        scripts/ from the bundle, and a Dockerfile).
+    Builds a Docker image with BUILD_TYPE=build (which runs install_build.sh), runs gradle assembleDebug assembleAndroidTest inside
+    the container, then copies build/outputs/ back to app_dir via docker cp.
     """
     if not (app_dir / "Dockerfile").is_file():
         raise FileNotFoundError(
@@ -84,3 +74,24 @@ def build_app(app_dir: Path) -> None:
     finally:
         subprocess.run(["docker", "rm", "-f", container_name], check=False)
         subprocess.run(["docker", "rmi", image_tag], check=False)
+
+
+def _build_native(app_dir: Path) -> None:
+    raise NotImplementedError("Native building of android apps is not supported")
+
+
+def build_app(app_dir: Path, use_docker: bool = True) -> None:
+    """Build Android debug and test APKs.
+
+    Parameters
+    ----------
+    app_dir:
+        Root directory of the fetched Android app (must contain install_build.sh,
+        scripts/ from the bundle, and — for Docker builds — a Dockerfile).
+    use_docker:
+        If True, build inside a Docker container; otherwise build natively on the host.
+    """
+    if use_docker:
+        _build_docker(app_dir)
+    else:
+        _build_native(app_dir)

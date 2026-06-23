@@ -13,7 +13,7 @@ from qai_hub_apps_test.builders.windows.build import (
 from qai_hub_apps_test.configs.info_yaml import AppLanguage, AppType, QAIHAAppInfo
 
 
-def build_app(app_info: QAIHAAppInfo, app_dir: Path) -> None:
+def build_app(app_info: QAIHAAppInfo, app_dir: Path, use_docker: bool = True) -> None:
     """Build the fetched app. No-op for app types that need no build step.
 
     Parameters
@@ -22,16 +22,19 @@ def build_app(app_info: QAIHAAppInfo, app_dir: Path) -> None:
         App metadata.
     app_dir:
         Root directory of the fetched app.
+    use_docker:
+        If True, build inside a Docker container; otherwise build natively on the
+        host.
     """
     if app_info.app_type == AppType.ANDROID:
-        _build_android_app(app_dir)
+        _build_android_app(app_dir, use_docker=use_docker)
     elif app_info.app_type == AppType.UBUNTU:
         pass  # Ubuntu Python apps: nothing to build
     elif app_info.app_type == AppType.WINDOWS:
         if AppLanguage.PYTHON in app_info.languages:
             pass  # Windows Python apps: nothing to build
         elif AppLanguage.CPP in app_info.languages:
-            _build_windows_cpp_app(app_dir)
+            _build_windows_cpp_app(app_dir, use_docker=use_docker)
         else:
             raise NotImplementedError(
                 f"Build not implemented for Windows app with languages={[l.value for l in app_info.languages]}"

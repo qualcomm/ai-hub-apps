@@ -49,7 +49,8 @@ void GenieCallBack(const char* response_back, const GenieDialog_SentenceCode_t s
 
 } // namespace
 
-ChatApp::ChatApp(const std::string& config)
+ChatApp::ChatApp(const std::string& config, const std::string& base_dir)
+    : m_base_dir(base_dir)
 {
     // Create Genie config
     if (GENIE_STATUS_SUCCESS != GenieDialogConfig_createFromJson(config.c_str(), &m_config_handle))
@@ -85,7 +86,7 @@ ChatApp::~ChatApp()
 
 void ChatApp::ChatLoop()
 {
-    AppUtils::PromptHandler prompt_handler;
+    AppUtils::PromptHandler prompt_handler(m_base_dir);
 
     // Initiate Chat with infinite loop.
     // User to provide `exit` as a prompt to exit.

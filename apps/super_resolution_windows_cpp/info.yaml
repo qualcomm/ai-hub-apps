@@ -4,7 +4,7 @@ license_url: https://github.com/qualcomm/ai-hub-apps/blob/main/LICENSE
 license_type: bsd-3-clause
 models: ['esrgan', 'quicksrnetlarge', 'quicksrnetmedium', 'quicksrnetsmall', 'real_esrgan_general_x4v3', 'real_esrgan_x4plus', 'sesr_m5', 'xlsr']
 model_file_paths:
-  - '/assets/models/super_resolution.onnx'
+  - 'assets/models/super_resolution.onnx'
 runtime: onnx
 status: published
 domain: 'Computer Vision'
@@ -13,6 +13,7 @@ description: 'A sample CLI app for Windows integrating the XLSR model via ONNX R
 precisions: [float]
 app_type: 'windows'
 static_img_filename: 'app_screen.png'
+base_docker: windows.dockerfile
 app_repo_url: "https://github.com/qualcomm/ai-hub-apps/tree/main/apps/super_resolution_windows_cpp"
 os:
   name: Windows
@@ -20,3 +21,4 @@ os:
 languages: ['C++']
 use_case: 'Super Resolution'
 related_models: [xlsr]
+supported_devices: ["Snapdragon X Elite CRD"]

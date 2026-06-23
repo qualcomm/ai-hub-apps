@@ -38,13 +38,19 @@ function Install-Qairt {
 
     Write-Host "::step::Downloading QAIRT SDK $QAIRT_SDK_FULL_VERSION"
     Write-Host "   URL: $url"
-    curl.exe -L -o $tmpZip $url
+    curl.exe -fL -o $tmpZip $url
+    if ($LASTEXITCODE -ne 0) {
+        throw "QAIRT SDK download failed (curl exit $LASTEXITCODE): $url"
+    }
     Write-Host "::done::download"
 
     Write-Host "::step::Extracting QAIRT SDK"
     $tmpDir = Join-Path $env:TEMP "qairt_extract_$([System.IO.Path]::GetRandomFileName())"
     New-Item -ItemType Directory -Path $tmpDir -Force | Out-Null
     tar -xf $tmpZip -C $tmpDir
+    if ($LASTEXITCODE -ne 0) {
+        throw "QAIRT SDK extraction failed (tar exit $LASTEXITCODE): $tmpZip"
+    }
     Remove-Item $tmpZip
 
     $extracted = Join-Path $tmpDir "qairt\$QAIRT_SDK_FULL_VERSION"

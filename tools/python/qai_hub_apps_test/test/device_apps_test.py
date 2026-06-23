@@ -141,6 +141,7 @@ def test_2_build_app(
     fetched_dirs: dict,
     built_dirs: dict,
     test_stage: str,
+    use_docker: bool,
 ) -> None:
     """Build the app from the fetched source."""
     app_info, model_id = app_to_test
@@ -154,7 +155,7 @@ def test_2_build_app(
 
     assert app_dir is not None
     try:
-        build_app(app_info, app_dir)
+        build_app(app_info, app_dir, use_docker=use_docker)
     except NotImplementedError as e:
         pytest.skip(str(e))
 

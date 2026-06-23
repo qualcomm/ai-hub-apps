@@ -25,6 +25,8 @@ on:
         required: false
       DOCKER_QC_REGISTRY_TOKEN:
         required: false
+      HUB_USER_TOKEN_PROD:
+        required: false
     outputs:
       result_payload:
         description: "JSON with summary counts and per-app results"
@@ -109,6 +111,7 @@ jobs:
     uses: ./.github/workflows/test-app.yaml
     with:
       app: ${{ matrix.app }}
+      app_type: ubuntu
       model_selection: ${{ inputs.model_selection }}
       test_stage: ${{ inputs.test_stage }}
     secrets:
@@ -128,6 +131,7 @@ jobs:
     uses: ./.github/workflows/test-app.yaml
     with:
       app: ${{ matrix.app }}
+      app_type: android
       model_selection: ${{ inputs.model_selection }}
       test_stage: ${{ inputs.test_stage }}
     secrets:
@@ -147,11 +151,13 @@ jobs:
     uses: ./.github/workflows/test-app.yaml
     with:
       app: ${{ matrix.app }}
+      app_type: windows
       model_selection: ${{ inputs.model_selection }}
       test_stage: ${{ inputs.test_stage }}
     secrets:
       QDC_API_TOKEN: ${{ secrets.QDC_API_TOKEN }}
       DOCKER_QC_REGISTRY_TOKEN: ${{ secrets.DOCKER_QC_REGISTRY_TOKEN }}
+      HUB_USER_TOKEN_PROD: ${{ secrets.HUB_USER_TOKEN_PROD }}
 
 
   report:

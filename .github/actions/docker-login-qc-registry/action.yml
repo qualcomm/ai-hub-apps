@@ -10,6 +10,16 @@ inputs:
 runs:
   using: composite
   steps:
-    - name: Log in to Qualcomm Docker registry
+    - name: Log in to Qualcomm Docker registry (Linux/macOS)
+      if: runner.os != 'Windows'
       shell: bash
-      run: echo "${{ inputs.token }}" | docker login -u='$app' --password-stdin docker-registry.qualcomm.com
+      env:
+        DOCKER_QC_REGISTRY_TOKEN: ${{ inputs.token }}
+      run: echo "$DOCKER_QC_REGISTRY_TOKEN" | docker login -u='$app' --password-stdin docker-registry.qualcomm.com
+
+    - name: Log in to Qualcomm Docker registry (Windows)
+      if: runner.os == 'Windows'
+      shell: powershell
+      env:
+        DOCKER_QC_REGISTRY_TOKEN: ${{ inputs.token }}
+      run: $env:DOCKER_QC_REGISTRY_TOKEN | docker login -u '$app' --password-stdin docker-registry.qualcomm.com

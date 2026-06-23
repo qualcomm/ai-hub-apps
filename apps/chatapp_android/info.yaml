@@ -3,11 +3,6 @@ id: chatapp_android
 license_url: https://github.com/qualcomm/ai-hub-apps/blob/main/LICENSE
 license_type: bsd-3-clause
 models: ['llama_v3_2_1b_instruct']
-private_model_s3_paths:
-  llama_v3_2_3b_instruct:
-    w4:
-      # CI Runs out of disk space with a full model, so we use a 'dummy model' copy. The dummy has context binary files that are empty.
-      qualcomm-snapdragon-8gen3: 'qai-hub-models/release-assets/v0.41.0/Llama-v3.2-1B-Instruct/precompiled/qualcomm-snapdragon-8gen3/Llama-v3.2-1B-Instruct_w4_DUMMY_MODELS.genie.zip'
 model_file_dir: 'src/main/assets/models/llm'
 runtime: genie
 status: published

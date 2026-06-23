@@ -15,6 +15,9 @@ from qai_hub_apps_test.bundlers.android.bundle import (
 from qai_hub_apps_test.bundlers.python.bundle import (
     bundle_source as _bundle_python_source,
 )
+from qai_hub_apps_test.bundlers.windows.bundle import (
+    bundle_source as _bundle_windows_cpp_source,
+)
 from qai_hub_apps_test.configs.info_yaml import AppLanguage, AppType, QAIHAAppInfo
 from qai_hub_apps_test.utils.paths import DOCKER_ROOT, find_app_dir
 
@@ -70,6 +73,11 @@ def bundle_app(
             _bundle_android_source(app_dir, tmp_dir, shared_scripts_root)
         elif AppLanguage.PYTHON in app_info.languages:
             _bundle_python_source(app_dir, tmp_dir, sdk_parent, shared_scripts_root)
+        elif (
+            app_info.app_type == AppType.WINDOWS
+            and AppLanguage.CPP in app_info.languages
+        ):
+            _bundle_windows_cpp_source(app_dir, tmp_dir, shared_scripts_root)
         else:
             raise NotImplementedError(
                 f"App '{app_info.id}' (type={app_info.app_type.value}, "

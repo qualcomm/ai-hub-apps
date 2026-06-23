@@ -66,10 +66,10 @@ __NOTE: Some of these apps will run without NPU acceleration on non-Snapdragon®
 
 | Task | Language | Inference API | Special Tags |
 | -- | -- | -- | -- |
-| [ChatApp](https://github.com/qualcomm/ai-hub-apps/tree/main/apps/chatapp_windows_cpp)* | C++ | Genie SDK | LLM, GenAI |
-| [Image Classification](https://github.com/qualcomm/ai-hub-apps/tree/main/apps/image_classification_windows_cpp)* | C++ | ONNX | OpenCV |
+| [ChatApp](https://github.com/qualcomm/ai-hub-apps/tree/main/apps/chatapp_windows_cpp) | C++ | Genie SDK | LLM, GenAI |
+| [Image Classification](https://github.com/qualcomm/ai-hub-apps/tree/main/apps/image_classification_windows_cpp) | C++ | ONNX | OpenCV |
 | [Object Detection](https://github.com/qualcomm/ai-hub-apps/tree/main/apps/object_detection_windows_cpp)* | C++ | ONNX | OpenCV |
-| [Super Resolution](https://github.com/qualcomm/ai-hub-apps/tree/main/apps/super_resolution_windows_cpp)* | C++ | ONNX | OpenCV |
+| [Super Resolution](https://github.com/qualcomm/ai-hub-apps/tree/main/apps/super_resolution_windows_cpp) | C++ | ONNX | OpenCV |
 | [Whisper Speech-to-Text](apps/whisper_windows_py) | Python | ONNX |
 | [Stable Diffusion Image Generation](apps/stable_diffusion_windows_py) | Python | ONNX |
 <!-- /WINDOWS_APPS -->

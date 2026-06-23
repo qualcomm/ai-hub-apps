@@ -42,7 +42,4 @@
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
-  <ItemGroup>
-    <CopyFileToFolders Include="synset.txt" />
-  </ItemGroup>
 </Project>

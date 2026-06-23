@@ -13,7 +13,7 @@
 #include <onnxruntime_cxx_api.h>
 
 const size_t output_data_size = 1000;
-constexpr const char* label_file = "synset.txt";
+constexpr const char* label_file = "labels.txt";
 
 namespace App
 {
