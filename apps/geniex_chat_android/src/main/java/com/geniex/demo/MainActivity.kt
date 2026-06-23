@@ -67,7 +67,7 @@ import com.geniex.sdk.bean.ModelPullInput
 import com.geniex.sdk.bean.VlmChatMessage
 import com.geniex.sdk.bean.VlmContent
 import com.geniex.sdk.bean.VlmCreateInput
-import com.geniex.sdk.bean.DeviceIdValue
+import com.geniex.sdk.bean.ComputeUnitValue
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -361,9 +361,9 @@ Note: You must use the campaign_investigation function whenever a customer asks 
                 onLoadModelFailed("model paths unavailable — pull it first")
                 return@launch
             }
-            // Manifest-written plugin_id wins when present; fall back to
+            // Manifest-written runtime_id wins when present; fall back to
             // the user's UI selection for GGUF models that skip the manifest.
-            val pluginId = paths.plugin_id.ifEmpty { modelDataPluginId }
+            val pluginId = paths.runtime_id.ifEmpty { modelDataPluginId }
             val resolvedDeviceId = deviceId
             when (selectModelData.type) {
                 "chat", "llm" -> {
@@ -386,8 +386,8 @@ Note: You must use the campaign_investigation function whenever a customer asks 
                             model_path = paths.model_path,
                             tokenizer_path = paths.tokenizer_path,
                             config = conf,
-                            plugin_id = pluginId,
-                            device_id = resolvedDeviceId ?: DeviceIdValue.NPU.value,
+                            runtime_id = pluginId,
+                            compute_unit = resolvedDeviceId ?: ComputeUnitValue.NPU.value,
                         )
                     ).build().onSuccess { wrapper ->
                         isLoadLlmModel = true
@@ -420,8 +420,8 @@ Note: You must use the campaign_investigation function whenever a customer asks 
                                 model_path = paths.model_path,
                                 mmproj_path = paths.mmproj_path,
                                 config = config,
-                                plugin_id = pluginId,
-                                device_id = resolvedDeviceId ?: "HTP0",
+                                runtime_id = pluginId,
+                                compute_unit = resolvedDeviceId ?: "HTP0",
                             )
                         )
                         .build().onSuccess {
@@ -473,7 +473,7 @@ Note: You must use the campaign_investigation function whenever a customer asks 
         }
         val input = ModelPullInput(
             model_name = selectModelData.modelName,
-            quant = selectModelData.quant,
+            precision = selectModelData.quant,
             hub = hub,
             chipset = selectModelData.chipset,
             display_name = selectModelData.aiHubDisplayName,
@@ -651,7 +651,7 @@ space ::= | " " | "\n" | "\r" | "\t"
             modelScope.launch {
                 try {
                 val selectModelData = modelList.first { it.id == selectModelId }
-                val isNpu = ModelManagerWrapper.getPaths(selectModelData.modelName)?.plugin_id == "qairt"
+                val isNpu = ModelManagerWrapper.getPaths(selectModelData.modelName)?.runtime_id == "qairt"
                 Log.d(TAG, "isNpu: $isNpu")
 
                 val sb = StringBuilder()
@@ -853,10 +853,10 @@ space ::= | " " | "\n" | "\r" | "\t"
                                 return
                             }
                         }
-                        ggufLlmDeviceId = DeviceIdValue.GPU.value
+                        ggufLlmDeviceId = ComputeUnitValue.GPU.value
                     } else if (checkedId == R.id.rb_npu) {
                         nGpuLayers = 999
-                        ggufLlmDeviceId = DeviceIdValue.NPU.value
+                        ggufLlmDeviceId = ComputeUnitValue.NPU.value
                     }
                     when (which) {
                         DialogInterface.BUTTON_POSITIVE -> {

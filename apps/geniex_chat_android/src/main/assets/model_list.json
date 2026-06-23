@@ -18,15 +18,6 @@
     "runtime": "llama_cpp"
   },
   {
-    "id": "Llama-3.2-3B-Instruct-GGUF",
-    "displayName": "Llama-3.2-3B-Instruct (GGUF)",
-    "modelName": "unsloth/Llama-3.2-3B-Instruct-GGUF",
-    "quant": "Q4_K_M",
-    "hub": "HUGGINGFACE",
-    "type": "chat",
-    "runtime": "llama_cpp"
-  },
-  {
     "id": "Ministral-3-3B-Instruct-2512-GGUF",
     "displayName": "Ministral-3-3B-Instruct-2512 (GGUF)",
     "modelName": "unsloth/Ministral-3-3B-Instruct-2512-GGUF",
