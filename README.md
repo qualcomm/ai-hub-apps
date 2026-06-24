@@ -91,6 +91,7 @@ _\* Source available on GitHub; not included in the CLI release._
 | Tutorial | Topic |
 | --- | --- |
 | [LLM on-device deployment](https://github.com/qualcomm/ai-hub-apps/tree/main/tutorials/llm_on_genie) | Exporting and deploying Large Language Model (LLM) using Genie SDK |
+| [LLM on-device deployment with GenieX](https://github.com/qualcomm/ai-hub-apps/tree/main/tutorials/geniex) | Running and exporting Large Language Models (LLMs) with the GenieX runtime |
 <!-- /TUTORIALS -->
 
 ## LICENSE
