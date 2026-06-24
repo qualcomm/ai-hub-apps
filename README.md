@@ -58,7 +58,7 @@ __NOTE: Some of these apps will run without NPU acceleration on non-Snapdragon®
 | [Object Detection](https://github.com/qualcomm/ai-hub-apps/tree/main/apps/object_detection_android)* | Java | TensorFlow Lite | OpenCV, Live Camera Feed |
 | [Semantic Segmentation](apps/semantic_segmentation_android) |  Java | TensorFlow Lite | OpenCV, Live Camera Feed |
 | [Super Resolution](apps/super_resolution_android) | Java | TensorFlow Lite |
-| [WhisperKit (Speech to Text)](https://github.com/argmaxinc/WhisperKitAndroid) | Various | TensorFlow Lite |
+| [WhisperKit (Speech to Text)](https://github.com/argmaxinc/WhisperKitAndroid)* | Various | TensorFlow Lite |
 <!-- /ANDROID_APPS -->
 
 <!-- WINDOWS_APPS -->
