@@ -2,7 +2,7 @@
 // Copyright (c) 2026 Qualcomm Technologies, Inc. and/or its subsidiaries.
 // SPDX-License-Identifier: BSD-3-Clause
 // ---------------------------------------------------------------------
-package com.geniex.demo.utils;
+package com.geniex.demo.utils
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -76,7 +76,7 @@ class ImgUtil {
                 Bitmap.createScaledBitmap(bmp, targetW, targetH, true) else bmp
             if (resized !== bmp) bmp.recycle()
 
-            // 6) Re-compress and save to outFile (this step actually reduces file size)
+            // Re-compress and save to outFile (this step actually reduces file size)
             FileOutputStream(outFile).use { fos ->
                 resized.compress(format, quality, fos)
             }

@@ -280,15 +280,6 @@
                 android:background="@drawable/btn_rounded_border"
                 android:text="retry"
                 android:textAllCaps="false" />
-
-            <Button
-                android:id="@+id/btn_dismiss_download"
-                android:layout_width="wrap_content"
-                android:layout_height="30dp"
-                android:layout_marginLeft="20dp"
-                android:background="@drawable/btn_rounded_border"
-                android:text="dismiss"
-                android:textAllCaps="false" />
         </LinearLayout>
     </LinearLayout>
 

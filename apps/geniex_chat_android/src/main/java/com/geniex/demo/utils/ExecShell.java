@@ -31,8 +31,7 @@ public class ExecShell {
         try {
             localProcess = Runtime.getRuntime().exec(commands);
         } catch (Exception e) {
-            Log.e("nfl","Command line execution failed");
-            e.printStackTrace();
+            Log.e(LOG_TAG, "Command line execution failed", e);
             return null;
         }
         BufferedWriter out = new BufferedWriter(new OutputStreamWriter(localProcess.getOutputStream()));
@@ -42,8 +41,7 @@ public class ExecShell {
                 fullResponse.add(line);
             }
         } catch (Exception e) {
-            Log.e("nfl", "Command line result processing failed");
-            e.printStackTrace();
+            Log.e(LOG_TAG, "Command line result processing failed", e);
         }
         return fullResponse;
     }

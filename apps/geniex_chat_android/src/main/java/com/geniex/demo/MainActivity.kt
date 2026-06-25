@@ -19,6 +19,7 @@ import android.graphics.RectF
 import android.net.Uri
 import android.os.Bundle
 import android.os.Environment
+import android.os.PowerManager
 import android.provider.MediaStore
 import android.util.Log
 import android.view.LayoutInflater
@@ -76,6 +77,7 @@ import kotlinx.serialization.json.Json
 import java.io.File
 import java.io.FileNotFoundException
 import java.io.FileOutputStream
+import java.util.Locale
 
 class MainActivity : FragmentActivity() {
 
@@ -108,13 +110,10 @@ class MainActivity : FragmentActivity() {
     private val modelScope = CoroutineScope(Dispatchers.IO)
 
     private val chatList = arrayListOf<ChatMessage>()
-    private lateinit var llmSystemPrompt: ChatMessage
     private val vlmChatList = arrayListOf<VlmChatMessage>()
-    private lateinit var vlmSystemPrompty: VlmChatMessage
     private lateinit var modelList: List<ModelData>
     private var selectModelId = ""
 
-    // ADD: Track which model type is loaded
     private var isLoadLlmModel = false
     private var isLoadVlmModel = false
 
@@ -190,20 +189,17 @@ class MainActivity : FragmentActivity() {
         findViewById<Button>(R.id.btn_test).setOnClickListener {
             Thread {
                 val exeFile = File(filesDir, "geniex_test_llm")
-                val chmodProcess = Runtime.getRuntime().exec("chmod 755 " + exeFile.absolutePath);
+                val chmodProcess = Runtime.getRuntime().exec("chmod 755 " + exeFile.absolutePath)
                 chmodProcess.waitFor()
-                Log.d("nfl", "exeFile exe? ${exeFile.canExecute()}")
-                Log.d("nfl", "Exe Thread:${Thread.currentThread().name}")
+                Log.d(TAG, "exeFile exe? ${exeFile.canExecute()}")
+                Log.d(TAG, "Exe Thread:${Thread.currentThread().name}")
                 ExecShell().executeCommand(
                     arrayOf(
-                        //                        exeFile.absolutePath,
-//                        "--test-suite=\"npu\"", "--success "
                         "cat",
-                        "/sys/devices/soc0/sku"
-//                        "/data/local/tmp/test_cat.txt"
-                    )
+                        "/sys/devices/soc0/sku",
+                    ),
                 ).forEach {
-                    Log.d("nfl", "cmd:$it")
+                    Log.d(TAG, "cmd:$it")
                 }
             }.start()
         }
@@ -219,7 +215,7 @@ class MainActivity : FragmentActivity() {
             val json = Json { ignoreUnknownKeys = true }
             modelList = json.decodeFromString<List<ModelData>>(baseJson)
         } catch (e: Exception) {
-            Log.e("nfl", "parseModelList: $e")
+            Log.e(TAG, "parseModelList: $e")
         }
     }
 
@@ -229,44 +225,13 @@ class MainActivity : FragmentActivity() {
      */
     private fun initData() {
         parseModelList()
-        //
         initGenieXSdk()
-        //
-        val sysPrompt = """\
-You are Nays Campaign Manager, an AI assistant responsible for managing customer campaigns and investigating campaign-related issues.
-
-When a customer inquiry comes in, you need to:
-1. Analyze the customer's request to understand their campaign needs
-2. Check if it's related to campaign limits or issues
-3. Use the campaign_investigation function when needed to check campaign status
-4. Provide appropriate responses based on the investigation results
-
-Your responsibilities include:
-- Investigating campaign performance and limits
-- Determining if customers have reached their campaign limits
-- Providing helpful messages when limits are reached
-- Directing customers to support when limits haven't been reached
-- Ensuring smooth campaign operations for all customers
-
-When you receive a query about campaigns, you should:
-1. First understand what the customer is asking about
-2. If it's campaign-related, use the campaign_investigation tool to check the status
-3. Based on the tool's response, provide appropriate guidance
-
-Always be professional, helpful, and focused on resolving campaign-related issues efficiently.
-
-Note: You must use the campaign_investigation function whenever a customer asks about campaign limits, issues, or status.
-"""
-        // It works better with Chinese prompt words.
-        val sysPrompt2 = "Must reply in markdown format"
-//        addSystemPrompt(sysPrompt2)
     }
 
     /**
      * Step 1. initGenieXSdk environment
      */
     private fun initGenieXSdk() {
-        // Initialize GenieXSdk with context
         GenieXSdk.getInstance().init(this, object : GenieXSdk.InitCallback {
             override fun onSuccess() {
             }
@@ -276,21 +241,6 @@ Note: You must use the campaign_investigation function whenever a customer asks 
             }
         })
     }
-
-    /**
-     * Step 2. add system prompt, such as : output markdown style, contains emoji etc.(Options)
-     */
-    private fun addSystemPrompt(sysPrompt: String) {
-        llmSystemPrompt = ChatMessage("system", sysPrompt)
-        chatList.add(llmSystemPrompt)
-        vlmSystemPrompty =
-            VlmChatMessage(
-                "system",
-                listOf(VlmContent("text", sysPrompt))
-            )
-        vlmChatList.add(vlmSystemPrompty)
-    }
-
 
     private fun onLoadModelSuccess(tip: String) {
         runOnUiThread {
@@ -302,7 +252,6 @@ Note: You must use the campaign_investigation function whenever a customer asks 
             if (isLoadVlmModel) {
                 btnAddImage.visibility = View.VISIBLE
             }
-            //
             btnUnloadModel.visibility = View.VISIBLE
             llLoading.visibility = View.INVISIBLE
             btnStop.visibility = View.VISIBLE
@@ -479,43 +428,50 @@ Note: You must use the campaign_investigation function whenever a customer asks 
             display_name = selectModelData.aiHubDisplayName,
         )
 
+        val wakeLock = (getSystemService(Context.POWER_SERVICE) as PowerManager)
+            .newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "geniex:model_download")
+        wakeLock.acquire()
         downloadJob = modelScope.launch {
-            // Short-circuit if already cached — the manager filters .inflight/
-            // models out of list(), so this only matches a complete pull.
-            if (isModelDownloaded(selectModelData)) {
-                runOnUiThread {
-                    llDownloading.visibility = View.GONE
-                    Toast.makeText(this@MainActivity, "model already downloaded", Toast.LENGTH_SHORT).show()
+            try {
+                // Short-circuit if already cached — the manager filters .inflight/
+                // models out of list(), so this only matches a complete pull.
+                if (isModelDownloaded(selectModelData)) {
+                    runOnUiThread {
+                        llDownloading.visibility = View.GONE
+                        Toast.makeText(this@MainActivity, "model already downloaded", Toast.LENGTH_SHORT).show()
+                    }
+                    return@launch
                 }
-                return@launch
-            }
 
-            ModelManagerWrapper.pullFlow(input).collect { event ->
-                when (event) {
-                    is ModelManagerWrapper.PullEvent.Progress -> {
-                        val total = event.files.sumOf { if (it.total_bytes > 0) it.total_bytes else 0L }
-                        val done = event.files.sumOf { it.downloaded_bytes }
-                        val percent = if (total > 0) ((done * 100) / total).toInt() else 0
-                        runOnUiThread { tvDownloadProgress.text = "$percent%" }
-                    }
-                    is ModelManagerWrapper.PullEvent.Completed -> {
-                        runOnUiThread {
-                            llDownloading.visibility = View.GONE
-                            Toast.makeText(this@MainActivity, "${selectModelData.displayName} downloaded", Toast.LENGTH_SHORT).show()
+                ModelManagerWrapper.pullFlow(input).collect { event ->
+                    when (event) {
+                        is ModelManagerWrapper.PullEvent.Progress -> {
+                            val total = event.files.sumOf { if (it.total_bytes > 0) it.total_bytes else 0L }
+                            val done = event.files.sumOf { it.downloaded_bytes }
+                            val percent = if (total > 0) ((done * 100) / total).toInt() else 0
+                            runOnUiThread { tvDownloadProgress.text = "$percent%" }
                         }
-                    }
-                    is ModelManagerWrapper.PullEvent.Error -> {
-                        Log.e(TAG, "pull failed rc=${event.code}: ${event.message}")
-                        runOnUiThread {
-                            llDownloading.visibility = View.GONE
-                            Toast.makeText(
-                                this@MainActivity,
-                                "Download failed. Please check your network connection and try again.",
-                                Toast.LENGTH_LONG
-                            ).show()
+                        is ModelManagerWrapper.PullEvent.Completed -> {
+                            runOnUiThread {
+                                llDownloading.visibility = View.GONE
+                                Toast.makeText(this@MainActivity, "${selectModelData.displayName} downloaded", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                        is ModelManagerWrapper.PullEvent.Error -> {
+                            Log.e(TAG, "pull failed rc=${event.code}: ${event.message}")
+                            runOnUiThread {
+                                llDownloading.visibility = View.GONE
+                                Toast.makeText(
+                                    this@MainActivity,
+                                    "Download failed. Please check your network connection and try again.",
+                                    Toast.LENGTH_LONG
+                                ).show()
+                            }
                         }
                     }
                 }
+            } finally {
+                if (wakeLock.isHeld) wakeLock.release()
             }
         }
     }
@@ -539,15 +495,12 @@ Note: You must use the campaign_investigation function whenever a customer asks 
             downloadJob?.cancel()
             downloadJob = null
             tvDownloadProgress.text = "0%"
-            binding.btnDismissDownload.performClick()
+            binding.llDownloading.visibility = View.GONE
         }
         binding.btnRetryDownload.setOnClickListener {
             downloadJob?.cancel()
             downloadJob = null
             downloadingModelData?.let { downloadModel(it) }
-        }
-        binding.btnDismissDownload.setOnClickListener {
-            binding.llDownloading.visibility = View.GONE
         }
         btnDownload.setOnClickListener {
             if (downloadJob?.isActive == true) {
@@ -566,10 +519,6 @@ Note: You must use the campaign_investigation function whenever a customer asks 
          */
         btnLoadModel.setOnClickListener {
             val selectModelData = modelList.first { it.id == selectModelId }
-            if (selectModelData == null) {
-                Toast.makeText(this@MainActivity, "model not selected", Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
             Log.d(TAG, "current select model data:$selectModelData")
             if (hasLoadedModel()) {
                 Toast.makeText(this@MainActivity, "please unload first", Toast.LENGTH_SHORT).show()
@@ -625,20 +574,10 @@ Note: You must use the campaign_investigation function whenever a customer asks 
 
             val supportFunctionCall = false
             var tools: String? = null
-            var grammarString: String? = null
             if (supportFunctionCall) {
                 // if this model support 'function call'
                 tools =
                     "[{\"type\":\"function\",\"function\":{\"name\": \"campaign_investigation\",\"description\": \"Check campaign limits and determine appropriate action. If customer has reached limit, return a message (hardcoded or generated by model). If limit not reached, contact support.\",\"parameters\": {\"type\": \"object\", \"properties\":{\"campaign_name\":{\"type\": \"string\",\"description\": \"The name of the campaign to investigate\"}}, \"required\":[\"campaign_name\"]}}}]"
-                grammarString = """
-root ::= "<tool_call>" space object "</tool_call>" space
-object ::= "{" space campaign-name-kv "}" space
-campaign-name-kv ::= "\"campaign_name\"" space ":" space string
-string ::= "\"" char* "\"" space
-char ::= [^"\\\x7F\x00-\x1F] | [\\] (["\\bfnrt] | "u" hex hex hex hex)
-hex ::= [0-9a-fA-F]
-space ::= | " " | "\n" | "\r" | "\t"
-"""
             }
 
             if (!hasLoadedModel()) {
@@ -662,13 +601,6 @@ space ::= | " " | "\n" | "\r" | "\t"
                     contents.add(VlmContent("text", inputString))
                     clearImages()
                     val sendMsg = VlmChatMessage(role = "user", contents = contents)
-                    // VlmContentTransfer(
-                    //     this@MainActivity, VlmContent(
-                    //         "image", inputString
-                    //     )
-                    // ).forUrl()
-
-                    // vlmChatList.clear()
                     vlmChatList.add(sendMsg)
 
                     Log.d(TAG, "before apply chat template:$vlmChatList")
@@ -676,7 +608,7 @@ space ::= | " " | "\n" | "\r" | "\t"
                         .onSuccess { result ->
                             Log.d(TAG, "vlm chat template:${result.formattedText}")
                             val baseConfig =
-                                GenerationConfigSample().toGenerationConfig(grammarString)
+                                GenerationConfigSample().toGenerationConfig()
                             // Only inject the current turn's media: SDK tokenizes
                             // incrementally, so re-passing history bitmaps breaks
                             // mtmd_tokenize (markers/bitmaps mismatch).
@@ -709,7 +641,7 @@ space ::= | " " | "\n" | "\r" | "\t"
                         Log.d(TAG, "chat template:${templateOutput.formattedText}")
                         llmWrapper.generateStreamFlow(
                             templateOutput.formattedText,
-                            GenerationConfigSample().toGenerationConfig(grammarString)
+                            GenerationConfigSample().toGenerationConfig()
                         ).collect { streamResult ->
                             handleResult(sb, streamResult)
                         }
@@ -768,13 +700,11 @@ space ::= | " " | "\n" | "\r" | "\t"
                     vlmWrapper.stopStream()
                     vlmWrapper.destroy()
                     vlmChatList.clear()
-                    // TODO:
                     handleUnloadResult(0)
                 } else if (isLoadLlmModel) {
                     llmWrapper.stopStream()
                     llmWrapper.destroy()
                     chatList.clear()
-                    // TODO:
                     handleUnloadResult(0)
                 } else {
                     handleUnloadResult(0)
@@ -920,18 +850,18 @@ space ::= | " " | "\n" | "\r" | "\t"
                 }
 
                 runOnUiThread {
-                    var content = sb.toString()
+                    val content = sb.toString()
                     val size = messages.size
                     messages[size - 1] = Message(content, MessageType.ASSISTANT)
 
-                    val ttft = String.format(null, "%.2f", streamResult.profile.ttftMs)
+                    val ttft = String.format(Locale.US, "%.2f", streamResult.profile.ttftMs)
                     val promptTokens = streamResult.profile.promptTokens
                     val prefillSpeed =
-                        String.format(null, "%.2f", streamResult.profile.prefillSpeed)
+                        String.format(Locale.US, "%.2f", streamResult.profile.prefillSpeed)
 
                     val generatedTokens = streamResult.profile.generatedTokens
                     val decodingSpeed =
-                        String.format(null, "%.2f", streamResult.profile.decodingSpeed)
+                        String.format(Locale.US, "%.2f", streamResult.profile.decodingSpeed)
 
                     val profileData =
                         "TTFT: $ttft ms; Prompt Tokens: $promptTokens; \nPrefilling Speed: $prefillSpeed tok/s\nGenerated Tokens: $generatedTokens; Decoding Speed: $decodingSpeed tok/s"
@@ -1006,14 +936,14 @@ space ::= | " " | "\n" | "\r" | "\t"
                 val file = File(filesDir, "chat_${System.currentTimeMillis()}.jpg")
                 val success = saveBitmapToFile(it, file)
                 if (success) {
-                    Log.d(TAG, "Save success：${file.absolutePath}")
+                    Log.d(TAG, "Save success: ${file.absolutePath}")
                     savedImageFiles.add(file)
                     refreshTopScrollContainer()
                 } else {
                     Toast.makeText(this, "Save Image failed", Toast.LENGTH_SHORT).show()
                 }
             } catch (e: FileNotFoundException) {
-                e.printStackTrace()
+                Log.e(TAG, "save image failed", e)
             }
         }
     }
@@ -1045,7 +975,7 @@ space ::= | " " | "\n" | "\r" | "\t"
             )
             true
         } catch (e: Exception) {
-            e.printStackTrace()
+            Log.e(TAG, "saveBitmapToFile failed", e)
             false
         }
     }
@@ -1204,6 +1134,6 @@ space ::= | " " | "\n" | "\r" | "\t"
     }
 
     companion object {
-        private const val TAG = "MainActivity"
+        private const val TAG = "GenieXDemo"
     }
 }

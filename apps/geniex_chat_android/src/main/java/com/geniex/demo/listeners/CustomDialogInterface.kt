@@ -12,8 +12,6 @@ abstract class CustomDialogInterface : DialogInterface {
 
     abstract class OnClickListener : View.OnClickListener, DialogInterface.OnClickListener {
         private var dialog: DialogInterface? = null
-        protected val SUBMIT: Int = DialogInterface.BUTTON_POSITIVE
-        protected val CANCLE: Int = DialogInterface.BUTTON_NEGATIVE
 
         constructor()
 

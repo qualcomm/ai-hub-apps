@@ -48,9 +48,7 @@ data class ModelData(
      * pair with an explicit `chipset`.
      */
     val chipset: String? = null,
-) {
-    var isSupport = true
-}
+)
 
 /**
  * Compute units offered in the picker dialog for this model. QAIRT is

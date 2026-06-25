@@ -4,6 +4,8 @@
 
     <!-- Runtime model download from the in-app catalog. -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Keeps the CPU alive during model downloads when the screen locks. -->
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
     <!-- Optional in-app camera capture for VLM image input. -->
     <uses-permission android:name="android.permission.CAMERA" />
 
