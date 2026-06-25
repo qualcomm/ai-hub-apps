@@ -79,6 +79,15 @@ The APKs will be at:
 - `build/outputs/apk/androidTest/debug/app-debug-androidTest.apk`
 
 ### Option B: Using Docker
+
+> [!IMPORTANT]
+> **Building on an ARM host?**
+> The Android build tools (AAPT2, NDK clang) are x86_64-only binaries. To run them under emulation, register the QEMU x86_64 handler on the **host** before building (run once per boot):
+> ```bash
+> sudo apt-get update && sudo apt-get install -y qemu-user-static binfmt-support
+> sudo update-binfmts --enable qemu-x86_64
+> ```
+
 Build our Docker image with all required dependencies, including the supported Android and QAIRT SDKs.
 ```bash
 docker build --build-arg BUILD_TYPE=build -t aiha-chatapp .

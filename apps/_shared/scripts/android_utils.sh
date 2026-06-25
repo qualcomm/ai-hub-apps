@@ -79,8 +79,18 @@ install_android_sdk() {
         tmp_zip="$(mktemp --suffix=.zip)"
         arch="$(uname -m)"
         if [ "$arch" = "aarch64" ] || [ "$arch" = "arm64" ]; then
-            # Android build tools (AAPT2, etc.) are x86_64 only. On ARM64 hosts,
-            # install QEMU user-space emulation and the x86_64 runtime libraries.
+            # Android build tools (AAPT2, etc.) are x86_64 only. On ARM64 hosts they
+            # run under QEMU user-space emulation, which is driven by a binfmt_misc
+            # handler registered on the host (kernel binfmt_misc is global and shared
+            # into containers — a container cannot register its own). See the per-app
+            # README "Building on an ARM host?" note for the host-side registration.
+            #
+            # The packages below set up the target binaries' x86_64 runtime — the
+            # cross libc/libgcc and (further down) libz that AAPT2/NDK clang need once
+            # emulated. The bundled qemu-user-static is only a fallback for non-"F"
+            # registrations that resolve the interpreter inside the container; the
+            # documented host setup installs qemu-user-static, which registers the
+            # handler with the "F" (fix_binary) flag, so the host's qemu is used instead.
             echo "::step::Detected aarch64, installing x86_64 emulation support"
             install_apt_pkgs qemu-user-static libc6-amd64-cross libgcc-s1-amd64-cross
             mkdir -p /lib64
