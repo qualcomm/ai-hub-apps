@@ -117,7 +117,7 @@ class App:
         try:
             model_download_url = get_asset_url(
                 model=model_asset.model_id,
-                runtime=self.runtime,
+                runtime=self.runtime[0],
                 precision=self.precisions[0],
                 version=QAIHM_VERSION,
                 chipset=model_asset.chipset,
@@ -361,13 +361,13 @@ class App:
             ("Type", self.app_type.value),
         ]
         if self.runtime:
-            fields.append(("Runtime", self.runtime))
+            fields.append(("Runtime", self.runtime[0]))
         if self.domain:
             fields.append(("Domain", self.domain))
         if self.use_case:
             fields.append(("Use Case", self.use_case))
         if self.precisions:
-            fields.append(("Precisions", ", ".join(self.precisions)))
+            fields.append(("Precision", self.precisions[0]))
         if self.related_models:
             fields.append(("Models", ", ".join(str(m) for m in self.related_models)))
         return fields

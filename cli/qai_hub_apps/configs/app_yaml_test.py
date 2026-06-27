@@ -37,7 +37,7 @@ def test_app_info_required_fields():
     assert info.name == "My App"
     assert info.id == "my_app"
     assert info.app_type == AppType.UBUNTU
-    assert info.runtime == "onnx"
+    assert info.runtime == ["onnx"]
     assert info.related_models == ["whisper_base"]
     assert info.precisions == ["float"]
 
@@ -149,7 +149,7 @@ domain: Audio
 use_case: Speech Recognition
 app_repo_url: https://github.com/test/app
 app_type: not_a_real_platform
-runtime: onnx
+runtime: [onnx]
 related_models: [whisper_base]
 precisions: [float]
 """

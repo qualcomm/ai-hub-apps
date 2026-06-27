@@ -85,11 +85,11 @@ def _read_cli_version() -> str:
 
 class GenerateRegistryParser(Tap):
     output_dir: Path  # Directory where registry.yaml will be written
-    schema_version: str = "1.1"  # Schema version to embed in the registry
+    schema_version: str = "1.2"  # Schema version to embed in the registry
     # Bump this when a schema change requires a newer CLI to parse the registry correctly.
     # The check is exclusive (cli > min_cli_version), so set this to the last version
     # that does NOT support the new schema.
-    min_cli_version: str = "0.29.0"
+    min_cli_version: str = "0.30.1"
     ref: str = "main"  # Git ref (branch or tag) used to construct GitHub URLs
 
     cli_version: str = _read_cli_version()  # CLI version used for S3 path
@@ -241,7 +241,7 @@ def generate_registry(
             build_path = Path(build_dir)
             for info, app_dir in public_apps:
                 print(f"\n{f' {info.id} ':─^60}")
-                if not _is_supported_app(info):
+                if not _is_supported_app(info) and scope is not RegistryScope.ALL:
                     print(
                         f"Skipping: unsupported app "
                         f"(type={info.app_type.value}, languages={[l.value for l in info.languages]})"
@@ -257,7 +257,7 @@ def generate_registry(
     else:
         for info, _ in public_apps:
             print(f"\n{f' {info.id} ':─^60}")
-            if not _is_supported_app(info):
+            if not _is_supported_app(info) and scope is not RegistryScope.ALL:
                 print(
                     f"Skipping: unsupported app "
                     f"(type={info.app_type.value}, languages={[l.value for l in info.languages]})"

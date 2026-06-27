@@ -6,7 +6,7 @@ import os
 from enum import Enum, unique
 from pathlib import Path
 
-from pydantic import ConfigDict, Field, model_validator
+from pydantic import ConfigDict, Field, field_validator, model_validator
 
 from qai_hub_apps_test.configs.base_config import BaseConfig
 from qai_hub_apps_test.configs.field_types import Device, Precision, TargetRuntime
@@ -43,6 +43,7 @@ class AppLanguage(Enum):
     CPP = "C++"
     JAVA = "Java"
     KOTLIN = "Kotlin"
+    GO = "Go"
 
 
 @unique
@@ -70,7 +71,7 @@ class QAIHACLIAppInfo(BaseConfig):
     use_case: str
     app_repo_url: str | None = None
     app_type: AppType
-    runtime: TargetRuntime
+    runtime: list[TargetRuntime]
     related_models: list[str]
     precisions: list[Precision]
     model_file_paths: list[
@@ -83,6 +84,14 @@ class QAIHACLIAppInfo(BaseConfig):
     # Optional message shown by the CLI for DEPRECATED apps. If unset, a default
     # deprecation message is used.
     deprecation_notice: str | None = None
+
+    @field_validator("runtime", mode="before")
+    @classmethod
+    def _normalize_runtime(cls, value: object) -> object:
+        """Normalize runtime; a single value is wrapped into a list."""
+        if isinstance(value, str):
+            return [value]
+        return value
 
     @model_validator(mode="after")
     def _validate_model_location(self) -> "QAIHACLIAppInfo":

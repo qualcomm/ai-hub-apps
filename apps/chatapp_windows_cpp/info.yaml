@@ -5,7 +5,8 @@ license_type: bsd-3-clause
 models: ['llama_v3_2_1b_instruct']
 model_file_dir: 'genie_bundle'
 runtime: genie
-status: published
+status: deprecated
+deprecation_notice: "LLM Chat Windows is deprecated in favour of the GenieX Chat Windows (geniex_chat_windows), which runs LLMs and VLMs on-device via the Qualcomm® GenieX SDK."
 domain: Generative AI
 headline: Deploy and run LLMs via CLI
 description: A sample CLI app demonstrating how to integrate an on-device LLM with Qualcomm® Gen AI Inference Extensions (Genie) APIs, optimized for Snapdragon® NPU acceleration.

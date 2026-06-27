@@ -6,7 +6,7 @@ Type:       windows
 Runtime:    onnx
 Domain:     Audio
 Use Case:   Speech Recognition
-Precisions: float
+Precision:  float
 Models:     whisper_base
 
 Speech to text on Windows

@@ -6,6 +6,8 @@ from __future__ import annotations
 
 from enum import Enum, unique
 
+from pydantic import field_validator
+
 from qai_hub_apps.configs.base_config import BaseConfig
 
 
@@ -51,7 +53,7 @@ class AppInfo(BaseConfig):
     use_case: str
     app_repo_url: str
     app_type: AppType
-    runtime: str
+    runtime: list[str]
     related_models: list[str]
     precisions: list[str]
     languages: list[AppLanguage] = []
@@ -61,3 +63,11 @@ class AppInfo(BaseConfig):
     environment: EnvironmentConfig | None = None
     url: AppUrl | None = None
     deprecation_notice: str | None = None
+
+    @field_validator("runtime", mode="before")
+    @classmethod
+    def _normalize_runtime(cls, value: object) -> object:
+        """Normalize runtime; a single value is wrapped into a list."""
+        if isinstance(value, str):
+            return [value]
+        return value

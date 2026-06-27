@@ -1,0 +1,17 @@
+name: GenieX Chat Windows
+id: geniex_chat_windows
+license_url: https://github.com/qualcomm/nexa-sdk?tab=BSD-3-Clause-1-ov-file
+license_type: bsd-3-clause
+headline: Run LLMs locally on Windows via CLI
+description: A sample CLI app demonstrating how to run on-device LLMs and VLMs with GenieX Gen AI runtime on Windows in a few lines of code.
+runtime: [geniex_qairt, geniex_llamacpp]
+status: published_website_only
+domain: Generative AI
+app_type: 'windows'
+use_case: Text Generation
+related_models: []
+precisions: []
+static_img_filename: 'app_screen.png'
+app_repo_url: 'https://github.com/qualcomm/geniex'
+supported_devices: ["Snapdragon X Elite CRD", "Snapdragon X2 Elite CRD"]
+languages: ['Go']

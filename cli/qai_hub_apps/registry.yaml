@@ -1,5 +1,5 @@
-schema_version: '1.1'
-min_cli_version: 0.29.0
+schema_version: '1.2'
+min_cli_version: 0.30.1
 apps:
 - name: LLM Chat Android
   id: chatapp_android
@@ -10,7 +10,8 @@ apps:
   use_case: Text Generation
   app_repo_url: https://github.com/qualcomm/ai-hub-apps/tree/main/apps/chatapp_android
   app_type: android
-  runtime: genie
+  runtime:
+  - genie
   related_models:
   - qwen3_4b_instruct_2507
   - llama_v3_2_3b_instruct
@@ -20,14 +21,15 @@ apps:
   deprecation_notice: LLM Chat Android is deprecated in favour of the GenieX Demo app (geniex_chat_android), which runs LLMs and VLMs on-device via the Qualcomm® GenieX SDK.
 - name: LLM Chat Windows
   id: chatapp_windows_cpp
-  status: published
+  status: deprecated
   headline: Deploy and run LLMs via CLI
   description: A sample CLI app demonstrating how to integrate an on-device LLM with Qualcomm® Gen AI Inference Extensions (Genie) APIs, optimized for Snapdragon® NPU acceleration.
   domain: Generative AI
   use_case: Text Generation
   app_repo_url: https://github.com/qualcomm/ai-hub-apps/tree/main/apps/chatapp_windows_cpp
   app_type: windows
-  runtime: genie
+  runtime:
+  - genie
   related_models:
   - qwen3_4b_instruct_2507
   - llama_v3_8b_instruct
@@ -37,6 +39,7 @@ apps:
   precisions:
   - w4a16
   model_file_dir: genie_bundle
+  deprecation_notice: LLM Chat Windows is deprecated in favour of the GenieX Chat Windows (geniex_chat_windows), which runs LLMs and VLMs on-device via the Qualcomm® GenieX SDK.
 - name: Image Classification Android
   id: image_classification_android
   status: published
@@ -46,7 +49,8 @@ apps:
   use_case: Image Classification
   app_repo_url: https://github.com/qualcomm/ai-hub-apps/tree/main/apps/image_classification_android
   app_type: android
-  runtime: tflite
+  runtime:
+  - tflite
   related_models:
   - convnext_tiny
   - densenet121
@@ -80,7 +84,8 @@ apps:
   use_case: Image Classification
   app_repo_url: https://github.com/qualcomm/ai-hub-apps/tree/main/apps/image_classification_windows_cpp
   app_type: windows
-  runtime: onnx
+  runtime:
+  - onnx
   related_models:
   - convnext_tiny
   - densenet121
@@ -114,7 +119,8 @@ apps:
   use_case: Object Detection
   app_repo_url: https://github.com/qualcomm/ai-hub-apps/tree/main/apps/mediapipe_hand_gesture_ubuntu_py
   app_type: ubuntu
-  runtime: tflite
+  runtime:
+  - tflite
   related_models:
   - mediapipe_hand_gesture
   precisions:
@@ -132,7 +138,8 @@ apps:
   use_case: Semantic Segmentation
   app_repo_url: https://github.com/qualcomm/ai-hub-apps/tree/main/apps/semantic_segmentation_android
   app_type: android
-  runtime: tflite
+  runtime:
+  - tflite
   related_models:
   - ffnet_40s
   - ffnet_54s
@@ -152,7 +159,8 @@ apps:
   use_case: Image Generation
   app_repo_url: https://github.com/qualcomm/ai-hub-apps/tree/main/apps/stable_diffusion_windows_py
   app_type: windows
-  runtime: precompiled_qnn_onnx
+  runtime:
+  - precompiled_qnn_onnx
   related_models:
   - stable_diffusion_v2_1
   precisions:
@@ -170,7 +178,8 @@ apps:
   use_case: Super Resolution
   app_repo_url: https://github.com/qualcomm/ai-hub-apps/tree/main/apps/super_resolution_android
   app_type: android
-  runtime: tflite
+  runtime:
+  - tflite
   related_models:
   - xlsr
   precisions:
@@ -186,7 +195,8 @@ apps:
   use_case: Super Resolution
   app_repo_url: https://github.com/qualcomm/ai-hub-apps/tree/main/apps/super_resolution_windows_cpp
   app_type: windows
-  runtime: onnx
+  runtime:
+  - onnx
   related_models:
   - xlsr
   precisions:
@@ -202,7 +212,8 @@ apps:
   use_case: Speech Recognition
   app_repo_url: https://github.com/qualcomm/ai-hub-apps/tree/main/apps/whisper_windows_py
   app_type: windows
-  runtime: precompiled_qnn_onnx
+  runtime:
+  - precompiled_qnn_onnx
   related_models:
   - whisper_base
   precisions:
