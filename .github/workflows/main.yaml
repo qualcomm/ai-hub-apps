@@ -76,11 +76,11 @@ jobs:
             --venv="${{ env.VENV_PATH }}" \
             --with-cli
 
-      - name: Generate test registry (all apps)
+      - name: Generate test registry (test scope)
         run: |
           source ${{ env.VENV_PATH }}/bin/activate
           python -m qai_hub_apps_test.scripts.generate_registry \
-            --output_dir cli/qai_hub_apps/ --include_all
+            --output_dir cli/qai_hub_apps/ --scope test
 
       - id: detect
         name: Find updated registered app IDs

@@ -7,10 +7,14 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
-from qai_hub_models.configs.info_yaml import MODEL_LICENSE as LICENSE
-from qai_hub_models.models.common import Precision, TargetRuntime
 
-from qai_hub_apps_test.configs.info_yaml import AppLanguage, AppType, QAIHAAppInfo
+from qai_hub_apps_test.configs.field_types import Precision, TargetRuntime
+from qai_hub_apps_test.configs.info_yaml import (
+    AppLanguage,
+    AppLicense,
+    AppType,
+    QAIHAAppInfo,
+)
 
 _FIXTURES = Path(__file__).parent / "test" / "fixtures"
 
@@ -47,10 +51,10 @@ def make_sample_app_info(**overrides: object) -> QAIHAAppInfo:
         app_type=AppType.UBUNTU,
         runtime=TargetRuntime.ONNX,
         related_models=["test_model"],
-        precisions=[Precision.float],
+        precisions=[Precision.FLOAT],
         languages=[AppLanguage.PYTHON],
         license_url="https://github.com/qualcomm/ai-hub-apps/blob/main/LICENSE",
-        license_type=LICENSE.BSD_3_CLAUSE,
+        license_type=AppLicense.BSD_3_CLAUSE,
         private_model_s3_paths={},
     )
     defaults.update(overrides)

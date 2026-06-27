@@ -11,10 +11,11 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 import qai_hub_apps_test.scripts.generate_registry as gen_mod
-from qai_hub_apps_test.configs.info_yaml import AppLanguage
+from qai_hub_apps_test.configs.info_yaml import AppLanguage, AppStatus, QAIHAAppInfo
 from qai_hub_apps_test.configs.registry_yaml import AppRegistry
 from qai_hub_apps_test.conftest import make_sample_app_info
 from qai_hub_apps_test.scripts.generate_registry import (
+    RegistryScope,
     _resolve_repo_url,
     generate_registry,
     upload_app,
@@ -25,6 +26,20 @@ pytestmark = pytest.mark.bundler_unit
 
 _REPO_BASE = "https://github.com/qualcomm/ai-hub-apps"
 _CLI_VERSION = "0.27.0"
+
+
+def _make_one_app_per_status(
+    tmp_path: Path,
+) -> list[tuple[QAIHAAppInfo, Path]]:
+    """One app per AppStatus, each in a directory named after its status value."""
+    apps = []
+    for status in AppStatus:
+        app_dir = tmp_path / status.value
+        app_dir.mkdir()
+        apps.append(
+            (make_sample_app_info(id=status.value, status=status.value), app_dir)
+        )
+    return apps
 
 
 def _fake_attempt(fn: Callable[[], None]) -> None:
@@ -118,59 +133,71 @@ def test_skips_non_python_apps(tmp_path: Path) -> None:
     assert len(registry.apps) == 0
 
 
-def test_include_all_includes_unpublished_and_excluded(tmp_path: Path) -> None:
-    pub_dir = tmp_path / "pub_app"
-    pub_dir.mkdir()
-    unpub_dir = tmp_path / "unpub_app"
-    unpub_dir.mkdir()
-    excluded_dir = tmp_path / "excluded_app"
-    excluded_dir.mkdir()
-    apps = [
-        (make_sample_app_info(id="pub_app", status="published"), pub_dir),
-        (make_sample_app_info(id="unpub_app", status="unpublished"), unpub_dir),
-        (
-            make_sample_app_info(
-                id="excluded_app", status="published", include_in_cli=False
-            ),
-            excluded_dir,
-        ),
-    ]
+def test_production_set_includes_published_and_deprecated(tmp_path: Path) -> None:
     generate_registry(
-        tmp_path, apps, _REPO_BASE, "main", _CLI_VERSION, include_all=True
+        tmp_path,
+        _make_one_app_per_status(tmp_path),
+        _REPO_BASE,
+        "main",
+        _CLI_VERSION,
+        scope=RegistryScope.PRODUCTION,
     )
-
     registry = AppRegistry.from_yaml(tmp_path / "registry.yaml")
-    assert {a.id for a in registry.apps} == {"pub_app", "unpub_app", "excluded_app"}
+    assert {a.status for a in registry.apps} == {
+        AppStatus.PUBLISHED,
+        AppStatus.DEPRECATED,
+    }
 
 
-def test_default_excludes_unpublished_and_excluded(tmp_path: Path) -> None:
-    pub_dir = tmp_path / "pub_app"
-    pub_dir.mkdir()
-    unpub_dir = tmp_path / "unpub_app"
-    unpub_dir.mkdir()
-    excluded_dir = tmp_path / "excluded_app"
-    excluded_dir.mkdir()
-    apps = [
-        (make_sample_app_info(id="pub_app", status="published"), pub_dir),
-        (make_sample_app_info(id="unpub_app", status="unpublished"), unpub_dir),
-        (
-            make_sample_app_info(
-                id="excluded_app", status="published", include_in_cli=False
-            ),
-            excluded_dir,
-        ),
-    ]
-    generate_registry(tmp_path, apps, _REPO_BASE, "main", _CLI_VERSION)
-
+def test_default_set_is_production(tmp_path: Path) -> None:
+    generate_registry(
+        tmp_path, _make_one_app_per_status(tmp_path), _REPO_BASE, "main", _CLI_VERSION
+    )
     registry = AppRegistry.from_yaml(tmp_path / "registry.yaml")
-    assert {a.id for a in registry.apps} == {"pub_app"}
+    assert {a.status for a in registry.apps} == {
+        AppStatus.PUBLISHED,
+        AppStatus.DEPRECATED,
+    }
 
 
-def test_include_all_with_build_and_upload_raises(tmp_path: Path) -> None:
+def test_test_set_excludes_website_only(tmp_path: Path) -> None:
+    generate_registry(
+        tmp_path,
+        _make_one_app_per_status(tmp_path),
+        _REPO_BASE,
+        "main",
+        _CLI_VERSION,
+        scope=RegistryScope.TEST,
+    )
+    registry = AppRegistry.from_yaml(tmp_path / "registry.yaml")
+    assert {a.status for a in registry.apps} == {
+        AppStatus.UNPUBLISHED,
+        AppStatus.PUBLISHED,
+        AppStatus.DEPRECATED,
+    }
+
+
+def test_all_set_includes_every_app(tmp_path: Path) -> None:
+    generate_registry(
+        tmp_path,
+        _make_one_app_per_status(tmp_path),
+        _REPO_BASE,
+        "main",
+        _CLI_VERSION,
+        scope=RegistryScope.ALL,
+    )
+    registry = AppRegistry.from_yaml(tmp_path / "registry.yaml")
+    assert {a.status for a in registry.apps} == set(AppStatus)
+
+
+@pytest.mark.parametrize("scope", [RegistryScope.TEST, RegistryScope.ALL])
+def test_non_production_scope_with_build_and_upload_raises(
+    tmp_path: Path, scope: RegistryScope
+) -> None:
     app_dir = tmp_path / "myapp"
     app_dir.mkdir()
     apps = [(make_sample_app_info(id="myapp", status="published"), app_dir)]
-    with pytest.raises(SystemExit, match="include_all cannot be used"):
+    with pytest.raises(SystemExit, match="build_and_upload requires"):
         generate_registry(
             tmp_path,
             apps,
@@ -178,7 +205,7 @@ def test_include_all_with_build_and_upload_raises(tmp_path: Path) -> None:
             "main",
             _CLI_VERSION,
             build_and_upload=True,
-            include_all=True,
+            scope=scope,
         )
 
 

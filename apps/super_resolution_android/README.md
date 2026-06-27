@@ -29,6 +29,15 @@ cd ~/super_resolution_android
 
 This downloads the app source and places the model asset in the correct location automatically.
 
+> [!NOTE]
+> To use a model you exported yourself with [AI Hub Models](https://github.com/qualcomm/ai-hub-models),
+> pass the exported model path to `--model` in place of a model ID. The CLI places the exported
+> assets into the app automatically:
+>
+> ```bash
+> qai-hub-apps fetch super_resolution_android --model <path/to/exported_model>
+> ```
+
 ### Option B: Cloning the Repo
 
 If you cloned the release branch, the app directory is already self-contained — but **model weights are not included**. Download a compatible model from [AI Hub Models](https://aihub.qualcomm.com/mobile/models), unzip the bundle and copy the tflite model to `src/main/assets/superres.tflite` before building.

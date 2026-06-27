@@ -8,6 +8,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
+from qai_hub_apps.configs.model_asset import ModelAsset
 from qai_hub_apps.errors import QAIHubAppsError
 from qai_hub_apps.main import main
 
@@ -58,8 +59,6 @@ def test_fetch_command_calls_run_fetch(monkeypatch, tmp_path, sample_registry_ya
 def test_fetch_command_with_model_creates_model_asset(
     monkeypatch, tmp_path, sample_registry_yaml
 ):
-    from qai_hub_apps.configs.model_asset import ModelAsset
-
     mock_run_fetch = MagicMock()
     monkeypatch.setattr("qai_hub_apps.main.run_fetch", mock_run_fetch)
     _run_main(
@@ -83,6 +82,130 @@ def test_fetch_command_with_model_creates_model_asset(
     assert isinstance(model_asset, ModelAsset)
     assert model_asset.model_id == "whisper_base"
     assert model_asset.chipset == "snapdragon_8_gen_3"
+
+
+def test_fetch_command_with_model_path_creates_local_asset(
+    monkeypatch, tmp_path, sample_registry_yaml
+):
+    export_dir = tmp_path / "exported"
+    export_dir.mkdir()
+
+    mock_run_fetch = MagicMock()
+    monkeypatch.setattr("qai_hub_apps.main.run_fetch", mock_run_fetch)
+    _run_main(
+        [
+            "fetch",
+            "test_app",
+            "--model",
+            str(export_dir),
+            "--output-dir",
+            str(tmp_path),
+            "--registry",
+            str(sample_registry_yaml),
+        ],
+        monkeypatch,
+    )
+    model_asset = mock_run_fetch.call_args[0][3]
+    assert isinstance(model_asset, ModelAsset)
+    assert model_asset.path == export_dir
+    assert model_asset.model_id is None
+
+
+def test_fetch_command_with_model_id_flag(monkeypatch, tmp_path, sample_registry_yaml):
+    mock_run_fetch = MagicMock()
+    monkeypatch.setattr("qai_hub_apps.main.run_fetch", mock_run_fetch)
+    _run_main(
+        [
+            "fetch",
+            "test_app",
+            "--model-id",
+            "whisper_base",
+            "--chipset",
+            "snapdragon_8_gen_3",
+            "--output-dir",
+            str(tmp_path),
+            "--registry",
+            str(sample_registry_yaml),
+        ],
+        monkeypatch,
+    )
+    model_asset = mock_run_fetch.call_args[0][3]
+    assert isinstance(model_asset, ModelAsset)
+    assert model_asset.model_id == "whisper_base"
+    assert model_asset.chipset == "snapdragon_8_gen_3"
+    assert model_asset.path is None
+
+
+def test_fetch_command_with_model_path_flag_resolves_absolute(
+    monkeypatch, tmp_path, sample_registry_yaml
+):
+    export_dir = tmp_path / "exported"
+    export_dir.mkdir()
+
+    mock_run_fetch = MagicMock()
+    monkeypatch.setattr("qai_hub_apps.main.run_fetch", mock_run_fetch)
+    _run_main(
+        [
+            "fetch",
+            "test_app",
+            "--model-path",
+            str(export_dir),
+            "--output-dir",
+            str(tmp_path),
+            "--registry",
+            str(sample_registry_yaml),
+        ],
+        monkeypatch,
+    )
+    model_asset = mock_run_fetch.call_args[0][3]
+    assert isinstance(model_asset, ModelAsset)
+    assert model_asset.path == export_dir.resolve()
+    assert model_asset.model_id is None
+
+
+def test_fetch_chipset_with_model_path_exits(
+    monkeypatch, tmp_path, sample_registry_yaml
+):
+    monkeypatch.setattr("qai_hub_apps.main.run_fetch", MagicMock())
+    with pytest.raises(SystemExit):
+        _run_main(
+            [
+                "fetch",
+                "test_app",
+                "--model-path",
+                str(tmp_path),
+                "--chipset",
+                "snapdragon_8_gen_3",
+                "--registry",
+                str(sample_registry_yaml),
+            ],
+            monkeypatch,
+        )
+
+
+def test_fetch_model_path_with_chipset_warns(
+    monkeypatch, tmp_path, sample_registry_yaml, capsys
+):
+    export_dir = tmp_path / "exported"
+    export_dir.mkdir()
+
+    monkeypatch.setattr("qai_hub_apps.main.run_fetch", MagicMock())
+    _run_main(
+        [
+            "fetch",
+            "test_app",
+            "--model",
+            str(export_dir),
+            "--chipset",
+            "snapdragon_8_gen_3",
+            "--output-dir",
+            str(tmp_path),
+            "--registry",
+            str(sample_registry_yaml),
+        ],
+        monkeypatch,
+    )
+    assert "--chipset is ignored" in capsys.readouterr().out
 
 
 def test_fetch_without_model_passes_none(monkeypatch, tmp_path, sample_registry_yaml):

@@ -39,6 +39,15 @@ cd ~/chatapp_android
 
 This downloads the app source and places the model binaries and tokenizer in the correct location automatically.
 
+> [!NOTE]
+> To use a model you exported yourself (see [Exporting an LLM](#exporting-an-llm)), pass the
+> exported model path to `--model` in place of a model ID. The CLI places the exported assets
+> into the app automatically:
+>
+> ```bash
+> qai-hub-apps fetch chatapp_android --model <path/to/exported_bundle>
+> ```
+
 ### Option B: Cloning the Repo
 
 If you cloned the release branch, the app directory is already self-contained — but **model weights are not included**. Obtain the LLM binaries from [AI Hub Models](https://aihub.qualcomm.com/models?domain=Generative+AI&useCase=Text+Generation) and unzip the bundle to `src/main/assets/models/llm/` before building. See [Exporting an LLM](#exporting-an-llm) for more details.

@@ -1,13 +1,12 @@
 name: Object Detection Android
 id: object_detection_android
-include_in_cli: false
 license_url: https://github.com/qualcomm/ai-hub-apps/blob/main/LICENSE
 license_type: bsd-3-clause
 models: ['yolox']
 model_file_paths:
   - 'src/main/assets/detector.tflite'
 runtime: tflite
-status: published
+status: published_website_only
 domain: 'Computer Vision'
 headline: On-device object detection with TFLite
 description: 'A sample Android app that detects and localizes objects in real time using live camera input, demonstrating best practices for integrating streaming camera, TFLite, and OpenCV for on-device AI inference.'

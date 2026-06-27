@@ -14,7 +14,7 @@
 #   --extras  dev
 #
 # Available extras:
-#   dev        Full test install: pytest, qai_hub_models, boto3, etc. (default)
+#   dev        Full test install: pytest, qai-hub-models-cli, boto3, etc. (default)
 #   precommit  Light install: pre-commit + mypy only (for CI lint checks)
 #
 # Flags:
@@ -54,17 +54,6 @@ else
 fi
 
 INSTALL_TARGET="$REPO_ROOT/tools/python/[$EXTRAS]"
-TORCH_INDEX="https://download.pytorch.org/whl/cpu"
-TORCH_VERSION="torch==2.8.0+cpu"
-
-# Pre-install CPU torch before qai_hub_models so pip doesn't pull in the CUDA build.
-if [ "$EXTRAS" = "dev" ]; then
-    if command -v uv &>/dev/null; then
-        uv pip install --python "$VENV_PATH/bin/python" --extra-index-url "$TORCH_INDEX" "$TORCH_VERSION"
-    else
-        "$VENV_PATH/bin/pip" install --extra-index-url "$TORCH_INDEX" "$TORCH_VERSION"
-    fi
-fi
 
 if command -v uv &>/dev/null; then
     uv pip install --python "$VENV_PATH/bin/python" -e "$INSTALL_TARGET"

@@ -1,0 +1,5 @@
+models
+models/metadata.json
+models/whisper_base.onnx
+requirements.txt
+run.py

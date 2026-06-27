@@ -184,7 +184,7 @@ App directories follow the pattern: `{app_name}_{platform}[_{language}]`
 Every app must have an `info.yaml`. Copy from a similar app and adjust.
 
 > [!IMPORTANT]
-> CI validates *every* app's `info.yaml` regardless of `status` / `include_in_cli`, so a half-filled file fails CI even for an unpublished app.
+> CI validates *every* app's `info.yaml` regardless of `status`, so a half-filled file fails CI even for an unpublished app.
 
 ### Mandatory fields
 
@@ -198,7 +198,7 @@ Every app must have an `info.yaml`. Copy from a similar app and adjust.
 | `use_case` | string | Use-case label (e.g. `Image Classification`) — copy from a similar app |
 | `app_type` | `android` \| `windows` \| `ubuntu` | Platform type |
 | `runtime` | closed enum | `tflite` \| `onnx` \| `genie` \| `precompiled_qnn_onnx` \| … — must be an existing `TargetRuntime` value (a new one needs an upstream `qai_hub_models` change) |
-| `status` | `published` \| `unpublished` | Set `unpublished` until ready |
+| `status` | closed enum | Lifecycle stage — see [App Status](#app-status). Set `unpublished` until ready |
 | `languages` | list | e.g. `['Java']`, `['Python']`, `['Java', 'C++']` |
 | `related_models` | list | All compatible model IDs (used for CLI fetch + testing) |
 | `precisions` | list | e.g. `[float]`, `[w4a16]` |
@@ -213,10 +213,31 @@ Every app must have an `info.yaml`. Copy from a similar app and adjust.
 |-------|---------|-------------|
 | `model_file_paths` | — | **Required** (if not using `model_file_dir`) — relative destination paths for each downloaded model file; all paths must share the same parent directory |
 | `model_file_dir` | — | **Required** (if not using `model_file_paths`) — single directory to extract all model files into; mutually exclusive with `model_file_paths` |
-| `include_in_cli` | `true` | Set `false` to exclude from CLI registry (e.g. external apps) |
 | `disable_cli_model_fetch` | `false` | Set `true` for apps that **download their model at runtime** instead of bundling a model asset. Mutually exclusive with `model_file_paths` / `model_file_dir`. Without it, `fetch` fails trying to download a non-existent asset. |
+| `deprecation_notice` | — | Message shown by the CLI for `deprecated` apps. If unset, a default deprecation message is used |
 | `skip_test` | — | String reason to skip CI testing |
 | `app_repo_url` | — | Explicit GitHub URL (overrides `app_repo_relative_path` — use for external repos) |
+
+### App Status
+
+The `status` field is an app's lifecycle stage. It controls where the app appears: on the public **website**, in the bundled **CLI** registry, and in the **CI test** set.
+
+| `status` | Website | CLI | Tested in CI | Meaning |
+|----------|:-------:|:---:|:------------:|---------|
+| `unpublished` | ✗ | ✗ | ✓ | Work in progress — not released yet, but exercised by CI |
+| `published` | ✓ | ✓ | ✓ | Live everywhere |
+| `published_website_only` | ✓ | ✗ | ✗ | On the website but not CLI-fetchable (e.g. external apps) |
+| `deprecated` | ✓ | ✓ | ✓ | Like `published`, but the CLI shows a deprecation notice (`deprecation_notice`, or a default) |
+
+Deprecated apps are removed completely from the repo once their deprecation period ends.
+
+Registry generation selects which apps to include via `--scope` (see [Regenerate and commit the registry](#7-regenerate-and-commit-the-registry)):
+
+| `--scope` | Includes | Used for |
+|-----------|----------|----------|
+| `production` (default) | `published` + `deprecated` | The released CLI registry (only scope allowed with `--build_and_upload`) |
+| `test` | `unpublished` + `published` + `deprecated` | CI test runs (`skip_test` still gates per-app) |
+| `all` | Every app, including `published_website_only` | Inspection / completeness |
 
 ---
 
@@ -335,8 +356,7 @@ mkdir apps/<app_name>_<platform>[_<language>]
 ### 2. Write `info.yaml`
 
 Copy from a similar app (e.g. `image_classification_android/info.yaml`). Set:
-- `status: unpublished` until the app is ready
-- `include_in_cli: false` until bundling and testing are verified
+- `status: unpublished` until the app is ready (see [App Status](#app-status))
 - `supported_devices` — check `HUB_DEVICE_TO_QDC_DEVICE_MAP` in `tools/python/qai_hub_apps_test/qdc/qdc_jobs.py` for valid device names
 
 ### 3. Add platform-specific files
@@ -399,9 +419,9 @@ Adding (or changing) an app means the bundled registry must be regenerated **and
 python -m qai_hub_apps_test.scripts.generate_registry --output_dir cli/qai_hub_apps/
 ```
 
-Then commit the updated `cli/qai_hub_apps/registry.yaml`. When the app is ready to publish, set `include_in_cli: true` and `status: published` in `info.yaml` and regenerate again.
+Then commit the updated `cli/qai_hub_apps/registry.yaml`. When the app is ready to publish, set `status: published` in `info.yaml` and regenerate again.
 
-To inspect the output without touching the bundled file, point `--output_dir` at a scratch path (e.g. `/tmp/reg_test`).
+To inspect the output without touching the bundled file, point `--output_dir` at a scratch path (e.g. `/tmp/reg_test`). To preview the full test set (including unpublished apps), add `--scope test` (see [App Status](#app-status)).
 
 ### 8. Run on-device tests locally
 

@@ -7,7 +7,6 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
-from qai_hub_models_cli.common import Precision, TargetRuntime
 
 from qai_hub_apps.configs.app_yaml import AppInfo, AppLanguage, AppType
 from qai_hub_apps.registry.base import Registry
@@ -32,9 +31,9 @@ def make_app_info(**overrides) -> AppInfo:
         use_case="Testing",
         app_repo_url="https://github.com/test/app",
         app_type=AppType.UBUNTU,
-        runtime=TargetRuntime.ONNX,
+        runtime="onnx",
         related_models=["test_model"],
-        precisions=[Precision.FLOAT],
+        precisions=["float"],
         languages=[AppLanguage.PYTHON],
         url=None,
     )

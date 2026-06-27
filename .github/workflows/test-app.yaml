@@ -100,10 +100,10 @@ jobs:
             -WithCli `
             -WithQdcSdk
 
-      - name: Generate test registry (all apps)
+      - name: Generate test registry (test scope)
         run: |
           ${{ env.ACTIVATE_VENV }}
-          python -m qai_hub_apps_test.scripts.generate_registry --output_dir cli/qai_hub_apps/ --include_all
+          python -m qai_hub_apps_test.scripts.generate_registry --output_dir cli/qai_hub_apps/ --scope test
 
       - name: Configure QAI Hub client
         if: ${{ inputs.app_type == 'windows' }}

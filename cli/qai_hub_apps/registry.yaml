@@ -3,7 +3,7 @@ min_cli_version: 0.29.0
 apps:
 - name: LLM Chat Android
   id: chatapp_android
-  status: published
+  status: deprecated
   headline: Run an LLM on Android
   description: A sample Android chat app showcasing how to integrate an on-device LLM with Qualcomm® Gen AI Inference Extensions (Genie) APIs, optimized for Snapdragon® NPU acceleration.
   domain: Generative AI
@@ -17,6 +17,7 @@ apps:
   precisions:
   - w4a16
   model_file_dir: src/main/assets/models/llm
+  deprecation_notice: LLM Chat Android is deprecated in favour of the GenieX Demo app (geniex_chat_android), which runs LLMs and VLMs on-device via the Qualcomm® GenieX SDK.
 - name: LLM Chat Windows
   id: chatapp_windows_cpp
   status: published
@@ -122,22 +123,6 @@ apps:
   - models/palm_detector.tflite
   - models/hand_landmark_detector.tflite
   - models/canned_gesture_classifier.tflite
-- name: Posenet Pose Estimation
-  id: posenet_ubuntu_py
-  status: published
-  headline: On-device human pose estimation with TFLite
-  description: A sample app for Ubuntu integrating the Posenet MobileNet pose-estimation model via TFLite Runtime. It uses GStreamer for input video and provides a minimal web interface to stream output frames suitable for embedded applications.
-  domain: Computer Vision
-  use_case: Pose Estimation
-  app_repo_url: https://github.com/qualcomm/ai-hub-apps/tree/main/apps/posenet_ubuntu_py
-  app_type: ubuntu
-  runtime: tflite
-  related_models:
-  - posenet_mobilenet
-  precisions:
-  - w8a8
-  model_file_paths:
-  - models/posenet_mobilenet.tflite
 - name: Semantic Segmentation Android
   id: semantic_segmentation_android
   status: published

@@ -3,7 +3,7 @@ id: posenet_ubuntu_py
 license_url: https://github.com/qualcomm/ai-hub-apps/blob/main/LICENSE
 license_type: bsd-3-clause
 runtime: tflite
-status: published
+status: unpublished
 domain: 'Computer Vision'
 headline: 'On-device human pose estimation with TFLite'
 description: 'A sample app for Ubuntu integrating the Posenet MobileNet pose-estimation model via TFLite Runtime. It uses GStreamer for input video and provides a minimal web interface to stream output frames suitable for embedded applications.'

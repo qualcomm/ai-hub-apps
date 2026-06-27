@@ -6,13 +6,12 @@ models: ['yolox']
 model_file_paths:
   - 'assets/models/detection.onnx'
 runtime: onnx
-status: published
+status: published_website_only
 domain: 'Computer Vision'
 headline: 'Accelerated object detection with YOLO-X'
 description: 'A sample CLI app for Windows that runs YOLO-X via ONNX Runtime leveraging the QNN execution provider to perform efficient object detection.'
 precisions: [float]
 app_type: 'windows'
-include_in_cli: false
 skip_test: model cannot be downloaded directly without exporting; needs qai-hub-models CLI support https://github.com/qcom-ai-hub/tetracode/issues/19766
 static_img_filename: 'app_screen.png'
 app_repo_url: "https://github.com/qualcomm/ai-hub-apps/tree/main/apps/object_detection_windows_cpp"

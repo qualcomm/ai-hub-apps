@@ -13,7 +13,7 @@
 #   -Extras  dev
 #
 # Available extras:
-#   dev        Full test install: pytest, qai_hub_models, boto3, etc. (default)
+#   dev        Full test install: pytest, qai-hub-models-cli, boto3, etc. (default)
 #   precommit  Light install: pre-commit + mypy only (for CI lint checks)
 #
 # Flags:
@@ -40,18 +40,6 @@ if (-not (Test-Path $Venv)) {
 }
 
 $InstallTarget = "$RepoRoot\tools\python\[$Extras]"
-$TorchIndex = "https://download.pytorch.org/whl/cpu"
-$TorchVersion = "torch==2.8.0+cpu"
-
-# Pre-install CPU torch before qai_hub_models so pip doesn't pull in the CUDA build.
-if ($Extras -eq "dev") {
-    $uvAvailable = Get-Command uv -ErrorAction SilentlyContinue
-    if ($uvAvailable) {
-        uv pip install --python "$Venv\Scripts\python.exe" --extra-index-url $TorchIndex $TorchVersion
-    } else {
-        & "$Venv\Scripts\pip.exe" install --extra-index-url $TorchIndex $TorchVersion
-    }
-}
 
 $uvAvailable = Get-Command uv -ErrorAction SilentlyContinue
 if ($uvAvailable) {

@@ -21,6 +21,15 @@ cd ~\chatapp_windows_cpp
 
 This downloads the app source and places the Genie bundle into `genie_bundle/`.
 
+> [!NOTE]
+> To use a model you exported yourself (see [Exporting an LLM](#exporting-an-llm)), pass the
+> exported model path to `--model` in place of a model ID. The CLI places the exported assets
+> into the app automatically:
+>
+> ```powershell
+> qai-hub-apps fetch chatapp_windows_cpp --model <path\to\exported_bundle>
+> ```
+
 ### Option B: Cloning the Repo
 
 If you cloned the release branch, the app directory is already self-contained — but **model weights are not included**. Obtain the LLM binaries from [AI Hub Models](https://aihub.qualcomm.com/models?domain=Generative+AI&useCase=Text+Generation) and unzip the bundle to `genie_bundle` before building. See [Exporting an LLM](#exporting-an-llm) for more details. You should see `genie_bundle\*.bin` context binary files.

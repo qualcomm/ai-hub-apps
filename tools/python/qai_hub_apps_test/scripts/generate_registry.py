@@ -6,6 +6,8 @@ from __future__ import annotations
 
 import sys
 import tempfile
+from collections import Counter
+from enum import Enum, unique
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -22,6 +24,7 @@ from qai_hub_apps_test.configs.info_yaml import (
     AppType,
     AppUrl,
     QAIHAAppInfo,
+    QAIHACLIAppInfo,
 )
 from qai_hub_apps_test.configs.registry_yaml import AppRegistry
 from qai_hub_apps_test.utils.aws import (
@@ -30,6 +33,36 @@ from qai_hub_apps_test.utils.aws import (
     get_qaihm_s3,
 )
 from qai_hub_apps_test.utils.paths import REPOSITORY_ROOT, get_all_apps
+
+
+@unique
+class RegistryScope(Enum):
+    """Which apps to include when generating registry.yaml.
+
+    - PRODUCTION: apps that ship in the released CLI registry (PUBLISHED +
+      DEPRECATED). The only scope permitted with --build_and_upload.
+    - TEST: the CI test set — everything exercised by tests (UNPUBLISHED,
+      PUBLISHED, DEPRECATED); excludes PUBLISHED_WEBSITE_ONLY.
+    - ALL: every app regardless of status
+    """
+
+    PRODUCTION = "production"
+    TEST = "test"
+    ALL = "all"
+
+    def includes(self, info: QAIHAAppInfo) -> bool:
+        """Whether an app with this info belongs to this scope."""
+        if self is RegistryScope.PRODUCTION:
+            return info.status in (AppStatus.PUBLISHED, AppStatus.DEPRECATED)
+        if self is RegistryScope.TEST:
+            return info.status in (
+                AppStatus.UNPUBLISHED,
+                AppStatus.PUBLISHED,
+                AppStatus.DEPRECATED,
+            )
+        if self is RegistryScope.ALL:
+            return True
+        raise NotImplementedError(f"Unhandled registry scope: {self}")
 
 
 def _is_supported_app(info: QAIHAAppInfo) -> bool:
@@ -61,7 +94,8 @@ class GenerateRegistryParser(Tap):
 
     cli_version: str = _read_cli_version()  # CLI version used for S3 path
     build_and_upload: bool = False  # Build app zips and upload to S3; without this, list apps without bundling
-    include_all: bool = False  # Include every app (ignore status + include_in_cli). For testing only; never upload.
+    # Which apps to include: Only 'production' may be combined with --build_and_upload.
+    scope: RegistryScope = RegistryScope.PRODUCTION
 
 
 def _resolve_repo_url(info: QAIHAAppInfo, repo_base: str, ref: str) -> str:
@@ -110,7 +144,7 @@ def generate_registry(
     schema_version: str = "1.0",
     min_cli_version: str = "0.0.1",
     build_and_upload: bool = False,
-    include_all: bool = False,
+    scope: RegistryScope = RegistryScope.PRODUCTION,
 ) -> None:
     """Generate registry.yaml from a list of (info, app_dir) pairs.
 
@@ -132,28 +166,53 @@ def generate_registry(
         Minimum CLI version required to consume this registry.
     build_and_upload:
         If True, bundle Python and Android apps and upload zips + registry to S3.
-    include_all:
-        If True, include every app regardless of status / include_in_cli. For testing
-        only (e.g. on-device CI of WIP apps); cannot be combined with build_and_upload.
+    scope:
+        Which apps to include (see RegistryScope). Only 'production' may be combined with build_and_upload.
     """
-    if include_all and build_and_upload:
-        raise SystemExit("include_all cannot be used with build_and_upload.")
+    if build_and_upload and scope is not RegistryScope.PRODUCTION:
+        raise SystemExit(
+            f"build_and_upload requires scope='production' (got '{scope.value}')."
+        )
 
-    print(f"Using ref '{ref}' for GitHub URLs (repo base: {repo_base})")
+    mode = "build + upload" if build_and_upload else "list only"
+    print(f"\n{'  Generating registry.yaml  ':=^60}")
+    print(f"Scope:     {scope.value} ({mode})")
+    print(f"CLI ver:   {cli_version}")
+    print(f"Ref:       {ref} (repo base: {repo_base})")
     output_dir.mkdir(parents=True, exist_ok=True)
 
     public_apps: list[tuple[QAIHAAppInfo, Path]] = []
+    excluded: list[QAIHAAppInfo] = []
     for info, app_dir in all_apps:
         if info.id != app_dir.name:
             raise SystemExit(
                 f"Error: app ID '{info.id}' in {app_dir / 'info.yaml'} "
                 f"does not match directory name '{app_dir.name}'."
             )
-        if include_all or (info.status == AppStatus.PUBLISHED and info.include_in_cli):
+        if scope.includes(info):
             resolved_url = _resolve_repo_url(info, repo_base, ref)
             public_apps.append(
                 (info.model_copy(update={"app_repo_url": resolved_url}), app_dir)
             )
+        else:
+            excluded.append(info)
+
+    # Report which apps are in/out of this scope, grouped by status.
+    included_by_status = Counter(info.status.value for info, _ in public_apps)
+    print(
+        f"\nIncluded {len(public_apps)}/{len(all_apps)} app(s) for scope "
+        f"'{scope.value}': "
+        + (
+            ", ".join(f"{n} {s}" for s, n in sorted(included_by_status.items()))
+            or "none"
+        )
+    )
+    if excluded:
+        excluded_by_status = Counter(info.status.value for info in excluded)
+        print(
+            f"Excluded {len(excluded)} app(s): "
+            + ", ".join(f"{n} {s}" for s, n in sorted(excluded_by_status.items()))
+        )
 
     ids = [info.id for info, _ in public_apps]
     dupes = {i for i in ids if ids.count(i) > 1}
@@ -175,7 +234,7 @@ def generate_registry(
                 sys.exit("Aborted.")
         bucket, _ = get_qaihm_s3(QAIHM_PUBLIC_S3_BUCKET, requires_admin=False)
 
-    bundled_apps: list[QAIHAAppInfo] = []
+    bundled_apps: list[QAIHACLIAppInfo] = []
 
     if build_and_upload:
         with tempfile.TemporaryDirectory() as build_dir:
@@ -224,14 +283,15 @@ def generate_registry(
         )
 
     action = "Uploaded" if build_and_upload else "Registered"
+    print(f"\n{'  Summary  ':=^60}")
     print(
-        f"\n{'  Summary  ':=^60}"
-        f"\n{action} {len(bundled_apps)} app(s) out of {len(public_apps)} public app(s) "
-        f"to {output_dir / 'registry.yaml'}"
-        f"\nRegistry uploaded to: {s3_base}/{s3_prefix}/{cli_version}/registry.yaml"
-        if build_and_upload
-        else ""
+        f"{action} {len(bundled_apps)} app(s) out of {len(public_apps)} "
+        f"in-scope ('{scope.value}') app(s) to {output_dir / 'registry.yaml'}"
     )
+    if build_and_upload:
+        print(
+            f"Registry uploaded to: {s3_base}/{s3_prefix}/{cli_version}/registry.yaml"
+        )
 
 
 def main() -> None:
@@ -247,7 +307,7 @@ def main() -> None:
         args.schema_version,
         args.min_cli_version,
         args.build_and_upload,
-        args.include_all,
+        args.scope,
     )
 
 

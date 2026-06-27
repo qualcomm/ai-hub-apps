@@ -5,15 +5,15 @@
 from __future__ import annotations
 
 from pydantic import ConfigDict
-from qai_hub_models.utils.base_config import BaseQAIHMConfig
 
+from qai_hub_apps_test.configs.base_config import BaseConfig
 from qai_hub_apps_test.configs.info_yaml import QAIHACLIAppInfo
 from qai_hub_apps_test.utils.paths import REPOSITORY_ROOT
 
 _DEFAULT_REGISTRY: AppRegistry | None = None
 
 
-class AppRegistry(BaseQAIHMConfig):
+class AppRegistry(BaseConfig):
     """
     Registry of all published AI Hub Apps.
     Produced at release time and bundled with the CLI.

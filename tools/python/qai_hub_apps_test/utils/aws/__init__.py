@@ -5,13 +5,13 @@
 
 from __future__ import annotations
 
+import os
 from collections.abc import Callable
 from typing import TYPE_CHECKING, TypeVar
 
 import boto3
 import tqdm
 from botocore.exceptions import ClientError, NoCredentialsError
-from qai_hub_models.utils.envvars import IsOnCIEnvvar
 
 if TYPE_CHECKING:
     from mypy_boto3_s3.service_resource import Bucket
@@ -21,6 +21,11 @@ QAIHM_PUBLIC_S3_BUCKET = "qaihub-public-assets"
 QAIHM_PRIVATE_S3_BUCKET = "qai-hub-models-private-assets"
 
 CallableRetT = TypeVar("CallableRetT")
+
+
+def _is_on_ci() -> bool:
+    """Whether we're running in CI, per the QAIHA_CI environment variable."""
+    return os.environ.get("QAIHA_CI", "").lower() in {"true", "1", "on", "yes"}
 
 
 def attempt_with_s3_credentials_warning(
@@ -51,10 +56,10 @@ def s3_download(bucket: Bucket, key: str, local_file_path: str) -> None:
     with tqdm.tqdm(total=obj.content_length, unit="B", unit_scale=True) as t:
         attempt_with_s3_credentials_warning(
             lambda: obj.download_file(
-                local_file_path, Callback=t.update if IsOnCIEnvvar.get() else None
+                local_file_path, Callback=t.update if _is_on_ci() else None
             )
         )
-        if IsOnCIEnvvar.get():
+        if _is_on_ci():
             t.update(obj.content_length)
 
 

@@ -65,6 +65,7 @@ apps:
   runtime: onnx
   related_models: [whisper_base]
   precisions: [float]
+  model_file_dir: models
   url:
     source: https://example.com/whisper_windows_py.zip
 - name: Stable Diffusion
@@ -96,6 +97,22 @@ def whisper_app_zip(tmp_path: Path) -> Path:
         zf.writestr("requirements.txt", "onnxruntime\n")
         zf.writestr("run.py", "# Whisper app\n")
     return zip_path
+
+
+@pytest.fixture
+def exported_model_dir(tmp_path: Path) -> Path:
+    """A locally-exported model directory (metadata.json + model file)."""
+    import json
+
+    export = tmp_path / "exported_model"
+    export.mkdir()
+    (export / "whisper_base.onnx").write_text("MODEL\n")
+    (export / "metadata.json").write_text(
+        json.dumps(
+            {"model_id": "whisper_base", "model_files": {"whisper_base.onnx": {}}}
+        )
+    )
+    return export
 
 
 @pytest.fixture

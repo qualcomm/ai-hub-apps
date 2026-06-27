@@ -14,6 +14,34 @@ from qai_hub_apps.errors import QAIHubAppsError, RegistryNotFoundError
 from qai_hub_apps.registry import Registry
 
 
+def _resolve_model_asset(
+    model: str | None,
+    model_id: str | None,
+    model_path: Path | None,
+    chipset: str | None,
+) -> ModelAsset | None:
+    """Build a ModelAsset from the --model / --model-id / --model-path args.
+
+    --model-id and --model-path are explicit. Plain --model is auto-resolved: an
+    existing path is treated as a local export, otherwise as a model ID. (A
+    --model value that is both a supported model and a path is rejected later,
+    in App.fetch, with a hint to use the explicit flags.)
+    """
+    if model_id is not None:
+        return ModelAsset(model_id=model_id, chipset=chipset)
+    if model_path is not None:
+        # Resolve to an absolute path so it can never collide with a model id.
+        return ModelAsset(path=model_path.resolve())
+    if model is None:
+        return None
+    path = Path(model)
+    if path.exists():
+        if chipset is not None:
+            print("Warning: --chipset is ignored when --model is a local path.")
+        return ModelAsset(path=path)
+    return ModelAsset(model_id=model, chipset=chipset)
+
+
 def main() -> None:
     epilog = (
         "Examples:\n"
@@ -69,12 +97,30 @@ def main() -> None:
         default=Path.cwd(),
         help="Output directory (default: current directory)",
     )
-    fetch_parser.add_argument(
+    model_group = fetch_parser.add_mutually_exclusive_group()
+    model_group.add_argument(
         "--model",
         dest="model",
         default=None,
+        metavar="MODEL_ID_OR_PATH",
+        help="Model to bundle: a model ID to download (must be supported by the app), "
+        "or a path to a locally-exported model (directory or .zip). "
+        "Use --model-id or --model-path to be explicit",
+    )
+    model_group.add_argument(
+        "--model-id",
+        dest="model_id",
+        default=None,
         metavar="MODEL_ID",
-        help="Also download the specified model (must be supported by the app)",
+        help="Model ID to download (must be supported by the app)",
+    )
+    model_group.add_argument(
+        "--model-path",
+        dest="model_path",
+        default=None,
+        type=Path,
+        metavar="PATH",
+        help="Path to a locally-exported model (directory or .zip)",
     )
     fetch_parser.add_argument(
         "--chipset",
@@ -86,8 +132,11 @@ def main() -> None:
 
     args = parser.parse_args()
 
-    if args.command == "fetch" and args.chipset and not args.model:
-        fetch_parser.error("--chipset requires --model")
+    if args.command == "fetch" and args.chipset:
+        if args.model_path is not None:
+            fetch_parser.error("--chipset cannot be used with --model-path")
+        if args.model is None and args.model_id is None:
+            fetch_parser.error("--chipset requires --model or --model-id")
 
     registry_path = getattr(args, "registry", None)
 
@@ -106,10 +155,8 @@ def main() -> None:
         elif args.command == "info":
             run_info(args.app_id, registry)
         elif args.command == "fetch":
-            model_asset = (
-                ModelAsset(model_id=args.model, chipset=args.chipset)
-                if args.model is not None
-                else None
+            model_asset = _resolve_model_asset(
+                args.model, args.model_id, args.model_path, args.chipset
             )
             run_fetch(args.app_id, args.output_dir, registry, model_asset)
     except QAIHubAppsError as e:

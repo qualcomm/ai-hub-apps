@@ -20,6 +20,15 @@ qai-hub-apps fetch posenet_ubuntu_py --model posenet_mobilenet --output-dir ~
 cd ~/posenet_ubuntu_py
 ```
 
+> [!NOTE]
+> To use a model you exported yourself with [AI Hub Models](https://github.com/qualcomm/ai-hub-models),
+> pass the exported model path to `--model` in place of a model ID. The CLI places the exported
+> assets into the app automatically:
+>
+> ```bash
+> qai-hub-apps fetch posenet_ubuntu_py --model <path/to/exported_model>
+> ```
+
 ### Option B: Cloning the Repo
 
 If you cloned the release branch, the app directory is already self-contained — but **model weights are not included**. Download a compatible model from [AI Hub Models](https://aihub.qualcomm.com/iot/models), unzip the bundle and copy the tflite model to the following path before building:

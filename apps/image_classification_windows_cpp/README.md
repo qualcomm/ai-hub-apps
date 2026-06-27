@@ -25,6 +25,15 @@ cd ~\image_classification_windows_cpp
 
 This downloads the app source and places the model asset in the correct location automatically.
 
+> [!NOTE]
+> To use a model you exported yourself with [AI Hub Models](https://github.com/qualcomm/ai-hub-models),
+> pass the exported model path to `--model` in place of a model ID. The CLI places the exported
+> assets into the app automatically:
+>
+> ```powershell
+> qai-hub-apps fetch image_classification_windows_cpp --model <path\to\exported_model>
+> ```
+
 Browse the full set of compatible models on [AI Hub](https://aihub.qualcomm.com/models?domain=Computer+Vision&useCase=Image+Classification).
 
 ### Option B: Cloning the Repo

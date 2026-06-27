@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import warnings
+from typing import Any
 
 import pytest
 from pydantic import ValidationError
@@ -13,8 +14,8 @@ from qai_hub_apps.configs.registry_yaml import AppRegistry
 from qai_hub_apps.conftest import make_app_info
 
 
-def _make_registry(**overrides) -> AppRegistry:
-    defaults = dict(
+def _make_registry(**overrides: Any) -> AppRegistry:
+    defaults: dict[str, Any] = dict(
         schema_version="1.1",
         min_cli_version="0.0.1",
         apps=[make_app_info()],

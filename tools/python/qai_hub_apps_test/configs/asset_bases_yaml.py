@@ -4,14 +4,13 @@
 # ---------------------------------------------------------------------
 from __future__ import annotations
 
-from qai_hub_models.utils.base_config import BaseQAIHMConfig
-
+from qai_hub_apps_test.configs.base_config import BaseConfig
 from qai_hub_apps_test.utils.paths import APPS_ROOT
 
 _DEFAULT_ASSET_BASES: AssetBases | None = None
 
 
-class AssetBases(BaseQAIHMConfig):
+class AssetBases(BaseConfig):
     """
     Base URLs for AI Hub Apps assets.
     Loaded from apps/asset_bases.yaml.

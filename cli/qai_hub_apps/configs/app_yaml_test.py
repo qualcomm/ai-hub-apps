@@ -8,7 +8,6 @@ from pathlib import Path
 
 import pytest
 from pydantic import ValidationError
-from qai_hub_models_cli.common import Precision, TargetRuntime
 
 from qai_hub_apps.configs.app_yaml import (
     AppInfo,
@@ -38,9 +37,9 @@ def test_app_info_required_fields():
     assert info.name == "My App"
     assert info.id == "my_app"
     assert info.app_type == AppType.UBUNTU
-    assert info.runtime == TargetRuntime.ONNX
+    assert info.runtime == "onnx"
     assert info.related_models == ["whisper_base"]
-    assert info.precisions == [Precision.FLOAT]
+    assert info.precisions == ["float"]
 
 
 def test_app_info_optional_url_defaults_none():

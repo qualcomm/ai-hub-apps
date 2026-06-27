@@ -19,6 +19,15 @@ qai-hub-apps fetch stable_diffusion_windows_py --model stable_diffusion_v2_1 --c
 cd ~\stable_diffusion_windows_py
 ```
 
+> [!NOTE]
+> To use a model you exported yourself with [AI Hub Models](https://github.com/qualcomm/ai-hub-models),
+> pass the exported model path to `--model` in place of a model ID. The CLI places the exported
+> assets into the app automatically:
+>
+> ```powershell
+> qai-hub-apps fetch stable_diffusion_windows_py --model <path\to\exported_model>
+> ```
+
 ### Option B: Cloning the Repo
 
 If you cloned the release branch, the app directory is already self-contained — but **model weights are not included**. Download the `PRECOMPILED_QNN_ONNX` model files from [Qualcomm HuggingFace Repo](https://huggingface.co/qualcomm/Stable-Diffusion-v2.1) for your target device (e.g. `Snapdragon® X Elite`), extract the zip to `<APP ROOT>/model/`. The expected directory structure is:

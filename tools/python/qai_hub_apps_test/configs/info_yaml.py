@@ -6,20 +6,35 @@ import os
 from enum import Enum, unique
 from pathlib import Path
 
-from pydantic import ConfigDict, Field, field_validator, model_validator
-from qai_hub_models.configs.info_yaml import MODEL_LICENSE as LICENSE
-from qai_hub_models.models.common import Precision, TargetRuntime
-from qai_hub_models.scorecard.device import ScorecardDevice, cs_8_gen_3, cs_x_elite
-from qai_hub_models.utils.base_config import BaseQAIHMConfig
-from typing_extensions import assert_never
+from pydantic import ConfigDict, Field, model_validator
 
+from qai_hub_apps_test.configs.base_config import BaseConfig
+from qai_hub_apps_test.configs.field_types import Device, Precision, TargetRuntime
 from qai_hub_apps_test.utils.paths import APPS_ROOT, REPOSITORY_ROOT
 
 
 @unique
 class AppStatus(Enum):
-    UNPUBLISHED = "unpublished"
-    PUBLISHED = "published"
+    UNPUBLISHED = "unpublished"  # WIP: not on the website or CLI, but tested in CI
+    PUBLISHED = "published"  # Live on the website, in the CLI, and tested
+    PUBLISHED_WEBSITE_ONLY = (
+        "published_website_only"  # On the website only; not CLI-fetchable or tested
+    )
+    DEPRECATED = "deprecated"  # Like published, but carries a deprecation notice
+
+
+@unique
+class AppLicense(Enum):
+    UNLICENSED = "unlicensed"
+    COMMERCIAL = "commercial"
+    APACHE_2_0 = "apache-2.0"
+    MIT = "mit"
+    BSD_3_CLAUSE = "bsd-3-clause"
+    CC_BY_4_0 = "cc-by-4.0"
+    AGPL_3_0 = "agpl-3.0"
+    GPL_3_0 = "gpl-3.0"
+    OTHER_NON_COMMERCIAL = "other-non-commercial"
+    CC_BY_NON_COMMERCIAL_4_0 = "cc-by-non-commercial-4.0"
 
 
 @unique
@@ -36,22 +51,12 @@ class AppType(Enum):
     WINDOWS = "windows"
     UBUNTU = "ubuntu"
 
-    @property
-    def default_device(self) -> ScorecardDevice:
-        if self == AppType.ANDROID:
-            return cs_8_gen_3
-        if self == AppType.WINDOWS:
-            return cs_x_elite
-        if self == AppType.UBUNTU:
-            return cs_x_elite  # safe-harbor; no device has ubuntu os yet
-        assert_never(self)
 
-
-class AppUrl(BaseQAIHMConfig):
+class AppUrl(BaseConfig):
     source: str
 
 
-class QAIHACLIAppInfo(BaseQAIHMConfig):
+class QAIHACLIAppInfo(BaseConfig):
     """CLI-facing subset of app info — the fields written to registry.yaml."""
 
     model_config = ConfigDict(extra="ignore")
@@ -75,6 +80,9 @@ class QAIHACLIAppInfo(BaseQAIHMConfig):
     # Set True for apps that download their model at runtime
     disable_cli_model_fetch: bool = False
     url: AppUrl | None = None
+    # Optional message shown by the CLI for DEPRECATED apps. If unset, a default
+    # deprecation message is used.
+    deprecation_notice: str | None = None
 
     @model_validator(mode="after")
     def _validate_model_location(self) -> "QAIHACLIAppInfo":
@@ -109,16 +117,10 @@ class QAIHAAppInfo(QAIHACLIAppInfo):
     ##########################
 
     skip_test: str | None = None
-    include_in_cli: bool = True
-    supported_devices: list[ScorecardDevice] = Field(default_factory=list)
+    supported_devices: list[Device] = Field(default_factory=list)
     app_repo_relative_path: str | None = (
         None  # relative path within qualcomm/ai-hub-apps
     )
-
-    @field_validator("supported_devices", mode="before")
-    @classmethod
-    def _parse_devices(cls, v: list) -> list[ScorecardDevice]:
-        return [ScorecardDevice.parse(d) if isinstance(d, str) else d for d in v]
 
     @model_validator(mode="after")
     def _validate_repo(self) -> "QAIHAAppInfo":
@@ -130,7 +132,7 @@ class QAIHAAppInfo(QAIHACLIAppInfo):
 
     # License information
     license_url: str
-    license_type: LICENSE
+    license_type: AppLicense
 
     languages: list[AppLanguage]
 

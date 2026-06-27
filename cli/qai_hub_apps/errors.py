@@ -23,6 +23,10 @@ class AppIncompatibleError(QAIHubAppsError):
     pass
 
 
+class InvalidArgumentError(QAIHubAppsError):
+    pass
+
+
 class RegistryNotFoundError(QAIHubAppsError):
     def __init__(self, path: Path | str) -> None:
         super().__init__(
@@ -39,11 +43,20 @@ class RegistryFetchError(QAIHubAppsError):
 
 
 class ModelAssetNotFoundError(QAIHubAppsError):
-    def __init__(self, model_id: str, chipset: str | None = None) -> None:
+    def __init__(
+        self,
+        model_id: str,
+        chipset: str | None = None,
+        *,
+        reason: str | None = None,
+    ) -> None:
         self.model_id = model_id
         self.chipset = chipset
         detail = f" for chipset '{chipset}'" if chipset else ""
-        super().__init__(
-            f"Model asset '{model_id}'{detail} not found. "
-            "Check that the model ID and chipset are correct."
+        message = f"Model asset '{model_id}'{detail} not found."
+        message += (
+            f" {reason}"
+            if reason
+            else " Check that the model ID and chipset are correct."
         )
+        super().__init__(message)
