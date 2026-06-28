@@ -111,4 +111,4 @@ geniex infer local/llama_v3_2_3b_instruct
 
 For installation and all other run options (Python SDK, Android SDK, local
 server), see the
-[GenieX documentation](https://refactored-happiness-4qyl9vn.pages.github.io/).
+[GenieX documentation](https://geniex.aihub.qualcomm.com/).

@@ -14,7 +14,7 @@ Supported platforms:
 
 > [!IMPORTANT]
 > **The complete, authoritative
-> [GenieX documentation](https://refactored-happiness-4qyl9vn.pages.github.io/)**
+> [GenieX documentation](https://geniex.aihub.qualcomm.com/)**
 > covers installation, running
 > models, supported platforms and runtimes, the Python and Android SDKs, the
 > local server, and troubleshooting. This tutorial intentionally keeps only a
@@ -25,7 +25,7 @@ Supported platforms:
 ## Quickstart
 
 First install the GenieX CLI by following the
-[installation guide](https://refactored-happiness-4qyl9vn.pages.github.io/),
+[installation guide](https://geniex.aihub.qualcomm.com/),
 then run your first model:
 
 ```bash
@@ -44,7 +44,7 @@ geniex infer <org>/<repo>-GGUF
 
 For installation, the Python and Android SDKs, the OpenAI-compatible local
 server, the list of tested models, runtime/compute-unit options, and
-troubleshooting, see the **[GenieX documentation](https://refactored-happiness-4qyl9vn.pages.github.io/)**.
+troubleshooting, see the **[GenieX documentation](https://geniex.aihub.qualcomm.com/)**.
 
 ## Export your own model bundle
 
