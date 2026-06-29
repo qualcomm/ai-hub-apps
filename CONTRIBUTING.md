@@ -217,6 +217,7 @@ Every app must have an `info.yaml`. Copy from a similar app and adjust.
 | `deprecation_notice` | — | Message shown by the CLI for `deprecated` apps. If unset, a default deprecation message is used |
 | `skip_test` | — | String reason to skip CI testing |
 | `app_repo_url` | — | Explicit GitHub URL (overrides `app_repo_relative_path` — use for external repos) |
+| `qaihm_version` | — | Explicit Qualcomm AI Hub Models CLI version to use when dowloading model assets. By default, the installed version of the models-cli is used, if provided, this version will be used instead |
 
 ### App Status
 

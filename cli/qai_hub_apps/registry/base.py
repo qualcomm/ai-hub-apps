@@ -12,6 +12,7 @@ from collections.abc import ValuesView
 from pathlib import Path
 from typing import Any
 
+from packaging.version import Version
 from qai_hub_models_cli.fetch import get_asset_url
 from qai_hub_models_cli.proto_helpers.release_assets import AssetNotFoundError
 from qai_hub_models_cli.utils import download, extract_zip_file, get_next_free_path
@@ -115,11 +116,14 @@ class App:
 
         assert model_asset.model_id is not None  # set when path is None
         try:
+            resolved_qaihm_version = (
+                Version(self.qaihm_version) if self.qaihm_version else QAIHM_VERSION
+            )
             model_download_url = get_asset_url(
                 model=model_asset.model_id,
                 runtime=self.runtime[0],
                 precision=self.precisions[0],
-                version=QAIHM_VERSION,
+                version=resolved_qaihm_version,
                 chipset=model_asset.chipset,
             )
         except AssetNotFoundError as e:

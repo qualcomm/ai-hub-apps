@@ -12,6 +12,7 @@ app_type: 'windows'
 static_img_filename: 'app_screen.png'
 base_docker: windows.dockerfile
 app_repo_relative_path: 'stable_diffusion_windows_py'
+qaihm_version: 0.53.1
 os:
   name: Windows
   version: 11+

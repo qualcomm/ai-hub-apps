@@ -169,6 +169,7 @@ apps:
   - model/text_encoder.onnx
   - model/unet.onnx
   - model/vae.onnx
+  qaihm_version: 0.53.1
 - name: Super Resolution Android
   id: super_resolution_android
   status: published
@@ -221,3 +222,4 @@ apps:
   model_file_paths:
   - models/encoder.onnx
   - models/decoder.onnx
+  qaihm_version: 0.53.1

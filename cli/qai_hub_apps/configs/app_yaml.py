@@ -63,6 +63,7 @@ class AppInfo(BaseConfig):
     environment: EnvironmentConfig | None = None
     url: AppUrl | None = None
     deprecation_notice: str | None = None
+    qaihm_version: str | None = None
 
     @field_validator("runtime", mode="before")
     @classmethod

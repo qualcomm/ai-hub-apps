@@ -85,6 +85,10 @@ class QAIHACLIAppInfo(BaseConfig):
     # deprecation message is used.
     deprecation_notice: str | None = None
 
+    # Supported AI Hub Models version (this version is used by the CLI to download model assets)
+    # If None, assumes any version is supported.
+    qaihm_version: str | None = None
+
     @field_validator("runtime", mode="before")
     @classmethod
     def _normalize_runtime(cls, value: object) -> object:
@@ -150,10 +154,6 @@ class QAIHAAppInfo(QAIHACLIAppInfo):
     ##########################
 
     base_docker: str | None = None  # Dockerfile filename relative to tools/docker/
-
-    # Supported AI Hub Models version
-    # If None, assumes any version is supported.
-    qaihm_version: str | None = None
 
     # Path to private S3 URLs that CI will use to fetch certain models. map<Model ID, map<Precision, map<Chipset, Relative S3 Path>>
     # This is necessary for complex models (like LLMs) until AI Hub Models has a good way to fetch these.
