@@ -96,7 +96,7 @@ jobs:
           git diff --name-only "$BASE_SHA"...HEAD > changed.txt
           python tools/ci/find_updated_apps.py --diff-file changed.txt >> $GITHUB_OUTPUT
 
-  build-changed-apps:
+  build_changed_apps:
     name: "Build Changed Apps"
     needs: [detect_changed_apps]
     if: ${{ needs.detect_changed_apps.outputs.has_app_changes == 'true' }}
@@ -106,3 +106,28 @@ jobs:
       test_stage: build
       model_selection: first
       app_filter: ${{ needs.detect_changed_apps.outputs.app_filter }}
+
+  # The build_changed_apps matrix has dynamic, per-PR job names and is skipped entirely when no apps change.
+  # This job always runs and reports a single fixed status: pass when builds succeed or were correctly skipped, fail otherwise.
+  ensure_builds_pass:
+    name: "Ensure Builds Pass"
+    needs: [detect_changed_apps, build_changed_apps]
+    if: always()
+    runs-on: [tetra-ubuntu-2204, self-hosted]
+    steps:
+      - name: Verify build result
+        run: |
+          detect_result="${{ needs.detect_changed_apps.result }}"
+          build_result="${{ needs.build_changed_apps.result }}"
+          echo "detect_changed_apps result: $detect_result"
+          echo "build_changed_apps result:  $build_result"
+          if [[ "$detect_result" != "success" ]]; then
+            echo "::error::Detect Changed Apps did not succeed (result: $detect_result)"
+            exit 1
+          fi
+          # 'skipped' is OK (no app changes); 'success' is OK. Anything else
+          # (failure, cancelled) should block the merge.
+          if [[ "$build_result" != "success" && "$build_result" != "skipped" ]]; then
+            echo "::error::Build Changed Apps did not pass (result: $build_result)"
+            exit 1
+          fi
