@@ -9,6 +9,7 @@ from unittest.mock import MagicMock
 import pytest
 
 from qai_hub_apps.commands.list_apps import run_info, run_list
+from qai_hub_apps.configs.app_yaml import AppLanguage
 from qai_hub_apps.conftest import make_app_info
 from qai_hub_apps.errors import AppNotFoundError
 from qai_hub_apps.registry.base import App
@@ -27,18 +28,28 @@ def test_run_list_prints_app_count(capsys):
     )
     run_list(registry)
     out = capsys.readouterr().out
-    assert "(2 apps)" in out
+    assert "Total: 2 apps" in out
 
 
-def test_run_list_prints_app_ids(capsys):
+def test_run_list_happy_path_output(capsys):
     registry = _make_registry_with_apps(
-        make_app_info(id="whisper_windows_py", name="Whisper"),
+        make_app_info(
+            id="whisper_windows_py",
+            name="Whisper",
+            domain="Audio",
+            languages=[AppLanguage.PYTHON, AppLanguage.CPP],
+        ),
         make_app_info(id="stable_diffusion_py", name="Stable Diffusion"),
     )
     run_list(registry)
     out = capsys.readouterr().out
     assert "whisper_windows_py" in out
     assert "stable_diffusion_py" in out
+
+    assert "Domain" in out
+    assert "Languages" in out
+    assert "Audio" in out
+    assert "Python, C++" in out
 
 
 def test_run_list_empty_registry(capsys):

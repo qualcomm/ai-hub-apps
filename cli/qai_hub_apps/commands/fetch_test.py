@@ -21,14 +21,17 @@ def _make_registry(fetch_return=Path("/tmp/test_app")):
     return registry
 
 
-def test_run_fetch_success(capsys):
+def test_run_fetch_success(caplog, capsys):
     dest = Path("/tmp/test_app")
     registry = _make_registry(fetch_return=dest)
-    run_fetch("test_app", Path("/tmp"), registry)
+    with caplog.at_level("INFO", logger="qai_hub_apps"):
+        run_fetch("test_app", Path("/tmp"), registry)
     registry.fetch_app.assert_called_once_with(
         "test_app", Path("/tmp"), model_asset=None
     )
-    assert dest.as_posix() in capsys.readouterr().out
+    assert dest.as_posix() in caplog.text
+    # The fetched path is printed to stdout so it can be piped to other commands.
+    assert capsys.readouterr().out.strip() == str(dest)
 
 
 def test_run_fetch_with_model_asset(capsys):

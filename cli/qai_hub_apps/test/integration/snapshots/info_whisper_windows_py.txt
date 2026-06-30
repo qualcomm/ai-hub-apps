@@ -1,16 +1,24 @@
-Whisper Windows
-══════════════════════════════════════════════════
++=============================================================================+
+|                               Whisper Windows                               |
+|  https://github.com/qualcomm/ai-hub-apps/tree/main/apps/whisper_windows_py  |
++=============================================================================+
 
-ID:         whisper_windows_py
-Type:       windows
-Runtime:    onnx
-Domain:     Audio
-Use Case:   Speech Recognition
-Precision:  float
-Models:     whisper_base
++-----------------------------------+
+|            Description            |
++-----------------------------------+
+| Run Whisper on-device using ONNX. |
++-----------------------------------+
 
-Speech to text on Windows
-
-Run Whisper on-device using ONNX.
-
-Repo:  https://github.com/qualcomm/ai-hub-apps/tree/main/apps/whisper_windows_py
++------------------------------------+
+|              Metadata              |
++---------------+--------------------+
+| ID            | whisper_windows_py |
+| Type          | windows            |
+| Languages     | Python             |
+| Runtime       | onnx               |
+| Domain        | Audio              |
+| Use Case      | Speech Recognition |
+| Precision     | float              |
+| Models        | whisper_base       |
+| AI Hub Models | 0.30.0             |
++---------------+--------------------+

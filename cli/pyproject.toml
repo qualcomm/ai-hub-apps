@@ -20,6 +20,7 @@ dependencies = [
     "qai-hub-models-cli @ https://qaihub-public-assets.s3.us-west-2.amazonaws.com/qai-hub-models/wheels/qai_hub_models_cli-0.56.1.dev77%2Bgf11aaf934-py3-none-any.whl",
     "packaging>=24.2",
     "platformdirs>=3.0",
+    "prettytable>=3.10,<=3.16.0",
     "pydantic>=2.0",
     "pyyaml",
 ]

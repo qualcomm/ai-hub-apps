@@ -17,6 +17,9 @@ apps:
   - llama_v3_2_3b_instruct
   precisions:
   - w4a16
+  languages:
+  - Java
+  - C++
   model_file_dir: src/main/assets/models/llm
   deprecation_notice: LLM Chat Android is deprecated in favour of the GenieX Demo app (geniex_chat_android), which runs LLMs and VLMs on-device via the Qualcomm® GenieX SDK.
 - name: LLM Chat Windows
@@ -38,6 +41,8 @@ apps:
   - llama_v3_taide_8b_chat
   precisions:
   - w4a16
+  languages:
+  - C++
   model_file_dir: genie_bundle
   deprecation_notice: LLM Chat Windows is deprecated in favour of the GenieX Chat Windows (geniex_chat_windows), which runs LLMs and VLMs on-device via the Qualcomm® GenieX SDK.
 - name: Image Classification Android
@@ -73,6 +78,8 @@ apps:
   - wideresnet50
   precisions:
   - float
+  languages:
+  - Java
   model_file_paths:
   - src/main/assets/classifier.tflite
 - name: Image Classification Windows
@@ -108,6 +115,8 @@ apps:
   - wideresnet50
   precisions:
   - float
+  languages:
+  - C++
   model_file_paths:
   - assets/models/classification.onnx
 - name: MediaPipe Hand Gesture Recognition
@@ -125,6 +134,8 @@ apps:
   - mediapipe_hand_gesture
   precisions:
   - w8a8
+  languages:
+  - Python
   model_file_paths:
   - models/palm_detector.tflite
   - models/hand_landmark_detector.tflite
@@ -148,6 +159,8 @@ apps:
   - ffnet_122ns_lowres
   precisions:
   - float
+  languages:
+  - Java
   model_file_paths:
   - src/main/assets/segmenter.tflite
 - name: Stable Diffusion Windows
@@ -165,6 +178,8 @@ apps:
   - stable_diffusion_v2_1
   precisions:
   - w8a16
+  languages:
+  - Python
   model_file_paths:
   - model/text_encoder.onnx
   - model/unet.onnx
@@ -185,6 +200,8 @@ apps:
   - xlsr
   precisions:
   - float
+  languages:
+  - Java
   model_file_paths:
   - src/main/assets/superres.tflite
 - name: Super Resolution Windows
@@ -202,6 +219,8 @@ apps:
   - xlsr
   precisions:
   - float
+  languages:
+  - C++
   model_file_paths:
   - assets/models/super_resolution.onnx
 - name: Whisper Windows
@@ -219,6 +238,8 @@ apps:
   - whisper_base
   precisions:
   - float
+  languages:
+  - Python
   model_file_paths:
   - models/encoder.onnx
   - models/decoder.onnx

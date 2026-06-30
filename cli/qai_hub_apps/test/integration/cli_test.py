@@ -37,6 +37,7 @@ def test_fetch_output(
         return dest
 
     monkeypatch.setattr("qai_hub_apps.registry.base._is_dev", lambda: False)
+    monkeypatch.setattr("qai_hub_apps.configs.registry_yaml._is_dev", lambda: False)
     monkeypatch.setattr("qai_hub_apps.registry.base.is_app_supported", lambda _: True)
 
     # only mock download from qai_hub_models_cli
@@ -54,7 +55,11 @@ def test_fetch_output(
         monkeypatch,
     )
 
-    out = capsys.readouterr().out.replace(tmp_path.as_posix(), "<dest>")
+    out = (
+        capsys.readouterr()
+        .out.replace("\\", "/")
+        .replace(tmp_path.as_posix(), "<dest>")
+    )
     snapshot("fetch.txt", out)
 
     extracted = tmp_path / "whisper_windows_py"
@@ -68,7 +73,6 @@ def test_fetch_with_local_model_dir(
     monkeypatch,
     two_app_registry,
     tmp_path,
-    capsys,
     snapshot,
     whisper_app_zip,
     exported_model_dir,
@@ -105,9 +109,6 @@ def test_fetch_with_local_model_dir(
         monkeypatch,
     )
 
-    out = capsys.readouterr().out.replace(tmp_path.as_posix(), "<dest>")
-    snapshot("fetch_local_model.txt", out)
-
     extracted = tmp_path / "whisper_windows_py"
     tree = "\n".join(
         str(p.relative_to(extracted)) for p in sorted(extracted.rglob("*"))
@@ -116,7 +117,7 @@ def test_fetch_with_local_model_dir(
 
 
 def test_fetch_ambiguous_model_exits(
-    monkeypatch, two_app_registry, tmp_path, capsys, whisper_app_zip
+    monkeypatch, two_app_registry, tmp_path, caplog, whisper_app_zip
 ):
     def fake_download(url, dest, **kwargs):
         dest = Path(dest)
@@ -148,10 +149,10 @@ def test_fetch_ambiguous_model_exits(
             monkeypatch,
         )
 
-    assert "--model-id or --model-path" in capsys.readouterr().out
+    assert "--model-id or --model-path" in caplog.text
 
 
-def test_fetch_dev_output(monkeypatch, two_app_registry, tmp_path, capsys, snapshot):
+def test_fetch_dev_output(monkeypatch, two_app_registry, tmp_path, snapshot):
     def fake_bundle_app(app_id, dest, make_zip=False):
         out_dir = Path(dest) / app_id
         out_dir.mkdir(parents=True, exist_ok=True)
@@ -175,9 +176,6 @@ def test_fetch_dev_output(monkeypatch, two_app_registry, tmp_path, capsys, snaps
         ],
         monkeypatch,
     )
-
-    out = capsys.readouterr().out.replace(tmp_path.as_posix(), "<dest>")
-    snapshot("fetch_dev.txt", out)
 
     extracted = tmp_path / "stable_diffusion_py"
     tree = "\n".join(

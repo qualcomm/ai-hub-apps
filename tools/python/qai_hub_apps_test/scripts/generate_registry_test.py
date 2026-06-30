@@ -58,7 +58,7 @@ def test_constructs_url_from_relative_path() -> None:
     info = make_sample_app_info(app_repo_url=None, app_repo_relative_path="my_app")
     assert (
         _resolve_repo_url(info, _REPO_BASE, "v1.0")
-        == f"{_REPO_BASE}/tree/v1.0/apps/my_app"
+        == f"{_REPO_BASE}/tree/apps/v1.0/my_app"
     )
 
 

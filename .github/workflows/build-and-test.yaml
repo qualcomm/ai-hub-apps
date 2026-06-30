@@ -75,6 +75,8 @@ jobs:
       VENV_PATH: qaiha-dev
     steps:
     - uses: actions/checkout@v7
+      with:
+        fetch-depth: 0
     - id: setup_python
       uses: actions/setup-python@v6
       with:

@@ -4,7 +4,7 @@
 # ---------------------------------------------------------------------
 from __future__ import annotations
 
-import warnings
+import logging
 
 from packaging.version import Version
 from pydantic import model_validator
@@ -20,6 +20,8 @@ SCHEMA_CLI_SUPPORT_MAP: dict[str, str] = {
 }
 
 MIN_SUPPORTED_SCHEMA_VERSION = Version("1.1")
+
+logger = logging.getLogger(__name__)
 
 
 class AppRegistry(BaseConfig):
@@ -59,7 +61,7 @@ class AppRegistry(BaseConfig):
                 "Use generate_registry --build_and_upload to produce a versioned registry."
             )
             if _is_dev():
-                warnings.warn(msg, stacklevel=2)
+                logger.warning(msg, stacklevel=2)
             else:
                 raise ValueError(
                     "Registry is missing a version. "
@@ -76,7 +78,7 @@ class AppRegistry(BaseConfig):
                 f"but you have {__version__}. Please upgrade: pip install -U qai-hub-apps"
             )
             if _is_dev():
-                warnings.warn(msg, stacklevel=2)
+                logger.warning(msg, stacklevel=2)
             else:
                 raise ValueError(msg)
 
@@ -87,7 +89,7 @@ class AppRegistry(BaseConfig):
                 f"but you have {__version__}. Please upgrade: pip install -U qai-hub-apps"
             )
             if _is_dev():
-                warnings.warn(msg, stacklevel=2)
+                logger.warning(msg, stacklevel=2)
             else:
                 raise ValueError(msg)
 

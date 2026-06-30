@@ -4,6 +4,7 @@
 # ---------------------------------------------------------------------
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 
 import pytest
@@ -47,6 +48,16 @@ def reset_registry_singleton():
     Registry._instance = None
     yield
     Registry._instance = None
+
+
+@pytest.fixture(autouse=True)
+def configure_test_logging():
+    """Run the package logger at debug level so caplog sees every record."""
+    logger = logging.getLogger("qai_hub_apps")
+    saved_level = logger.level
+    logger.setLevel(logging.DEBUG)
+    yield
+    logger.setLevel(saved_level)
 
 
 @pytest.fixture

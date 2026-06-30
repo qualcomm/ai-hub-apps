@@ -184,7 +184,7 @@ def test_fetch_chipset_with_model_path_exits(
 
 
 def test_fetch_model_path_with_chipset_warns(
-    monkeypatch, tmp_path, sample_registry_yaml, capsys
+    monkeypatch, tmp_path, sample_registry_yaml, caplog
 ):
     export_dir = tmp_path / "exported"
     export_dir.mkdir()
@@ -205,7 +205,7 @@ def test_fetch_model_path_with_chipset_warns(
         ],
         monkeypatch,
     )
-    assert "--chipset is ignored" in capsys.readouterr().out
+    assert "--chipset is ignored" in caplog.text
 
 
 def test_fetch_without_model_passes_none(monkeypatch, tmp_path, sample_registry_yaml):
@@ -252,11 +252,11 @@ def test_missing_registry_exits_1(monkeypatch, tmp_path):
     assert exc.value.code == 1
 
 
-def test_missing_registry_prints_message(monkeypatch, tmp_path, capsys):
+def test_missing_registry_prints_message(monkeypatch, tmp_path, caplog):
     nonexistent = tmp_path / "nonexistent.yaml"
     with pytest.raises(SystemExit):
         _run_main(["list", "--registry", str(nonexistent)], monkeypatch)
-    assert "Registry not found" in capsys.readouterr().out
+    assert "Registry not found" in caplog.text
 
 
 def test_qai_hub_apps_error_exits_1(monkeypatch, sample_registry_yaml):
@@ -269,14 +269,14 @@ def test_qai_hub_apps_error_exits_1(monkeypatch, sample_registry_yaml):
     assert exc.value.code == 1
 
 
-def test_qai_hub_apps_error_prints_message(monkeypatch, sample_registry_yaml, capsys):
+def test_qai_hub_apps_error_prints_message(monkeypatch, sample_registry_yaml, caplog):
     monkeypatch.setattr(
         "qai_hub_apps.main.run_list",
         MagicMock(side_effect=QAIHubAppsError("something went wrong")),
     )
     with pytest.raises(SystemExit):
         _run_main(["list", "--registry", str(sample_registry_yaml)], monkeypatch)
-    assert "something went wrong" in capsys.readouterr().out
+    assert "something went wrong" in caplog.text
 
 
 def test_no_command_does_not_crash(monkeypatch, capsys):

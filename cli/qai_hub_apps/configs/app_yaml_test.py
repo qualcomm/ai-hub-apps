@@ -84,6 +84,7 @@ def test_app_language_enum_values():
     assert AppLanguage("C++") == AppLanguage.CPP
     assert AppLanguage("Java") == AppLanguage.JAVA
     assert AppLanguage("Kotlin") == AppLanguage.KOTLIN
+    assert AppLanguage("Go") == AppLanguage.GO
 
 
 def test_extra_fields_ignored():

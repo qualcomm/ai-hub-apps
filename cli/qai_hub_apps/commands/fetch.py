@@ -4,12 +4,15 @@
 # ---------------------------------------------------------------------
 from __future__ import annotations
 
+import logging
 import urllib.error
 from pathlib import Path
 
 from qai_hub_apps.configs.model_asset import ModelAsset
 from qai_hub_apps.errors import QAIHubAppsError
 from qai_hub_apps.registry import Registry
+
+logger = logging.getLogger(__name__)
 
 
 def run_fetch(
@@ -27,4 +30,5 @@ def run_fetch(
             else f"Download failed: {e.reason}"
         )
         raise QAIHubAppsError(msg) from e
-    print(f"Extracted to {app_dest.as_posix()}")
+    logger.info("Extracted to %s", app_dest.as_posix())
+    print(app_dest)

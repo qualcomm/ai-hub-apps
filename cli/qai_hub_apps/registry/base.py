@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import shutil
 import tempfile
 import zipfile
@@ -13,9 +14,15 @@ from pathlib import Path
 from typing import Any
 
 from packaging.version import Version
+from prettytable import PrettyTable
 from qai_hub_models_cli.fetch import get_asset_url
 from qai_hub_models_cli.proto_helpers.release_assets import AssetNotFoundError
-from qai_hub_models_cli.utils import download, extract_zip_file, get_next_free_path
+from qai_hub_models_cli.utils import (
+    download,
+    extract_zip_file,
+    get_next_free_path,
+    wrap_table_column,
+)
 from qai_hub_models_cli.versions import CURRENT_VERSION as QAIHM_VERSION
 
 from qai_hub_apps import __version__, _is_dev
@@ -37,6 +44,8 @@ from qai_hub_apps.errors import (
 )
 from qai_hub_apps.utils.github import make_issue_url
 from qai_hub_apps.validate import is_app_supported
+
+logger = logging.getLogger(__name__)
 
 DEFAULT_DEPRECATION_MESSAGE = (
     "This app is deprecated and may be removed in a future release."
@@ -64,6 +73,12 @@ class App:
 
     def _ensure_model_supported(self, model_id: str) -> None:
         """Raise if *model_id* is not one of the app's supported models."""
+        logger.debug(
+            "Checking model '%s' against supported models %s for app '%s'",
+            model_id,
+            self.related_models,
+            self.id,
+        )
         if model_id not in self.related_models:
             available = ", ".join(self.related_models) or "none"
             raise AppIncompatibleError(
@@ -77,9 +92,13 @@ class App:
         bundles the app from local source.
         """
         staged = tmp / self.id
+        logger.debug("Staging app '%s' into %s", self.id, staged)
         if self.url is not None:
-            print(f"Fetching from: {self.url.source}")
-            return download(self.url.source, staged, extract=True)
+            logger.info("Fetching from: %s", self.url.source)
+            result = download(self.url.source, staged, extract=True)
+            logger.debug("Downloaded and extracted app source to %s", result)
+            return result
+        logger.debug("No source URL in registry for '%s'", self.id)
         if not _is_dev():
             raise QAIHubAppsError(
                 "No source URL found in registry. "
@@ -91,9 +110,10 @@ class App:
                 "Dev install detected but qai_hub_apps_test is not installed. "
                 "Install it with: pip install -e tools/python/"
             )
-        print(f"Dev install: bundling '{self.id}' from source...")
+        logger.debug("Dev install: bundling '%s' from source...", self.id)
         # bundle_app with make_zip=False writes to tmp/<app_id>/ == staged
         _bundle_app(self.id, tmp, make_zip=False)
+        logger.debug("Bundled '%s' from source into %s", self.id, staged)
         return staged
 
     def _stage_model(self, model_asset: ModelAsset, dest: Path) -> None:
@@ -104,9 +124,12 @@ class App:
         """
         if model_asset.path is not None:
             src = model_asset.path
+            logger.debug("Staging local model from %s into %s", src, dest)
             if zipfile.is_zipfile(src):
+                logger.debug("Local model is a zip; extracting %s", src)
                 extract_zip_file(src, dest)
             elif src.is_dir():
+                logger.debug("Local model is a directory; copying %s", src)
                 shutil.copytree(src, dest)
             else:
                 raise AppIncompatibleError(
@@ -118,6 +141,14 @@ class App:
         try:
             resolved_qaihm_version = (
                 Version(self.qaihm_version) if self.qaihm_version else QAIHM_VERSION
+            )
+            logger.debug(
+                "Resolving asset URL: model=%s runtime=%s precision=%s version=%s chipset=%s",
+                model_asset.model_id,
+                self.runtime[0],
+                self.precisions[0],
+                resolved_qaihm_version,
+                model_asset.chipset,
             )
             model_download_url = get_asset_url(
                 model=model_asset.model_id,
@@ -140,12 +171,15 @@ class App:
             raise ModelAssetNotFoundError(
                 model_asset.model_id, model_asset.chipset
             ) from e
+        logger.info("Fetching model from: %s", model_download_url)
         download(model_download_url, dest, extract=True)
+        logger.debug("Downloaded and extracted model asset into %s", dest)
 
     def _read_model_metadata(self, model_dir: Path, model_asset: ModelAsset) -> dict:
         """Read and validate metadata.json for a model in *model_dir*."""
         is_local = model_asset.path is not None
         metadata_path = model_dir / "metadata.json"
+        logger.debug("Reading model metadata from %s", metadata_path)
         if not metadata_path.exists():
             if is_local:
                 raise AppIncompatibleError(
@@ -190,6 +224,11 @@ class App:
                 f"  {issue_url}"
             )
 
+        logger.debug(
+            "Parsed metadata: model_id=%s, model_files=%s",
+            metadata["model_id"],
+            list(metadata["model_files"].keys()),
+        )
         return metadata
 
     def _place_model_in_app(
@@ -202,6 +241,13 @@ class App:
         """
         model_id = metadata["model_id"]
         src_names = list(metadata["model_files"].keys())
+        logger.debug(
+            "Placing model '%s' (%d file(s)) into app '%s' using %s",
+            model_id,
+            len(src_names),
+            self.id,
+            "model_file_paths" if self.model_file_paths else "model_file_dir",
+        )
         if self.model_file_paths:
             dst_paths = self.model_file_paths
             if len(src_names) != len(dst_paths):
@@ -243,6 +289,9 @@ class App:
             # Move entire asset into its destination directory
             models_dest = app_dir / Path(dst_paths[0]).parent
             models_dest.mkdir(parents=True, exist_ok=True)
+            logger.debug(
+                "Moving model files into %s (rename map: %s)", models_dest, rename_map
+            )
             for item in model_dir.iterdir():
                 dest_name = rename_map.get(item.name, item.name)
                 if item.name == "metadata.json":
@@ -261,6 +310,7 @@ class App:
             # model_file_dir: drop all files as-is into the target directory
             models_dest = app_dir / self.model_file_dir
             models_dest.mkdir(parents=True, exist_ok=True)
+            logger.debug("Dropping model files as-is into %s", models_dest)
             for item in model_dir.iterdir():
                 shutil.move(str(item), models_dest / item.name)
 
@@ -270,18 +320,21 @@ class App:
         model_asset: ModelAsset | None = None,
     ) -> Path:
         """Download and extract app source. Returns the extraction path."""
+        logger.debug("fetch('%s'): dest=%s, model_asset=%s", self.id, dest, model_asset)
         app_dest = dest / self.id
 
         if app_dest.exists():
             new_dest = get_next_free_path(app_dest)
-            print(f"Warning: {app_dest} already exists, saving to {new_dest} instead.")
+            logger.info("%s already exists, saving to %s instead.", app_dest, new_dest)
             app_dest = new_dest
 
         is_model_required = model_asset is not None
         is_model_local = model_asset is not None and model_asset.path is not None
+        logger.debug("Model required=%s, local=%s", is_model_required, is_model_local)
 
         with tempfile.TemporaryDirectory() as _tmp:
             tmp = Path(_tmp)
+            logger.debug("Using temporary staging directory %s", tmp)
 
             if is_model_required:
                 assert model_asset is not None
@@ -317,6 +370,7 @@ class App:
                 model_tmp = tmp / "model_asset"
                 self._stage_model(model_asset, model_tmp)
                 metadata = self._read_model_metadata(model_tmp, model_asset)
+                logger.debug("Validating staged model against app '%s'", self.id)
                 meta_model_id = metadata["model_id"]
                 if is_model_local:
                     # check the local model is supported by the app
@@ -340,30 +394,55 @@ class App:
                     )
                 self._place_model_in_app(model_tmp, staged, metadata)
 
+            logger.debug("Moving staged app from %s to %s", staged, app_dest)
             shutil.move(staged, app_dest)
 
+        logger.debug("fetch('%s') complete: %s", self.id, app_dest)
         return app_dest
 
     def __repr__(self) -> str:
-        lines = [self.name, "\u2550" * 50, ""]
-        if deprecation := self.deprecation_message():
-            lines.append(f"\u26a0  DEPRECATED: {deprecation}\n")
-        for label, value in self.detail_fields():
-            lines.append(f"{label + ':':<12}{value}")
-        lines.append("")
-        if self.headline:
-            lines.append(f"{self.headline}\n")
-        if self.description:
-            lines.append(f"{self.description}\n")
+        banner_lines = [self.name]
         if self.app_repo_url:
-            lines.append(f"Repo:  {self.app_repo_url}")
-        return "\n".join(lines)
+            banner_lines.append(self.app_repo_url)
+        width = max(len(line) for line in banner_lines) + 4
+        out = ["+" + "=" * width + "+"]
+        out += [f"| {line:^{width - 2}} |" for line in banner_lines]
+        out.append("+" + "=" * width + "+")
+        out.append("")
+
+        if deprecation := self.deprecation_message():
+            out.append(f"\u26a0  DEPRECATED: {deprecation}")
+            out.append("")
+
+        if self.description:
+            desc_table = PrettyTable()
+            desc_table.title = "Description"
+            desc_table.header = False
+            desc_table.align = "l"
+            desc_table.add_row([self.description])
+            wrap_table_column(desc_table, 0)
+            out.append(str(desc_table))
+            out.append("")
+
+        metadata_table = PrettyTable()
+        metadata_table.title = "Metadata"
+        metadata_table.header = False
+        metadata_table.align = "l"
+        for label, value in self.detail_fields():
+            metadata_table.add_row([label, value])
+        wrap_table_column(metadata_table, 1, wrap_on_commas=True)
+        out.append(str(metadata_table))
+        return "\n".join(out)
 
     def detail_fields(self) -> list[tuple[str, str]]:
         fields: list[tuple[str, str]] = [
             ("ID", self.id or "-"),
             ("Type", self.app_type.value),
         ]
+        if self.languages:
+            fields.append(
+                ("Languages", ", ".join(str(l.value) for l in self.languages))
+            )
         if self.runtime:
             fields.append(("Runtime", self.runtime[0]))
         if self.domain:
@@ -374,6 +453,7 @@ class App:
             fields.append(("Precision", self.precisions[0]))
         if self.related_models:
             fields.append(("Models", ", ".join(str(m) for m in self.related_models)))
+        fields.append(("AI Hub Models", self.qaihm_version or str(QAIHM_VERSION)))
         return fields
 
 
@@ -385,6 +465,11 @@ class Registry:
     def __init__(self, raw: AppRegistry) -> None:
         self._raw = raw
         self._apps = {a.id: _make_app(a) for a in raw.apps}
+        logger.debug(
+            "Registry initialized: version=%s, %d app(s)",
+            raw.version or "dev",
+            len(self._apps),
+        )
 
     @classmethod
     def load(cls, path: str | Path | None = None) -> Registry:
@@ -410,8 +495,12 @@ class Registry:
         """
         if cls._instance is None:
             if path is None:
+                logger.debug("No registry path given; resolving via ensure_registry()")
                 path = ensure_registry(__version__)
+            logger.debug("Loading registry from %s", path)
             cls._instance = cls(AppRegistry.from_yaml(Path(path)))
+        else:
+            logger.debug("Reusing existing Registry singleton")
         return cls._instance
 
     @property
@@ -419,8 +508,10 @@ class Registry:
         return self._apps.values()
 
     def find_by_id(self, app_id: str) -> App:
+        logger.debug("Looking up app by id '%s'", app_id)
         app = self._apps.get(app_id.lower())
         if app is None:
+            logger.debug("App '%s' not found in registry", app_id)
             raise AppNotFoundError(app_id)
         return app
 
@@ -435,14 +526,15 @@ class Registry:
         model_asset: ModelAsset | None = None,
     ) -> Path:
         """Find app by ID and download + extract it. Returns the extraction path."""
+        logger.debug("fetch_app('%s') -> dest=%s", app_id, dest)
         app = self.find_by_id(app_id)
 
         deprecation = app.deprecation_message()
         if deprecation:
-            print(f"Warning: {deprecation}")
+            logger.warning("%s", deprecation)
 
         if not is_app_supported(app):
-            print("Warning: This app may not be supported on the current device.")
+            logger.warning("This app may not be supported on the current device.")
 
         return app.fetch(dest, model_asset=model_asset)
 
@@ -452,5 +544,7 @@ def _make_app(info: AppInfo) -> App:
     if AppLanguage.PYTHON in info.languages:
         from qai_hub_apps.registry.python_app import PythonApp
 
+        logger.debug("Creating PythonApp for '%s'", info.id)
         return PythonApp(info)
+    logger.debug("Creating App for '%s'", info.id)
     return App(info)

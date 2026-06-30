@@ -10,6 +10,7 @@ from pathlib import Path
 
 import pytest
 
+from qai_hub_apps import __version__
 from qai_hub_apps.main import main
 from qai_hub_apps.registry.base import Registry
 
@@ -49,9 +50,10 @@ def snapshot(request: pytest.FixtureRequest) -> Callable[[str, str], None]:
     return _compare_or_update
 
 
-_TWO_APP_REGISTRY = """\
+_TWO_APP_REGISTRY = f"""\
 schema_version: '1.1'
 min_cli_version: 0.0.1
+version: {__version__}
 apps:
 - name: Whisper Windows
   id: whisper_windows_py
@@ -65,6 +67,8 @@ apps:
   runtime: onnx
   related_models: [whisper_base]
   precisions: [float]
+  languages: [Python]
+  qaihm_version: '0.30.0'
   model_file_dir: models
   url:
     source: https://example.com/whisper_windows_py.zip
@@ -80,6 +84,7 @@ apps:
   runtime: onnx
   related_models: [stable_diffusion]
   precisions: [float]
+  languages: [Python, C++]
 """
 
 

@@ -643,7 +643,7 @@ def test_repr_omits_deprecation_banner_when_not_deprecated():
     assert "DEPRECATED" not in repr(app)
 
 
-def test_fetch_app_deprecated_warns(monkeypatch, tmp_path, capsys):
+def test_fetch_app_deprecated_warns(monkeypatch, tmp_path, caplog):
     monkeypatch.setattr("qai_hub_apps.registry.base.download", fake_download)
     monkeypatch.setattr("qai_hub_apps.configs.registry_yaml._is_dev", lambda: True)
     monkeypatch.setattr("qai_hub_apps.registry.base.is_app_supported", lambda app: True)
@@ -660,7 +660,7 @@ def test_fetch_app_deprecated_warns(monkeypatch, tmp_path, capsys):
     registry = Registry(raw)
     registry.fetch_app("test_app", tmp_path)
 
-    assert "Warning: Use foo instead." in capsys.readouterr().out
+    assert "Use foo instead." in caplog.text
 
 
 def test_fetch_ambiguous_model_id_and_path_raises(monkeypatch, tmp_path):
@@ -821,7 +821,7 @@ def test_fetch_model_sharing_restricted_hint(monkeypatch, tmp_path):
         app.fetch(tmp_path / "out", model_asset=asset)
 
 
-def test_fetch_app_unsupported_platform_warns(monkeypatch, tmp_path, capsys):
+def test_fetch_app_unsupported_platform_warns(monkeypatch, tmp_path, caplog):
     monkeypatch.setattr("qai_hub_apps.registry.base.download", fake_download)
     monkeypatch.setattr("qai_hub_apps.configs.registry_yaml._is_dev", lambda: True)
     monkeypatch.setattr(
@@ -836,7 +836,4 @@ def test_fetch_app_unsupported_platform_warns(monkeypatch, tmp_path, capsys):
     registry = Registry(raw)
     registry.fetch_app("test_app", tmp_path)
 
-    assert (
-        "Warning: This app may not be supported on the current device."
-        in capsys.readouterr().out
-    )
+    assert "This app may not be supported on the current device." in caplog.text

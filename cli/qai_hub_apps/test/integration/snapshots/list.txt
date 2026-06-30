@@ -1,6 +1,9 @@
-Qualcomm® AI Hub Apps  (2 apps)
-
-ID                                      Name                                  
-──────────────────────────────────────────────────────────────────────────────
-whisper_windows_py                      Whisper Windows                       
-stable_diffusion_py                     Stable Diffusion                      
++----------------------------------------------------------------------+
+|                        Qualcomm® AI Hub Apps                         |
++---------------------+------------------+---------------+-------------+
+| ID                  | Name             | Domain        | Languages   |
++---------------------+------------------+---------------+-------------+
+| whisper_windows_py  | Whisper Windows  | Audio         | Python      |
+| stable_diffusion_py | Stable Diffusion | Generative AI | Python, C++ |
++---------------------+------------------+---------------+-------------+
+Total: 2 apps

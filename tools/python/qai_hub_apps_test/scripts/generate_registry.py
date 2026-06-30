@@ -106,7 +106,11 @@ def _resolve_repo_url(info: QAIHAAppInfo, repo_base: str, ref: str) -> str:
     """
     if info.app_repo_url:
         return info.app_repo_url
-    return f"{repo_base}/tree/{ref}/apps/{info.app_repo_relative_path}"
+
+    # release tag is apps/ref
+    if ref == "main":
+        return f"{repo_base}/tree/main/apps/{info.app_repo_relative_path}"
+    return f"{repo_base}/tree/apps/{ref}/{info.app_repo_relative_path}"
 
 
 def upload_registry(

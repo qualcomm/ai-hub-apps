@@ -74,6 +74,7 @@ class QAIHACLIAppInfo(BaseConfig):
     runtime: list[TargetRuntime]
     related_models: list[str]
     precisions: list[Precision]
+    languages: list[AppLanguage]
     model_file_paths: list[
         Path
     ] = []  # Destination paths for each downloaded model file
@@ -146,8 +147,6 @@ class QAIHAAppInfo(QAIHACLIAppInfo):
     # License information
     license_url: str
     license_type: AppLicense
-
-    languages: list[AppLanguage]
 
     ##########################
     # Build System Information

@@ -28,13 +28,15 @@ qai-hub-apps list
 ```
 
 ```
-Qualcomm® AI Hub Apps  (N apps)
-
-ID                                      Name
-──────────────────────────────────────────────────────────────────────────────
-whisper_windows_py                      Whisper Windows
-stable_diffusion_py                     Stable Diffusion
-...
++----------------------------------------------------------------------+
+|                        Qualcomm® AI Hub Apps                         |
++---------------------+------------------+---------------+-------------+
+| ID                  | Name             | Domain        | Languages   |
++---------------------+------------------+---------------+-------------+
+| whisper_windows_py  | Whisper Windows  | Audio         | Python      |
+| stable_diffusion_py | Stable Diffusion | Generative AI | Python, C++ |
++---------------------+------------------+---------------+-------------+
+Total: N apps
 ```
 
 ### info
@@ -46,22 +48,36 @@ qai-hub-apps info <app_id>
 ```
 
 ```
-Whisper Windows
-══════════════════════════════════════════════════
++=============================================================================+
+|                               Whisper Windows                               |
+|  https://github.com/qualcomm/ai-hub-apps/tree/main/apps/whisper_windows_py  |
++=============================================================================+
 
-ID:         whisper_windows_py
-Type:       windows
-Runtime:    onnx
-Domain:     Audio
-Use Case:   Speech Recognition
-Precisions: float
-Models:     whisper_base
++---------------------------+
+|          Headline         |
++---------------------------+
+| Speech to text on Windows |
++---------------------------+
 
-Speech to text on Windows
++-----------------------------------+
+|            Description            |
++-----------------------------------+
+| Run Whisper on-device using ONNX. |
++-----------------------------------+
 
-Run Whisper on-device using ONNX.
-
-Repo:  https://github.com/qualcomm/ai-hub-apps/tree/main/apps/whisper_windows_py
++------------------------------------+
+|              Metadata              |
++---------------+--------------------+
+| ID            | whisper_windows_py |
+| Type          | windows            |
+| Languages     | Python             |
+| Runtime       | onnx               |
+| Domain        | Audio              |
+| Use Case      | Speech Recognition |
+| Precision     | float              |
+| Models        | whisper_base       |
+| AI Hub Models | 0.30.0             |
++---------------+--------------------+
 ```
 
 ### fetch
@@ -82,8 +98,27 @@ qai-hub-apps fetch <app_id> --model <model_id> --chipset <chipset>
 | `--model MODEL_ID` | Also download a model supported by the app |
 | `--chipset CHIPSET` | Target chipset for the model download |
 
+On success, the path to the fetched app directory is printed.
+
 **Example — fetch app with model:**
 
 ```bash
 qai-hub-apps fetch stable_diffusion_windows_py --model stable_diffusion_v2_1 --chipset qualcomm-snapdragon-x-elite
+```
+
+## Logging
+
+Control verbosity with a global flag or the `QAI_HUB_APPS_LOG_LEVEL` environment
+variable. The command-line flag takes precedence over the environment variable.
+The default level is `info`.
+
+| Flag | Description |
+|------|-------------|
+| `--log-level {debug,info,error}` | Set log verbosity |
+| `-v`, `--verbose` | Shorthand for `--log-level debug` |
+| `-q`, `--quiet` | Shorthand for `--log-level error` |
+
+```bash
+qai-hub-apps -v list
+QAI_HUB_APPS_LOG_LEVEL=debug qai-hub-apps list
 ```

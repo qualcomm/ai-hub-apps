@@ -51,12 +51,10 @@ def test_unique_ids_raises_on_duplicate():
         AppRegistry(schema_version="1.1", min_cli_version="0.0.1", apps=[app_a, app_b])
 
 
-def test_no_version_dev_warns(monkeypatch):
+def test_no_version_dev_warns(monkeypatch, caplog):
     monkeypatch.setattr("qai_hub_apps.configs.registry_yaml._is_dev", lambda: True)
-    with warnings.catch_warnings(record=True) as caught:
-        warnings.simplefilter("always")
-        _make_registry(version=None)
-    assert any("no version (dev registry)" in str(w.message).lower() for w in caught)
+    _make_registry(version=None)
+    assert "no version (dev registry)" in caplog.text
 
 
 def test_no_version_prod_raises(monkeypatch):
@@ -74,13 +72,13 @@ def test_version_ok_no_warning(monkeypatch):
     assert not any(issubclass(w.category, UserWarning) for w in caught)
 
 
-def test_below_min_cli_version_dev_warns(monkeypatch):
+def test_below_min_cli_version_dev_warns(monkeypatch, caplog):
     monkeypatch.setattr("qai_hub_apps.configs.registry_yaml.__version__", "0.5.0")
     monkeypatch.setattr("qai_hub_apps.configs.registry_yaml._is_dev", lambda: True)
-    with warnings.catch_warnings(record=True) as caught:
-        warnings.simplefilter("always")
-        _make_registry(version="0.5.0", min_cli_version="1.0.0")
-    assert any(issubclass(w.category, UserWarning) for w in caught)
+    _make_registry(version="0.5.0", min_cli_version="1.0.0")
+    assert (
+        "This registry requires qai-hub-apps > 1.0.0, but you have 0.5.0" in caplog.text
+    )
 
 
 def test_below_min_cli_version_prod_raises(monkeypatch):
@@ -90,13 +88,14 @@ def test_below_min_cli_version_prod_raises(monkeypatch):
         _make_registry(version="0.5.0", min_cli_version="1.0.0")
 
 
-def test_below_registry_version_dev_warns(monkeypatch):
+def test_below_registry_version_dev_warns(monkeypatch, caplog):
     monkeypatch.setattr("qai_hub_apps.configs.registry_yaml.__version__", "0.5.0")
     monkeypatch.setattr("qai_hub_apps.configs.registry_yaml._is_dev", lambda: True)
-    with warnings.catch_warnings(record=True) as caught:
-        warnings.simplefilter("always")
-        _make_registry(version="1.0.0", min_cli_version="0.0.1")
-    assert any(issubclass(w.category, UserWarning) for w in caught)
+    _make_registry(version="1.0.0", min_cli_version="0.0.1")
+    assert (
+        "This registry was released with qai-hub-apps 1.0.0, but you have 0.5.0."
+        in caplog.text
+    )
 
 
 def test_below_registry_version_prod_raises(monkeypatch):

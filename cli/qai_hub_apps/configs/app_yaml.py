@@ -24,6 +24,7 @@ class AppLanguage(Enum):
     CPP = "C++"
     JAVA = "Java"
     KOTLIN = "Kotlin"
+    GO = "Go"
 
 
 @unique
