@@ -14,6 +14,7 @@ import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.UiObject2
 import androidx.test.uiautomator.StaleObjectException
 import androidx.test.uiautomator.Until
+import org.junit.After
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
@@ -42,10 +43,21 @@ class GenieXChatTest {
     private val device: UiDevice =
         UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
 
+    private var savedHeadsUp: String? = null
+    private var savedZenMode: String? = null
+
     @Before
     fun setUp() {
         device.wakeUp()
         device.executeShellCommand("wm dismiss-keyguard")
+
+        // Suppress notifications so a heads-up popup can't steal a tap; restored in tearDown().
+        savedHeadsUp =
+            device.executeShellCommand("settings get global heads_up_notifications_enabled").trim()
+        savedZenMode = device.executeShellCommand("settings get global zen_mode").trim()
+        device.executeShellCommand("settings put global heads_up_notifications_enabled 0")
+        device.executeShellCommand("cmd notification set_dnd priority")
+        device.executeShellCommand("cmd statusbar collapse")
 
         val context = ApplicationProvider.getApplicationContext<Context>()
         val intent = context.packageManager.getLaunchIntentForPackage(PACKAGE)!!
@@ -55,6 +67,17 @@ class GenieXChatTest {
             "App did not launch",
             device.wait(Until.hasObject(By.pkg(PACKAGE).depth(0)), LAUNCH_TIMEOUT_MS)
         )
+    }
+
+    @After
+    fun tearDown() {
+        // Restore the notification settings captured in setUp() so the device is left as found.
+        savedHeadsUp?.takeIf { it != "null" }?.let {
+            device.executeShellCommand("settings put global heads_up_notifications_enabled $it")
+        }
+        savedZenMode?.takeIf { it != "null" }?.let {
+            device.executeShellCommand("settings put global zen_mode $it")
+        }
     }
 
     @Test
