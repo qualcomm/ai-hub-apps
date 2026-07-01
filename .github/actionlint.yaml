@@ -1,6 +1,6 @@
 self-hosted-runner:
   # Labels of self-hosted runner in array of strings.
-  labels: [tetra-ubuntu-2204, larger-runner]
+  labels: [tetra-ubuntu-2204, larger-runner, windows-docker]
 # Configuration variables in array of strings defined in your repository or
 # organization. `null` means disabling configuration variables check.
 # Empty array means no configuration variable is allowed.
