@@ -6,7 +6,7 @@ models: ['llama_v3_2_1b_instruct']
 model_file_dir: 'src/main/assets/models/llm'
 runtime: genie
 status: deprecated
-deprecation_notice: "LLM Chat Android is deprecated in favour of the GenieX Demo app (geniex_chat_android), which runs LLMs and VLMs on-device via the Qualcomm® GenieX SDK."
+deprecation_notice: "LLM Chat Android is deprecated in favour of the GenieX Chat Android app (geniex_chat_android), which runs LLMs and VLMs on-device via the Qualcomm® GenieX SDK."
 domain: Generative AI
 headline: Run an LLM on Android
 description: A sample Android chat app showcasing how to integrate an on-device LLM with Qualcomm® Gen AI Inference Extensions (Genie) APIs, optimized for Snapdragon® NPU acceleration.

@@ -2,14 +2,30 @@ name: GenieX Chat Windows
 id: geniex_chat_windows
 license_url: https://github.com/qualcomm/nexa-sdk?tab=BSD-3-Clause-1-ov-file
 license_type: bsd-3-clause
-headline: Run LLMs locally on Windows via CLI
+headline: Run LLMs and VLMs locally on Windows via CLI
 description: A sample CLI app demonstrating how to run on-device LLMs and VLMs with GenieX Gen AI runtime on Windows in a few lines of code.
 runtime: [geniex_qairt, geniex_llamacpp]
 status: published_website_only
 domain: Generative AI
 app_type: 'windows'
 use_case: Text Generation
-related_models: []
+related_models: [
+  'gemma_4_e2b_it',
+  'gemma_4_e4b_it',
+  'gpt_oss_20b',
+  'granite_4_0_micro',
+  'ministral_3_3b_instruct_2512',
+  'phi_4_mini_instruct',
+  'qwen2_5_vl_7b_instruct',
+  'qwen3_0_6b',
+  'qwen3_1_7b',
+  'qwen3_4b',
+  'qwen3_4b_instruct_2507',
+  'qwen3_5_0_8b',
+  'qwen3_5_2b',
+  'qwen3_vl_2b_instruct',
+  'qwen3_vl_4b_instruct',
+]
 precisions: []
 static_img_filename: 'app_screen.png'
 app_repo_url: 'https://github.com/qualcomm/geniex'

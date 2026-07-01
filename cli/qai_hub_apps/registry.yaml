@@ -21,7 +21,7 @@ apps:
   - Java
   - C++
   model_file_dir: src/main/assets/models/llm
-  deprecation_notice: LLM Chat Android is deprecated in favour of the GenieX Demo app (geniex_chat_android), which runs LLMs and VLMs on-device via the Qualcomm® GenieX SDK.
+  deprecation_notice: LLM Chat Android is deprecated in favour of the GenieX Chat Android app (geniex_chat_android), which runs LLMs and VLMs on-device via the Qualcomm® GenieX SDK.
 - name: LLM Chat Windows
   id: chatapp_windows_cpp
   status: deprecated
@@ -45,6 +45,39 @@ apps:
   - C++
   model_file_dir: genie_bundle
   deprecation_notice: LLM Chat Windows is deprecated in favour of the GenieX Chat Windows (geniex_chat_windows), which runs LLMs and VLMs on-device via the Qualcomm® GenieX SDK.
+- name: GenieX Chat Android
+  id: geniex_chat_android
+  status: published
+  headline: Run LLMs and VLMs on Android with GenieX
+  description: A sample Android chat app that runs Large Language Models and Vision-Language Models on-device with the Qualcomm® GenieX SDK, using a single pluggable runtime that targets the Snapdragon® NPU, GPU, or CPU.
+  domain: Generative AI
+  use_case: Text Generation
+  app_repo_url: https://github.com/qualcomm/ai-hub-apps/tree/main/apps/geniex_chat_android
+  app_type: android
+  runtime:
+  - geniex_qairt
+  - geniex_llamacpp
+  related_models:
+  - qwen3_0_6b
+  - qwen3_1_7b
+  - ministral_3_3b_instruct_2512
+  - granite_4_0_micro
+  - phi_4_mini_instruct
+  - gemma_4_e2b_it
+  - gemma_4_e4b_it
+  - qwen3_5_0_8b
+  - qwen3_5_2b
+  - qwen3_vl_2b_instruct
+  - qwen3_vl_4b_instruct
+  - gpt_oss_20b
+  - qwen3_4b
+  - qwen3_4b_instruct_2507
+  - qwen2_5_vl_7b_instruct
+  precisions: []
+  languages:
+  - Kotlin
+  - Java
+  disable_cli_model_fetch: true
 - name: Image Classification Android
   id: image_classification_android
   status: published
