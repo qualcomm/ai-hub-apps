@@ -88,15 +88,22 @@ Download and extract an app's source to a local directory.
 # Download app source only
 qai-hub-apps fetch <app_id>
 
-# Download app source + model for a specific chipset
+# Download app source + a model to download for a specific chipset
 qai-hub-apps fetch <app_id> --model <model_id> --chipset <chipset>
+
+# Download app source + bundle a locally-exported model
+qai-hub-apps fetch <app_id> --model <path/to/model>
 ```
 
 | Flag | Description |
 |------|-------------|
 | `--output-dir PATH` | Output directory (default: current directory) |
-| `--model MODEL_ID` | Also download a model supported by the app |
-| `--chipset CHIPSET` | Target chipset for the model download |
+| `--model MODEL_ID_OR_PATH` | Model to bundle: a model ID to download (must be supported by the app), or a path to a locally-exported model (directory or `.zip`). Use `--model-id`/`--model-path` to be explicit |
+| `--model-id MODEL_ID` | Model ID to download (must be supported by the app) |
+| `--model-path PATH` | Path to a locally-exported model (directory or `.zip`) |
+| `--chipset CHIPSET` | Target chipset for the model download. Only applies to a downloaded model (`--model <id>` or `--model-id`); not valid with a local model path |
+
+`--model`, `--model-id`, and `--model-path` are mutually exclusive.
 
 On success, the path to the fetched app directory is printed.
 
