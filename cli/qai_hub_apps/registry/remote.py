@@ -7,6 +7,7 @@ from __future__ import annotations
 import functools
 import urllib.request
 from pathlib import Path
+from urllib.parse import quote
 
 from platformdirs import user_cache_dir
 
@@ -20,7 +21,7 @@ _BUNDLED_REGISTRY = Path(__file__).parent.parent / "registry.yaml"
 
 
 def _registry_s3_url(version: str) -> str:
-    return f"{_S3_BASE}/{_S3_PREFIX}/{version}/registry.yaml"
+    return f"{_S3_BASE}/{_S3_PREFIX}/{quote(version)}/registry.yaml"
 
 
 def _get_cached_registry_path(version: str) -> Path:

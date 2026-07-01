@@ -10,6 +10,7 @@ from collections import Counter
 from enum import Enum, unique
 from pathlib import Path
 from typing import TYPE_CHECKING
+from urllib.parse import quote
 
 from tap import Tap
 
@@ -254,7 +255,9 @@ def generate_registry(
                 bundle_app(app_dir, build_path, make_zip=True)
                 zip_path = build_path / f"{app_dir.name}.zip"
                 upload_app(zip_path, info.id, bucket, s3_prefix, cli_version)
-                source_url = f"{s3_base}/{s3_prefix}/{cli_version}/{info.id}/source.zip"
+                source_url = (
+                    f"{s3_base}/{s3_prefix}/{quote(cli_version)}/{info.id}/source.zip"
+                )
                 bundled_apps.append(
                     info.model_copy(update={"url": AppUrl(source=source_url)})
                 )
