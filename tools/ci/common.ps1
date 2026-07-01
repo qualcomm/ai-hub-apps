@@ -5,12 +5,18 @@
 # Shared CI PowerShell utilities.
 #
 # Functions:
+#   Get-RepoRoot
+#       Return the absolute path to the repository root.
 #   Invoke-DownloadAndVerify -Url <url> -Dest <dest_file> [-Sha256 <sha256>]
 #       Download <url> to <dest_file>. If <sha256> is provided, verifies the
 #       checksum and throws if it does not match.
 #
 # Usage: . common.ps1
 # ---------------------------------------------------------------------
+
+function Get-RepoRoot {
+    git rev-parse --show-toplevel
+}
 
 function Invoke-DownloadAndVerify {
     param(

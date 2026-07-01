@@ -15,9 +15,12 @@ os.environ.setdefault("QAIHM_CLI_FORCE_VERSION", "0.56.0")
 set_log_level()
 
 
-def _is_dev() -> bool:
-    """Return True if the current install is a development (pre-release) build."""
-    return parse_version(__version__).is_devrelease
+def _is_dev(version: str = __version__) -> bool:
+    """Return True if ``version`` is a development (pre-release) build.
+
+    Defaults to the installed package version.
+    """
+    return parse_version(version).is_devrelease
 
 
 __all__ = ["__version__", "_is_dev"]

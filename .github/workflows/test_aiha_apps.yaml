@@ -20,6 +20,16 @@ on:
         type: string
         required: false
         default: ""
+      version:
+        description: "qai-hub-apps version to test (required unless install_source=source)."
+        type: string
+        required: false
+        default: ""
+      install_source:
+        description: "Where to install the CLI under test from: source, s3, or prod."
+        type: string
+        required: false
+        default: source
     secrets:
       QDC_API_TOKEN:
         required: false
@@ -51,6 +61,17 @@ on:
         required: false
         type: string
         default: ""
+      version:
+        description: "qai-hub-apps version to test (required unless install_source=source)."
+        required: false
+        type: string
+        default: ""
+      install_source:
+        description: "Where to install the CLI under test from."
+        required: false
+        type: choice
+        options: [source, s3, prod]
+        default: source
 
 env:
   VENV_PATH: qaiha-dev
@@ -77,14 +98,24 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
-      - name: Set up environment (with CLI)
+      - name: Set up environment
         run: |
           bash tools/setup_env.sh \
             --python="${{ steps.setup_python.outputs.python-path }}" \
             --venv="${{ env.VENV_PATH }}" \
-            --with-cli
+            ${{ inputs.install_source == 'source' && '--with-cli' || '' }}
+
+      - name: Install CLI from published version
+        if: ${{ inputs.install_source != 'source' }}
+        env:
+          VERSION: ${{ inputs.version }}
+          SOURCE: ${{ inputs.install_source }}
+        run: |
+          source ${{ env.VENV_PATH }}/bin/activate
+          bash tools/ci/install_cli.sh --source "$SOURCE" --version "$VERSION"
 
       - name: Generate test registry (test scope)
+        if: ${{ inputs.install_source == 'source' }}
         run: |
           source ${{ env.VENV_PATH }}/bin/activate
           python -m qai_hub_apps_test.scripts.generate_registry \
@@ -116,6 +147,8 @@ jobs:
       app_type: ubuntu
       model_selection: ${{ inputs.model_selection }}
       test_stage: ${{ inputs.test_stage }}
+      version: ${{ inputs.version }}
+      install_source: ${{ inputs.install_source }}
     secrets:
       QDC_API_TOKEN: ${{ secrets.QDC_API_TOKEN }}
       DOCKER_QC_REGISTRY_TOKEN: ${{ secrets.DOCKER_QC_REGISTRY_TOKEN }}
@@ -136,6 +169,8 @@ jobs:
       app_type: android
       model_selection: ${{ inputs.model_selection }}
       test_stage: ${{ inputs.test_stage }}
+      version: ${{ inputs.version }}
+      install_source: ${{ inputs.install_source }}
     secrets:
       QDC_API_TOKEN: ${{ secrets.QDC_API_TOKEN }}
       DOCKER_QC_REGISTRY_TOKEN: ${{ secrets.DOCKER_QC_REGISTRY_TOKEN }}
@@ -156,6 +191,8 @@ jobs:
       app_type: windows
       model_selection: ${{ inputs.model_selection }}
       test_stage: ${{ inputs.test_stage }}
+      version: ${{ inputs.version }}
+      install_source: ${{ inputs.install_source }}
     secrets:
       QDC_API_TOKEN: ${{ secrets.QDC_API_TOKEN }}
       DOCKER_QC_REGISTRY_TOKEN: ${{ secrets.DOCKER_QC_REGISTRY_TOKEN }}

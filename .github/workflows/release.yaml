@@ -32,12 +32,12 @@ jobs:
     with:
       skip_approval: true
 
-  release_pypi:
+  release_wheel:
     name: Release Apps and Push to ${{ inputs.target == 'prod' && 'PyPI' || 'test PyPI' }}
     secrets: inherit
     needs: [approve, release_code]
     if: ${{ !cancelled() && (needs.approve.result == 'success' || needs.approve.result == 'skipped') && (needs.release_code.result == 'success' || needs.release_code.result == 'skipped') }}
-    uses: ./.github/workflows/release_pypi.yaml
+    uses: ./.github/workflows/release_wheel.yaml
     with:
       target: ${{ inputs.target }}
       skip_approval: true
@@ -45,8 +45,8 @@ jobs:
   release_apps_branch:
     name: Fetch Apps & Push to release branch (${{ inputs.target }})
     secrets: inherit
-    needs: [approve, release_pypi]
-    if: ${{ !cancelled() && (needs.approve.result == 'success' || needs.approve.result == 'skipped') && needs.release_pypi.result == 'success' }}
+    needs: [approve, release_wheel]
+    if: ${{ !cancelled() && (needs.approve.result == 'success' || needs.approve.result == 'skipped') && needs.release_wheel.result == 'success' }}
     uses: ./.github/workflows/release_apps_branch.yaml
     with:
       target: ${{ inputs.target }}

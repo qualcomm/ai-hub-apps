@@ -23,6 +23,16 @@ on:
         description: "How far to run: fetch, build, or all (includes on-device QDC)"
         type: string
         default: all
+      version:
+        description: "qai-hub-apps version to install (required unless install_source=source)."
+        type: string
+        required: false
+        default: ""
+      install_source:
+        description: "Where to install the CLI from: source (editable), s3 (dev index), or prod (PyPI)."
+        type: string
+        required: false
+        default: source
     secrets:
       QDC_API_TOKEN:
         required: false
@@ -55,6 +65,17 @@ on:
         type: choice
         options: [fetch, build, all]
         default: all
+      version:
+        description: "qai-hub-apps version to install (required unless install_source=source)."
+        required: false
+        type: string
+        default: ""
+      install_source:
+        description: "Where to install the CLI from."
+        required: false
+        type: choice
+        options: [source, s3, prod]
+        default: source
 
 env:
   VENV_PATH: qaiha-dev
@@ -82,13 +103,15 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
+      # install_source=source installs the CLI editable from the checked-out repo
+      # (--with-cli). Otherwise the CLI is installed from a published version below.
       - name: Set up environment (Linux)
         if: ${{ inputs.app_type != 'windows' }}
         run: |
           bash tools/setup_env.sh \
             --python="${{ steps.setup_python.outputs.python-path }}" \
             --venv="${{ env.VENV_PATH }}" \
-            --with-cli \
+            ${{ inputs.install_source == 'source' && '--with-cli' || '' }} \
             --with-qdc-sdk
 
       - name: Set up environment (Windows)
@@ -97,10 +120,31 @@ jobs:
           . tools/setup_env.ps1 `
             -Python "${{ steps.setup_python.outputs.python-path }}" `
             -Venv "${{ env.VENV_PATH }}" `
-            -WithCli `
+            ${{ inputs.install_source == 'source' && '-WithCli' || '' }} `
             -WithQdcSdk
 
+      - name: Install CLI from published version (Linux)
+        if: ${{ inputs.install_source != 'source' && inputs.app_type != 'windows' }}
+        env:
+          VERSION: ${{ inputs.version }}
+          SOURCE: ${{ inputs.install_source }}
+        run: |
+          source ${{ env.VENV_PATH }}/bin/activate
+          bash tools/ci/install_cli.sh --source "$SOURCE" --version "$VERSION"
+
+      - name: Install CLI from published version (Windows)
+        if: ${{ inputs.install_source != 'source' && inputs.app_type == 'windows' }}
+        env:
+          VERSION: ${{ inputs.version }}
+          SOURCE: ${{ inputs.install_source }}
+        run: |
+          . qaiha-dev\Scripts\Activate.ps1
+          . tools/ci/install_cli.ps1 -Source "$env:SOURCE" -Version "$env:VERSION"
+
+      # Only needed when the CLI is installed editable from source; a published
+      # (non-editable) client fetches the versioned registry from S3 instead.
       - name: Generate test registry (test scope)
+        if: ${{ inputs.install_source == 'source' }}
         run: |
           ${{ env.ACTIVATE_VENV }}
           python -m qai_hub_apps_test.scripts.generate_registry --output_dir cli/qai_hub_apps/ --scope test

@@ -8,13 +8,17 @@ on:
     # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
     inputs:
-      notify_failure:
-        description: Notify Slack Channel
+      notify_slack:
+        description: Send Slack notifications for this run
         required: false
         type: boolean
         default: false
   schedule:
     - cron: '0 9 * * *' # 1am PDT
+
+env:
+  WHEEL_INDEX_HOST: qaihub-public-python-wheels.s3-website-us-west-2.amazonaws.com
+  WHEEL_INDEX_URL: http://qaihub-public-python-wheels.s3-website-us-west-2.amazonaws.com/
 
 jobs:
   precommit_check:
@@ -24,13 +28,27 @@ jobs:
       do_all: true
       scheduled: true
 
+  publish_dev:
+    name: "Publish Nightly Dev Build"
+    needs: [precommit_check]
+    if: ${{ success() && github.ref == 'refs/heads/main' }}
+    secrets: inherit
+    uses: ./.github/workflows/release_wheel.yaml
+    with:
+      target: s3
+      skip_approval: true
+
   test_on_device_apps:
     secrets: inherit
     name: "Test AIHA Apps On-Device"
+    needs: [precommit_check, publish_dev]
+    if: ${{ !cancelled() && needs.precommit_check.result == 'success' }}
     uses: ./.github/workflows/test_aiha_apps.yaml
     with:
       model_selection: first
       test_stage: all
+      version: ${{ needs.publish_dev.result == 'success' && needs.publish_dev.outputs.version || '' }}
+      install_source: ${{ needs.publish_dev.result == 'success' && 's3' || 'source' }}
 
   test_website_import:
     secrets: inherit
@@ -44,9 +62,9 @@ jobs:
       import_mode: no-verify
 
   notify_failure:
-    if: ${{ failure() && (github.event_name == 'schedule' || inputs.notify_failure) }}
+    if: ${{ failure() && (github.event_name == 'schedule' || inputs.notify_slack) }}
     name: Notify Failure
-    needs: [precommit_check, test_website_import, test_on_device_apps]
+    needs: [precommit_check, test_website_import, test_on_device_apps, publish_dev]
     runs-on: [tetra-ubuntu-2204, self-hosted]
     permissions:
         contents: read
@@ -78,6 +96,11 @@ jobs:
                 result: '${{ needs.test_on_device_apps.result }}',
                 url: '${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/job/'
               },
+              'publish_dev': {
+                name: 'Publish Nightly Dev Build',
+                result: '${{ needs.publish_dev.result }}',
+                url: '${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/job/'
+              },
             };
             // Build failed jobs list
             let failedJobsList = '';
@@ -91,7 +114,7 @@ jobs:
               }
             }
             // Build issue body
-            let issueBody = `# 🚨 QAI Hub Apps Nightly Tests Failed
+            let issueBody = `# 🚨 QAI Hub Apps Nightly Failed
             Date: ${today}
             ## Links
             - [View Workflow Run Summary](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }})
@@ -122,7 +145,7 @@ jobs:
             const result = await github.rest.issues.create({
               owner: 'qcom-ai-hub',
               repo: 'tetracode',
-              title: `QAI Hub Apps Nightly Tests Failed - ${today}`,
+              title: `QAI Hub Apps Nightly Failed - ${today}`,
               body: issueBody,
               labels: ['p0', 'ai-hub-apps'],
               assignees: ['manupill_QCOM']
@@ -146,3 +169,22 @@ jobs:
               GitHub Issue: ${{ steps.create-github-issue.outputs.issue_url }}
               App Results: ✅ ${{ fromJson(needs.test_on_device_apps.outputs.result_payload).summary.passed }} passed | ❌ ${{ fromJson(needs.test_on_device_apps.outputs.result_payload).summary.failed }} failed | ⏭ ${{ fromJson(needs.test_on_device_apps.outputs.result_payload).summary.skipped }} skipped
               See full results table in the workflow summary.
+
+  notify_success:
+    name: Notify Success
+    needs: [publish_dev, test_on_device_apps]
+    if: ${{ !cancelled() && needs.publish_dev.result == 'success' && (github.event_name == 'schedule' || inputs.notify_slack) }}
+    runs-on: [tetra-ubuntu-2204, self-hosted]
+    steps:
+      - name: Send Slack Notification
+        uses: slackapi/slack-github-action@v3.0.3
+        with:
+          method: chat.postMessage
+          token: ${{ secrets.SLACK_NOTIFIER_TOKEN }}
+          payload: |
+            channel: "C08KWAVBQNB"
+            text: |
+              🚀 QAI Hub Apps Nightly Dev Build Published
+              On-device tests: ${{ needs.test_on_device_apps.result == 'success' && '✅' || '❌' }} ${{ needs.test_on_device_apps.result }}
+              Install:
+              ```pip install --pre --index-url ${{ env.WHEEL_INDEX_URL }} --extra-index-url https://pypi.org/simple/ --trusted-host ${{ env.WHEEL_INDEX_HOST }} qai-hub-apps==${{ needs.publish_dev.outputs.version }}```

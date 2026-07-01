@@ -5,12 +5,18 @@
 # Shared CI shell utilities.
 #
 # Functions:
+#   repo_root
+#       Print the absolute path to the repository root.
 #   download_and_verify <url> <dest_file> [<sha256>]
 #       Download <url> to <dest_file>. If <sha256> is provided, verifies the
 #       checksum and exits non-zero if it does not match.
 #
 # Usage: source common.sh
 # ---------------------------------------------------------------------
+
+repo_root() {
+    git rev-parse --show-toplevel
+}
 
 download_and_verify() {
     local url="$1"

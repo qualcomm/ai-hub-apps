@@ -44,7 +44,9 @@ while [ $# -gt 0 ]; do
     shift
 done
 
-REPO_ROOT="$(git rev-parse --show-toplevel)"
+# shellcheck source=tools/ci/common.sh
+source "$(dirname "${BASH_SOURCE[0]}")/ci/common.sh"
+REPO_ROOT="$(repo_root)"
 
 if [ ! -d "$VENV_PATH" ]; then
     echo "Creating virtual environment at $VENV_PATH using $PYTHON"
@@ -62,12 +64,7 @@ else
 fi
 
 if [ "$WITH_CLI" = true ]; then
-    echo "Installing CLI package (cli/)..."
-    if command -v uv &>/dev/null; then
-        uv pip install --python "$VENV_PATH/bin/python" -e "$REPO_ROOT/cli/"
-    else
-        "$VENV_PATH/bin/pip" install -e "$REPO_ROOT/cli/"
-    fi
+    bash "$REPO_ROOT/tools/ci/install_cli.sh" --source source --venv "$VENV_PATH"
 fi
 
 if [ "$WITH_QDC_SDK" = true ]; then

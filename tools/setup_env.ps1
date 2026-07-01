@@ -30,7 +30,8 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-$RepoRoot = git rev-parse --show-toplevel
+. "$PSScriptRoot\ci\common.ps1"
+$RepoRoot = Get-RepoRoot
 
 if (-not (Test-Path $Venv)) {
     Write-Host "Creating virtual environment at $Venv using $Python"
@@ -49,13 +50,7 @@ if ($uvAvailable) {
 }
 
 if ($WithCli) {
-    Write-Host "Installing CLI package (cli/)..."
-    $uvAvailable = Get-Command uv -ErrorAction SilentlyContinue
-    if ($uvAvailable) {
-        uv pip install --python "$Venv\Scripts\python.exe" -e "$RepoRoot\cli\"
-    } else {
-        & "$Venv\Scripts\pip.exe" install -e "$RepoRoot\cli\"
-    }
+    . "$RepoRoot\tools\ci\install_cli.ps1" -Source source -Venv $Venv
 }
 
 if ($WithQdcSdk) {

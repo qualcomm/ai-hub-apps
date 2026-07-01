@@ -29,11 +29,14 @@ from qai_hub_apps_test.configs.info_yaml import (
 )
 from qai_hub_apps_test.configs.registry_yaml import AppRegistry
 from qai_hub_apps_test.utils.aws import (
+    ASSETS_S3_BASE,
     QAIHM_PUBLIC_S3_BUCKET,
-    attempt_with_s3_credentials_warning,
     get_qaihm_s3,
+    s3_prefix_for,
+    upload_public_file,
 )
 from qai_hub_apps_test.utils.paths import REPOSITORY_ROOT, get_all_apps
+from qai_hub_apps_test.utils.versions import is_dev
 
 
 @unique
@@ -95,8 +98,11 @@ class GenerateRegistryParser(Tap):
 
     cli_version: str = _read_cli_version()  # CLI version used for S3 path
     build_and_upload: bool = False  # Build app zips and upload to S3; without this, list apps without bundling
-    # Which apps to include: Only 'production' may be combined with --build_and_upload.
+    # Which apps to include: Only 'production' may be combined with --build_and_upload, unless --force is set
     scope: RegistryScope = RegistryScope.PRODUCTION
+    # Allow uploading a dev version and combining build_and_upload with a non-production
+    # scope.
+    force: bool = False
 
 
 def _resolve_repo_url(info: QAIHAAppInfo, repo_base: str, ref: str) -> str:
@@ -118,26 +124,18 @@ def upload_registry(
     registry_path: Path, bucket: Bucket, s3_prefix: str, cli_version: str
 ) -> None:
     """Upload registry.yaml to S3."""
-    s3_key = f"{s3_prefix}/{cli_version}/registry.yaml"
-
-    def _upload(key: str = s3_key, path: Path = registry_path) -> None:
-        bucket.upload_file(str(path), key, ExtraArgs={"ACL": "public-read"})
-
-    attempt_with_s3_credentials_warning(_upload)
-    print(f"Uploaded to s3://{QAIHM_PUBLIC_S3_BUCKET}/{s3_key}")
+    upload_public_file(
+        bucket, registry_path, f"{s3_prefix}/{cli_version}/registry.yaml"
+    )
 
 
 def upload_app(
     zip_path: Path, app_id: str, bucket: Bucket, s3_prefix: str, cli_version: str
 ) -> None:
     """Upload an app zip to S3."""
-    s3_key = f"{s3_prefix}/{cli_version}/{app_id}/source.zip"
-
-    def _upload(key: str = s3_key, path: Path = zip_path) -> None:
-        bucket.upload_file(str(path), key, ExtraArgs={"ACL": "public-read"})
-
-    attempt_with_s3_credentials_warning(_upload)
-    print(f"Uploaded to s3://{QAIHM_PUBLIC_S3_BUCKET}/{s3_key}")
+    upload_public_file(
+        bucket, zip_path, f"{s3_prefix}/{cli_version}/{app_id}/source.zip"
+    )
 
 
 def generate_registry(
@@ -150,6 +148,7 @@ def generate_registry(
     min_cli_version: str = "0.0.1",
     build_and_upload: bool = False,
     scope: RegistryScope = RegistryScope.PRODUCTION,
+    force: bool = False,
 ) -> None:
     """Generate registry.yaml from a list of (info, app_dir) pairs.
 
@@ -172,11 +171,16 @@ def generate_registry(
     build_and_upload:
         If True, bundle Python and Android apps and upload zips + registry to S3.
     scope:
-        Which apps to include (see RegistryScope). Only 'production' may be combined with build_and_upload.
+        Which apps to include (see RegistryScope). Only 'production' may be combined with
+        build_and_upload, unless force is set.
+    force:
+        If True, allow uploading a dev version and allow
+        build_and_upload with a non-production scope.
     """
-    if build_and_upload and scope is not RegistryScope.PRODUCTION:
+    if build_and_upload and scope is not RegistryScope.PRODUCTION and not force:
         raise SystemExit(
-            f"build_and_upload requires scope='production' (got '{scope.value}')."
+            f"build_and_upload requires scope='production' (got '{scope.value}'); "
+            f"pass force=True for the dev path."
         )
 
     mode = "build + upload" if build_and_upload else "list only"
@@ -224,19 +228,19 @@ def generate_registry(
     if dupes:
         raise SystemExit(f"Error: duplicate app IDs found: {sorted(dupes)}")
 
-    s3_prefix = "qai-hub-apps/releases"
-    S3_REGION = "us-west-2"
-    s3_base = f"https://{QAIHM_PUBLIC_S3_BUCKET}.s3.{S3_REGION}.amazonaws.com"
+    # Dev releases go to a separate "dev" subfolder; mirrored client-side in
+    # cli/qai_hub_apps/registry/remote.py.
+    dev_release = is_dev(cli_version)
+    s3_prefix = s3_prefix_for(cli_version)
+    s3_base = ASSETS_S3_BASE
 
     if build_and_upload:
-        if "dev" in cli_version:
-            print(
-                f"\nWarning: version '{cli_version}' looks like a development build.\n"
-                f"Uploading dev versions to S3 is not recommended."
+        if dev_release and not force:
+            sys.exit(
+                f"Error: version '{cli_version}' looks like a development build.\n"
+                f"Uploading dev versions to S3 is not recommended. "
+                f"Pass --force to upload anyway."
             )
-            answer = input("Continue? [y/N]: ").strip().lower()
-            if answer != "y":
-                sys.exit("Aborted.")
         bucket, _ = get_qaihm_s3(QAIHM_PUBLIC_S3_BUCKET, requires_admin=False)
 
     bundled_apps: list[QAIHACLIAppInfo] = []
@@ -315,6 +319,7 @@ def main() -> None:
         args.min_cli_version,
         args.build_and_upload,
         args.scope,
+        args.force,
     )
 
 

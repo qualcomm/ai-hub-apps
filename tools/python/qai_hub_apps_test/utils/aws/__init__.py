@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import os
 from collections.abc import Callable
+from pathlib import Path
 from typing import TYPE_CHECKING, TypeVar
 
 import boto3
@@ -16,9 +17,21 @@ from botocore.exceptions import ClientError, NoCredentialsError
 if TYPE_CHECKING:
     from mypy_boto3_s3.service_resource import Bucket
 
+from qai_hub_apps_test.utils.versions import is_dev
 
 QAIHM_PUBLIC_S3_BUCKET = "qaihub-public-assets"
 QAIHM_PRIVATE_S3_BUCKET = "qai-hub-models-private-assets"
+QAIHM_PUBLIC_WHEELS_S3_BUCKET = "qaihub-public-python-wheels"
+
+_S3_REGION = "us-west-2"
+ASSETS_S3_BASE = f"https://{QAIHM_PUBLIC_S3_BUCKET}.s3.{_S3_REGION}.amazonaws.com"
+RELEASES_S3_PREFIX = "qai-hub-apps/releases"
+
+
+def s3_prefix_for(version: str) -> str:
+    """S3 key prefix for a release. Dev versions go under a separate "dev" subfolder."""
+    return f"{RELEASES_S3_PREFIX}/dev" if is_dev(version) else RELEASES_S3_PREFIX
+
 
 CallableRetT = TypeVar("CallableRetT")
 
@@ -61,6 +74,16 @@ def s3_download(bucket: Bucket, key: str, local_file_path: str) -> None:
         )
         if _is_on_ci():
             t.update(obj.content_length)
+
+
+def upload_public_file(bucket: Bucket, local_path: Path, key: str) -> None:
+    """Upload a file to S3 as public-read, wrapped with the credentials warning."""
+    attempt_with_s3_credentials_warning(
+        lambda: bucket.upload_file(
+            str(local_path), key, ExtraArgs={"ACL": "public-read"}
+        )
+    )
+    print(f"Uploaded to s3://{bucket.name}/{key}")
 
 
 def get_qaihm_s3(bucket_name: str, requires_admin: bool = False) -> tuple[Bucket, bool]:

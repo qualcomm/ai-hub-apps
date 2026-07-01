@@ -1,0 +1,152 @@
+name: Release - Wheel
+run-name: Release - Wheel (${{ inputs.target }})
+
+
+env:
+  PYTHON_VERSION: '3.10'
+  PYTHONUNBUFFERED: 1
+  VENV_PATH: qaiha-dev
+  CLI_EGG_INFO_DIR: "cli/qai_hub_apps.egg-info"
+
+on:
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+      inputs:
+          target:
+              required: true
+              type: choice
+              default: s3
+              description: Release Target
+              options:
+              - s3
+              - staging
+              - prod
+  workflow_call:
+      inputs:
+          target:
+              required: true
+              type: string
+          skip_approval:
+            required: false
+            type: boolean
+            default: false
+      outputs:
+          version:
+              description: "The released version"
+              value: ${{ jobs.release_apps_and_wheel.outputs.version }}
+          sha:
+              description: "Short commit SHA the release was built from"
+              value: ${{ jobs.release_apps_and_wheel.outputs.sha }}
+
+jobs:
+  approve:
+    if: ${{ !inputs.skip_approval && (inputs.target == 'prod' || inputs.target == 's3') }}
+    name: Approve Release
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: release
+    steps:
+      - run: echo "Release approved"
+
+  release_apps_and_wheel:
+      name: Release Apps and Wheel (${{ inputs.target }})
+      needs: [approve]
+      if: ${{ !cancelled() && (needs.approve.result == 'success' || needs.approve.result == 'skipped') }}
+      runs-on: [tetra-ubuntu-2204, self-hosted]
+      permissions:
+        id-token: write
+        contents: read
+      outputs:
+        version: ${{ steps.version.outputs.version }}
+        sha: ${{ steps.version.outputs.sha }}
+      steps:
+      - uses: actions/checkout@v7
+        with:
+          lfs: true
+          fetch-depth: 0
+
+      - id: setup_python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Setup AWS Credentials
+        uses: ./.github/actions/configure-multiple-aws-roles
+        with:
+          role-to-assume: ${{ secrets.QAIHA_CI_AWS_ROLE_ARN }}
+          role-duration-seconds: 7200
+          profile: qaihm
+          aws-region: us-west-2
+
+      - name: Install Deps
+        env:
+            SUDO_PASSWORD: ${{ secrets.TETRASERVICE_PASSWORD }}
+        run: |
+            bash tools/setup_env.sh --python="${{ steps.setup_python.outputs.python-path }}" --venv="${{ env.VENV_PATH }}"
+
+      - name: Resolve version
+        id: version
+        env:
+          TARGET: ${{ inputs.target }}
+          REF: ${{ github.ref }}
+          TAG_VERSION: ${{ github.ref_name }}
+        run: |
+          source ${{ env.VENV_PATH }}/bin/activate
+          if [ "$TARGET" == "s3" ]; then
+            # Dev release: scm derives the version from the commit
+            VERSION="$(python -c 'from setuptools_scm import get_version; print(get_version(root="."))')"
+          else
+            # PyPI release: must run from a tag; the tag (minus 'v') is the version
+            if [[ "$REF" != refs/tags/* ]]; then
+              echo "Error: target '$TARGET' must be run from a tag, got $REF"
+              exit 1
+            fi
+            VERSION="${TAG_VERSION#v}"
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "sha=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+          echo "Resolved version: $VERSION (target $TARGET)"
+
+      - name: Build and upload app bundles to S3, generate registry.yaml
+        run: |
+          source ${{ env.VENV_PATH }}/bin/activate
+          # Dev (s3) publishes the test app set with --force (dev version + dev S3 prefix);
+          # pypi targets publish the default production set.
+          EXTRA=""
+          if [ "${{ inputs.target }}" == "s3" ]; then
+            EXTRA="--force --scope test"
+          fi
+          python -m qai_hub_apps_test.scripts.generate_registry \
+            --output_dir cli/qai_hub_apps/ --build_and_upload --ref ${{ github.ref_name }} \
+            --cli_version "${{ steps.version.outputs.version }}" $EXTRA
+
+      - name: Build wheel
+        run: |
+          source ${{ env.VENV_PATH }}/bin/activate
+          pip install build
+          rm -rf ${{env.CLI_EGG_INFO_DIR}}
+          rm -f cli/build/wheel/*.whl
+          # The working tree is dirty after registry generation, so pin the version explicitly.
+          SETUPTOOLS_SCM_PRETEND_VERSION="${{ steps.version.outputs.version }}" \
+            python -m build --wheel --outdir cli/build/wheel/ cli/
+
+      - name: Upload wheel to S3 + regenerate index
+        # run always except when staging
+        if: ${{ inputs.target != 'staging' }}
+        run: |
+          source ${{ env.VENV_PATH }}/bin/activate
+          WHEEL="$(ls cli/build/wheel/*.whl)"
+          python -m qai_hub_apps_test.scripts.publish_wheel_s3 \
+            --wheel_path "$WHEEL" --cli_version "${{ steps.version.outputs.version }}"
+
+      - name: Upload to PyPI
+        if: ${{ inputs.target != 's3' }}
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ inputs.target == 'prod' && secrets.PYPI_TOKEN || secrets.TEST_PYPI_TOKEN }}
+          TWINE_REPOSITORY_URL: ${{ inputs.target == 'prod' && 'https://upload.pypi.org/legacy/' || 'https://test.pypi.org/legacy/' }}
+        run: |
+          source ${{ env.VENV_PATH }}/bin/activate
+          pip install twine
+          WHEELS="cli/build/wheel/*.whl"
+          twine upload --verbose $WHEELS

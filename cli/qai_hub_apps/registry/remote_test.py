@@ -6,6 +6,7 @@ from __future__ import annotations
 
 from pathlib import Path
 from unittest.mock import patch
+from urllib.parse import quote
 
 import pytest
 
@@ -30,6 +31,12 @@ def test_registry_s3_url_contains_version():
     assert "1.2.3" in url
     assert url.endswith("/registry.yaml")
     assert url.startswith("https://")
+    assert "/releases/1.2.3/" in url
+
+
+def test_registry_s3_url_uses_dev_prefix_for_dev_build():
+    url = _registry_s3_url("0.32.0.dev27+gabc1234")
+    assert quote("/releases/dev/0.32.0.dev27+gabc1234/") in url
 
 
 def test_get_cached_registry_path_includes_version(tmp_path):

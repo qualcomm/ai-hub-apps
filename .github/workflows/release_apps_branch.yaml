@@ -84,31 +84,10 @@ jobs:
 
       - name: Install CLI from PyPI (with retry)
         shell: bash
+        env:
+          TAG: ${{ github.ref_name }}
         run: |
-          VERSION="${{ github.ref_name }}"
-          VERSION="${VERSION#v}"
-
-          if [ "${{ inputs.target }}" == "prod" ]; then
-            INDEX_URL="https://pypi.org/simple/"
-          else
-            INDEX_URL="https://test.pypi.org/simple/"
-          fi
-
-          echo "Installing qai-hub-apps==$VERSION from $INDEX_URL"
-          for i in {1..10}; do
-            pip install \
-              --index-url "$INDEX_URL" \
-              --extra-index-url "https://pypi.org/simple/" \
-              "qai-hub-apps==$VERSION" && break
-            echo "Attempt $i failed, retrying in 60s..."
-            sleep 60
-            if [ "$i" -eq 10 ]; then
-              echo "ERROR: Failed to install qai-hub-apps==$VERSION after 10 attempts"
-              exit 1
-            fi
-          done
-
-          qai-hub-apps --version
+          bash tools/ci/install_cli.sh --source "${{ inputs.target }}" --version "$TAG"
 
       - name: Fetch all apps
         shell: bash
