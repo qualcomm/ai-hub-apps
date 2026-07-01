@@ -1,8 +1,7 @@
 pytest==9.0.3
 pytest-mock==3.15.1
 pytest-json-report
-# TODO: revert to "qai-hub-models-cli==0.57.0" once 0.57.0 lands on PyPI.
-qai-hub-models-cli @ https://qaihub-public-assets.s3.us-west-2.amazonaws.com/qai-hub-models/wheels/qai_hub_models_cli-0.56.1.dev77%2Bgf11aaf934-py3-none-any.whl
+qai-hub-models-cli==0.57.0
 qai-hub
 typed-argument-parser
 boto3 # for fetching test assets

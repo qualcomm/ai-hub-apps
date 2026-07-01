@@ -59,6 +59,7 @@ __NOTE: Some of these apps will run without NPU acceleration on non-Snapdragon®
 | [Semantic Segmentation](apps/semantic_segmentation_android) |  Java | TensorFlow Lite | OpenCV, Live Camera Feed |
 | [Super Resolution](apps/super_resolution_android) | Java | TensorFlow Lite |
 | [WhisperKit (Speech to Text)](https://github.com/argmaxinc/WhisperKitAndroid)* | Various | TensorFlow Lite |
+| [GenieX Chat Android](apps/geniex_chat_android) | Kotlin/Java | GenieX |
 <!-- /ANDROID_APPS -->
 
 <!-- WINDOWS_APPS -->
@@ -66,12 +67,13 @@ __NOTE: Some of these apps will run without NPU acceleration on non-Snapdragon®
 
 | Task | Language | Inference API | Special Tags |
 | -- | -- | -- | -- |
-| [ChatApp](https://github.com/qualcomm/ai-hub-apps/tree/main/apps/chatapp_windows_cpp) | C++ | Genie SDK | LLM, GenAI |
-| [Image Classification](https://github.com/qualcomm/ai-hub-apps/tree/main/apps/image_classification_windows_cpp) | C++ | ONNX | OpenCV |
+| [ChatApp](apps/chatapp_windows_cpp) | C++ | Genie SDK | LLM, GenAI |
+| [Image Classification](apps/image_classification_windows_cpp) | C++ | ONNX | OpenCV |
 | [Object Detection](https://github.com/qualcomm/ai-hub-apps/tree/main/apps/object_detection_windows_cpp)* | C++ | ONNX | OpenCV |
-| [Super Resolution](https://github.com/qualcomm/ai-hub-apps/tree/main/apps/super_resolution_windows_cpp) | C++ | ONNX | OpenCV |
+| [Super Resolution](apps/super_resolution_windows_cpp) | C++ | ONNX | OpenCV |
 | [Whisper Speech-to-Text](apps/whisper_windows_py) | Python | ONNX |
 | [Stable Diffusion Image Generation](apps/stable_diffusion_windows_py) | Python | ONNX |
+| [GenieX Chat Windows](https://github.com/qualcomm/geniex)* | Go | GenieX |
 <!-- /WINDOWS_APPS -->
 
 <!-- UBUNTU_APPS -->
