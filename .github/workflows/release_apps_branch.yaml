@@ -28,6 +28,7 @@ on:
 env:
   PYTHON_VERSION: '3.10'
   APPS_DIR: dist/apps
+  VENV_PATH: qaiha-dev
 
 jobs:
   approve:
@@ -87,11 +88,14 @@ jobs:
         env:
           TAG: ${{ github.ref_name }}
         run: |
-          bash tools/ci/install_cli.sh --source "${{ inputs.target }}" --version "$TAG"
+          python -m venv "${{ env.VENV_PATH }}"
+          bash tools/ci/install_cli.sh --source "${{ inputs.target }}" --version "$TAG" --venv "${{ env.VENV_PATH }}"
 
       - name: Fetch all apps
         shell: bash
-        run: bash tools/ci/fetch_all_apps.sh ${{ env.APPS_DIR }}
+        run: |
+          source "${{ env.VENV_PATH }}/bin/activate"
+          bash tools/ci/fetch_all_apps.sh ${{ env.APPS_DIR }}
 
       - name: Copy README and LICENSE
         shell: bash
