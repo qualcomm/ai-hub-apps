@@ -1,0 +1,44 @@
+name: Image Classification Android
+id: image_classification_android
+license_url: https://github.com/qualcomm/ai-hub-apps/blob/main/LICENSE
+license_type: bsd-3-clause
+models: ['mobilenet_v2']
+model_file_paths:
+  - 'src/main/assets/classifier.tflite'
+runtime: tflite
+status: published
+domain: 'Computer Vision'
+headline: On-device image recognition with TFLite
+description: 'A sample app that classifies images and displays the top three predicted ImageNet classes, demonstrating the best practices for TFLite model inference on Android devices.'
+precisions: [float]
+app_type: 'android'
+base_docker: ubuntu.dockerfile
+static_img_filename: 'app_screen.png'
+app_repo_relative_path: 'image_classification_android'
+os:
+  name: Android
+  version: 14+
+languages: ['Java']
+use_case: Image Classification
+related_models: [
+      'convnext_tiny',
+      'densenet121',
+      'efficientnet_b0',
+      'googlenet',
+      'inception_v3',
+      'mnasnet05',
+      'mobilenet_v2',
+      'mobilenet_v3_large',
+      'mobilenet_v3_small',
+      'regnet',
+      'resnet101',
+      'resnet18',
+      'resnet50',
+      'resnext101',
+      'resnext50',
+      'shufflenet_v2',
+      'squeezenet1_1',
+      'vit',
+      'wideresnet50',
+]
+supported_devices: ["Snapdragon 8 Elite QRD"]
