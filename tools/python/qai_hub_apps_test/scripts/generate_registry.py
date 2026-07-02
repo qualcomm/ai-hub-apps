@@ -241,6 +241,12 @@ def generate_registry(
                 f"Uploading dev versions to S3 is not recommended. "
                 f"Pass --force to upload anyway."
             )
+        # A non-dev version uploads to the prod prefix; never put a test/all set there.
+        if not dev_release and scope is not RegistryScope.PRODUCTION:
+            sys.exit(
+                f"Error: refusing to upload scope='{scope.value}' to the production "
+                f"prefix for non-dev version '{cli_version}'."
+            )
         bucket, _ = get_qaihm_s3(QAIHM_PUBLIC_S3_BUCKET, requires_admin=False)
 
     bundled_apps: list[QAIHACLIAppInfo] = []

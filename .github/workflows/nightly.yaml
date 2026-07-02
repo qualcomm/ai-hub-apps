@@ -28,27 +28,24 @@ jobs:
       do_all: true
       scheduled: true
 
-  publish_dev:
+  publish_nightly:
     name: "Publish Nightly Dev Build"
     needs: [precommit_check]
     if: ${{ success() && github.ref == 'refs/heads/main' }}
     secrets: inherit
-    uses: ./.github/workflows/release_wheel.yaml
-    with:
-      target: s3
-      skip_approval: true
+    uses: ./.github/workflows/publish_nightly.yaml
 
   test_on_device_apps:
     secrets: inherit
     name: "Test AIHA Apps On-Device"
-    needs: [precommit_check, publish_dev]
+    needs: [precommit_check, publish_nightly]
     if: ${{ !cancelled() && needs.precommit_check.result == 'success' }}
     uses: ./.github/workflows/test_aiha_apps.yaml
     with:
       model_selection: first
       test_stage: all
-      version: ${{ needs.publish_dev.result == 'success' && needs.publish_dev.outputs.version || '' }}
-      install_source: ${{ needs.publish_dev.result == 'success' && 's3' || 'source' }}
+      version: ${{ needs.publish_nightly.result == 'success' && needs.publish_nightly.outputs.version || '' }}
+      install_source: ${{ needs.publish_nightly.result == 'success' && 's3' || 'source' }}
 
   test_website_import:
     secrets: inherit
@@ -64,7 +61,7 @@ jobs:
   notify_failure:
     if: ${{ failure() && (github.event_name == 'schedule' || inputs.notify_slack) }}
     name: Notify Failure
-    needs: [precommit_check, test_website_import, test_on_device_apps, publish_dev]
+    needs: [precommit_check, test_website_import, test_on_device_apps, publish_nightly]
     runs-on: [tetra-ubuntu-2204, self-hosted]
     permissions:
         contents: read
@@ -96,9 +93,9 @@ jobs:
                 result: '${{ needs.test_on_device_apps.result }}',
                 url: '${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/job/'
               },
-              'publish_dev': {
+              'publish_nightly': {
                 name: 'Publish Nightly Dev Build',
-                result: '${{ needs.publish_dev.result }}',
+                result: '${{ needs.publish_nightly.result }}',
                 url: '${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/job/'
               },
             };
@@ -172,8 +169,8 @@ jobs:
 
   notify_success:
     name: Notify Success
-    needs: [publish_dev, test_on_device_apps]
-    if: ${{ !cancelled() && needs.publish_dev.result == 'success' && (github.event_name == 'schedule' || inputs.notify_slack) }}
+    needs: [publish_nightly, test_on_device_apps]
+    if: ${{ !cancelled() && needs.publish_nightly.result == 'success' && (github.event_name == 'schedule' || inputs.notify_slack) }}
     runs-on: [tetra-ubuntu-2204, self-hosted]
     steps:
       - name: Send Slack Notification
@@ -187,4 +184,4 @@ jobs:
               🚀 QAI Hub Apps Nightly Dev Build Published
               On-device tests: ${{ needs.test_on_device_apps.result == 'success' && '✅' || '❌' }} ${{ needs.test_on_device_apps.result }}
               Install:
-              ```pip install --pre --index-url ${{ env.WHEEL_INDEX_URL }} --extra-index-url https://pypi.org/simple/ --trusted-host ${{ env.WHEEL_INDEX_HOST }} qai-hub-apps==${{ needs.publish_dev.outputs.version }}```
+              ```pip install --pre --index-url ${{ env.WHEEL_INDEX_URL }} --extra-index-url https://pypi.org/simple/ --trusted-host ${{ env.WHEEL_INDEX_HOST }} qai-hub-apps==${{ needs.publish_nightly.outputs.version }}```

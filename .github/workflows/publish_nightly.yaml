@@ -1,0 +1,76 @@
+name: Publish Nightly
+
+on:
+  workflow_call:
+    outputs:
+      version:
+        description: "Resolved version, installable from the S3 index"
+        value: ${{ jobs.resolve.outputs.version }}
+
+env:
+  VENV_PATH: qaiha-dev
+  PYTHON_VERSION: '3.10'
+  WHEEL_INDEX_URL: http://qaihub-public-python-wheels.s3-website-us-west-2.amazonaws.com/
+  WHEEL_INDEX_HOST: qaihub-public-python-wheels.s3-website-us-west-2.amazonaws.com
+
+jobs:
+  resolve:
+    name: "Resolve Nightly Version"
+    runs-on: [tetra-ubuntu-2204, self-hosted]
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      is_dev: ${{ steps.version.outputs.is_dev }}
+      available: ${{ steps.check.outputs.available }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - id: setup_python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Install Deps
+        env:
+          SUDO_PASSWORD: ${{ secrets.TETRASERVICE_PASSWORD }}
+        run: bash tools/setup_env.sh --python="${{ steps.setup_python.outputs.python-path }}" --venv="${{ env.VENV_PATH }}"
+
+      - name: Resolve version
+        id: version
+        run: |
+          source ${{ env.VENV_PATH }}/bin/activate
+          python tools/ci/resolve_version.py --target dev >> "$GITHUB_OUTPUT"
+
+      - name: Check availability on S3 index
+        id: check
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          IS_DEV: ${{ steps.version.outputs.is_dev }}
+        run: |
+          source ${{ env.VENV_PATH }}/bin/activate
+          AVAILABLE_VERSIONS="$(pip index versions qai-hub-apps --pre \
+            --index-url "${{ env.WHEEL_INDEX_URL }}" \
+            --trusted-host "${{ env.WHEEL_INDEX_HOST }}" 2>/dev/null \
+            | sed -n 's/^Available versions: //p' | tr ', ' '\n\n')"
+          if echo "$AVAILABLE_VERSIONS" | grep -qxF "$VERSION"; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+            echo "'$VERSION' is already on the S3 index; no publish needed."
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            # A non-dev version won't be published by nightly, so if it isn't already
+            # on the index (e.g. the prod release hasn't published it) we can't test it.
+            if [ "$IS_DEV" != "true" ]; then
+              echo "Error: non-dev version '$VERSION' is not on the S3 index; cannot test."
+              exit 1
+            fi
+          fi
+
+  publish_dev:
+    name: "Publish Nightly Dev Build"
+    needs: [resolve]
+    if: ${{ needs.resolve.outputs.is_dev == 'true' && needs.resolve.outputs.available == 'false' }}
+    secrets: inherit
+    uses: ./.github/workflows/release_wheel.yaml
+    with:
+      target: dev
+      skip_approval: true
+      expected_version: ${{ needs.resolve.outputs.version }}

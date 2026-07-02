@@ -15,10 +15,10 @@ on:
           target:
               required: true
               type: choice
-              default: s3
+              default: dev
               description: Release Target
               options:
-              - s3
+              - dev
               - staging
               - prod
   workflow_call:
@@ -30,6 +30,12 @@ on:
             required: false
             type: boolean
             default: false
+          expected_version:
+            # If set, fail unless the resolved version matches. A guard against
+            # unexpected release behaviours
+            required: false
+            type: string
+            default: ''
       outputs:
           version:
               description: "The released version"
@@ -40,7 +46,7 @@ on:
 
 jobs:
   approve:
-    if: ${{ !inputs.skip_approval && (inputs.target == 'prod' || inputs.target == 's3') }}
+    if: ${{ !inputs.skip_approval && (inputs.target == 'prod' || inputs.target == 'dev') }}
     name: Approve Release
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -86,34 +92,19 @@ jobs:
 
       - name: Resolve version
         id: version
-        env:
-          TARGET: ${{ inputs.target }}
-          REF: ${{ github.ref }}
-          TAG_VERSION: ${{ github.ref_name }}
         run: |
           source ${{ env.VENV_PATH }}/bin/activate
-          if [ "$TARGET" == "s3" ]; then
-            # Dev release: scm derives the version from the commit
-            VERSION="$(python -c 'from setuptools_scm import get_version; print(get_version(root="."))')"
-          else
-            # PyPI release: must run from a tag; the tag (minus 'v') is the version
-            if [[ "$REF" != refs/tags/* ]]; then
-              echo "Error: target '$TARGET' must be run from a tag, got $REF"
-              exit 1
-            fi
-            VERSION="${TAG_VERSION#v}"
-          fi
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-          echo "sha=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
-          echo "Resolved version: $VERSION (target $TARGET)"
+          python tools/ci/resolve_version.py \
+            --target "${{ inputs.target }}" \
+            --expected "${{ inputs.expected_version }}" >> "$GITHUB_OUTPUT"
 
       - name: Build and upload app bundles to S3, generate registry.yaml
         run: |
           source ${{ env.VENV_PATH }}/bin/activate
-          # Dev (s3) publishes the test app set with --force (dev version + dev S3 prefix);
+          # Dev publishes the test app set with --force (dev version + dev S3 prefix);
           # pypi targets publish the default production set.
           EXTRA=""
-          if [ "${{ inputs.target }}" == "s3" ]; then
+          if [ "${{ inputs.target }}" == "dev" ]; then
             EXTRA="--force --scope test"
           fi
           python -m qai_hub_apps_test.scripts.generate_registry \
@@ -140,7 +131,7 @@ jobs:
             --wheel_path "$WHEEL" --cli_version "${{ steps.version.outputs.version }}"
 
       - name: Upload to PyPI
-        if: ${{ inputs.target != 's3' }}
+        if: ${{ inputs.target != 'dev' }}
         env:
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ inputs.target == 'prod' && secrets.PYPI_TOKEN || secrets.TEST_PYPI_TOKEN }}
