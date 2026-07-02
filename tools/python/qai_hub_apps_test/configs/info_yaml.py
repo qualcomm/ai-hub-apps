@@ -4,6 +4,7 @@
 # ---------------------------------------------------------------------
 import os
 from enum import Enum, unique
+from os import PathLike
 from pathlib import Path
 
 from pydantic import ConfigDict, Field, field_validator, model_validator
@@ -51,6 +52,11 @@ class AppType(Enum):
     ANDROID = "android"
     WINDOWS = "windows"
     UBUNTU = "ubuntu"
+
+
+class AppOS(BaseConfig):
+    name: str
+    version: str
 
 
 class AppUrl(BaseConfig):
@@ -130,6 +136,10 @@ class QAIHAAppInfo(QAIHACLIAppInfo):
     # General Information
     ##########################
 
+    # Operating system the app targets (name + minimum version). Used by
+    # website-import; not consumed by CI/build tooling here.
+    os: AppOS
+
     skip_test: str | None = None
     supported_devices: list[Device] = Field(default_factory=list)
     app_repo_relative_path: str | None = (
@@ -161,7 +171,7 @@ class QAIHAAppInfo(QAIHACLIAppInfo):
     )
 
     @staticmethod
-    def from_app(path: str | os.PathLike) -> tuple["QAIHAAppInfo", Path]:
+    def from_app(path: str | PathLike) -> tuple["QAIHAAppInfo", Path]:
         """
         Load an app info from this directory or yaml file.
 

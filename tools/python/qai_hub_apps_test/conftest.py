@@ -12,6 +12,7 @@ from qai_hub_apps_test.configs.field_types import Precision, TargetRuntime
 from qai_hub_apps_test.configs.info_yaml import (
     AppLanguage,
     AppLicense,
+    AppOS,
     AppType,
     QAIHAAppInfo,
 )
@@ -53,6 +54,7 @@ def make_sample_app_info(**overrides: object) -> QAIHAAppInfo:
         related_models=["test_model"],
         precisions=[Precision.FLOAT],
         languages=[AppLanguage.PYTHON],
+        os=AppOS(name="Ubuntu", version="24.04+"),
         license_url="https://github.com/qualcomm/ai-hub-apps/blob/main/LICENSE",
         license_type=AppLicense.BSD_3_CLAUSE,
         private_model_s3_paths={},

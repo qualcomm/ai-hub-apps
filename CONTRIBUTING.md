@@ -197,6 +197,7 @@ Every app must have an `info.yaml`. Copy from a similar app and adjust.
 | `domain` | string | Model domain (e.g. `Computer Vision`) — copy from a similar app |
 | `use_case` | string | Use-case label (e.g. `Image Classification`) — copy from a similar app |
 | `app_type` | `android` \| `windows` \| `ubuntu` | Platform type |
+| `os` | mapping | Target operating system — `name` (`Android` \| `Windows` \| `Ubuntu`) and `version` (e.g. `11+`, `24.04+`) |
 | `runtime` | closed enum | `tflite` \| `onnx` \| `genie` \| `precompiled_qnn_onnx` \| … — must be an existing `TargetRuntime` value (a new one needs an upstream `qai_hub_models` change) |
 | `status` | closed enum | Lifecycle stage — see [App Status](#app-status). Set `unpublished` until ready |
 | `languages` | list | e.g. `['Java']`, `['Python']`, `['Java', 'C++']` |

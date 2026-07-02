@@ -29,5 +29,8 @@ related_models: [
 precisions: []
 static_img_filename: 'app_screen.png'
 app_repo_url: 'https://github.com/qualcomm/geniex'
+os:
+  name: Windows
+  version: 11+
 supported_devices: ["Snapdragon X Elite CRD", "Snapdragon X2 Elite CRD"]
 languages: ['Go']
