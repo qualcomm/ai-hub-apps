@@ -1,0 +1,39 @@
+name: GenieX Chat Android
+id: geniex_chat_android
+license_url: https://github.com/qualcomm/nexa-sdk?tab=BSD-3-Clause-1-ov-file
+license_type: bsd-3-clause
+headline: Run LLMs and VLMs on Android with GenieX
+description: A sample Android chat app that runs Large Language Models and Vision-Language Models on-device with the Qualcomm® GenieX SDK, using a single pluggable runtime that targets the Snapdragon® NPU, GPU, or CPU.
+runtime: [geniex_qairt, geniex_llamacpp]
+status: published
+domain: Generative AI
+app_type: 'android'
+use_case: Text Generation
+related_models: [
+  'qwen3_0_6b',
+  'qwen3_1_7b',
+  'ministral_3_3b_instruct_2512',
+  'granite_4_0_micro',
+  'phi_4_mini_instruct',
+  'gemma_4_e2b_it',
+  'gemma_4_e4b_it',
+  'qwen3_5_0_8b',
+  'qwen3_5_2b',
+  'qwen3_vl_2b_instruct',
+  'qwen3_vl_4b_instruct',
+  'gpt_oss_20b',
+  'qwen3_4b',
+  'qwen3_4b_instruct_2507',
+  'qwen2_5_vl_7b_instruct',
+]
+precisions: []
+static_img_filename: 'app_screen.png'
+app_repo_relative_path: 'geniex_chat_android'
+supported_devices: ["Snapdragon 8 Elite QRD", "Snapdragon 8 Elite Gen 5 QRD"]
+base_docker: ubuntu.dockerfile
+# This app downloads models at runtime via the GenieX SDK rather than bundling
+disable_cli_model_fetch: true
+os:
+  name: Android
+  version: 12+
+languages: ['Kotlin', 'Java']
