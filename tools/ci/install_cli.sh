@@ -51,15 +51,15 @@ pip_install() {
     UV_AVAILABLE=$(command -v uv >/dev/null 2>&1 && echo true || echo false)
     if [ -n "$VENV" ]; then
         if [ "$UV_AVAILABLE" = true ]; then
-            uv pip install --python "$VENV/bin/python" "${UV_EXTRA_ARGS[@]}" "$@"
+            uv pip install --no-cache --python "$VENV/bin/python" "${UV_EXTRA_ARGS[@]}" "$@"
         else
-            "$VENV/bin/pip" install "${PIP_EXTRA_ARGS[@]}" "$@"
+            "$VENV/bin/pip" install --no-cache-dir "${PIP_EXTRA_ARGS[@]}" "$@"
         fi
     else
         if [ "$UV_AVAILABLE" = true ]; then
-            uv pip install "${UV_EXTRA_ARGS[@]}" "$@"
+            uv pip install --no-cache "${UV_EXTRA_ARGS[@]}" "$@"
         else
-            pip install "${PIP_EXTRA_ARGS[@]}" "$@"
+            pip install --no-cache-dir "${PIP_EXTRA_ARGS[@]}" "$@"
         fi
     fi
 }

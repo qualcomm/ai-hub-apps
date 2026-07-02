@@ -15,8 +15,6 @@
 # Usage:
 #   . install_cli.ps1 -Source source [-Venv <path>]
 #   . install_cli.ps1 -Source {s3|staging|prod} -Version <version> [-Venv <path>]
-#
-# Keep in sync with install_cli.sh.
 
 param(
     [Parameter(Mandatory = $true)][ValidateSet("source", "s3", "staging", "prod")][string]$Source,
@@ -36,11 +34,11 @@ $UvExtraArgs = @()
 function Invoke-PipInstall {
     $uvAvailable = Get-Command uv -ErrorAction SilentlyContinue
     if ($Venv -ne "") {
-        if ($uvAvailable) { uv pip install --python "$Venv\Scripts\python.exe" @UvExtraArgs @args }
-        else { & "$Venv\Scripts\pip.exe" install @PipExtraArgs @args }
+        if ($uvAvailable) { uv pip install --no-cache --python "$Venv\Scripts\python.exe" @UvExtraArgs @args }
+        else { & "$Venv\Scripts\pip.exe" install --no-cache-dir @PipExtraArgs @args }
     } else {
-        if ($uvAvailable) { uv pip install @UvExtraArgs @args }
-        else { pip install @PipExtraArgs @args }
+        if ($uvAvailable) { uv pip install --no-cache @UvExtraArgs @args }
+        else { pip install --no-cache-dir @PipExtraArgs @args }
     }
 }
 
