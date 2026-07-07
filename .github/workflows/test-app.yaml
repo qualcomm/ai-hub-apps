@@ -90,7 +90,7 @@ env:
 jobs:
   test:
     name: "Test ${{ inputs.app }}"
-    runs-on: ${{ inputs.app_type == 'windows' && fromJSON('["windows-latest"]') || fromJSON('["tetra-ubuntu-2204", "self-hosted"]') }}
+    runs-on: ${{ inputs.app_type == 'windows' && fromJSON('["self-hosted", "Windows", "X64", "windows-docker"]') || fromJSON('["tetra-ubuntu-2204", "self-hosted"]') }}
 
     steps:
       - uses: actions/checkout@v7
@@ -156,7 +156,6 @@ jobs:
           qai-hub configure --api_token ${{ secrets.HUB_USER_TOKEN_PROD }}
 
       - name: Log in to Qualcomm Docker registry
-        # windows apps are run through GH runners
         if: ${{ inputs.test_stage != 'fetch'  && inputs.app_type != 'windows'}}
         uses: ./.github/actions/docker-login-qc-registry
         with:
@@ -170,7 +169,7 @@ jobs:
         run: |
           ${{ env.ACTIVATE_VENV }}
           cd tools/python/qai_hub_apps_test/
-          python -m pytest -vv -ra -s -m device_test --model-selection "${{ inputs.model_selection }}" --test-stage "${{ inputs.test_stage }}" --qdc-token "${{ env.QDC_TOKEN }}" ${{ inputs.app_type == 'windows' && '--no-docker' || '' }} --json-report --json-report-file="${{ inputs.app }}-results.json" -k "${{ inputs.app }}"
+          python -m pytest -vv -ra -s -m device_test --model-selection "${{ inputs.model_selection }}" --test-stage "${{ inputs.test_stage }}" --qdc-token "${{ env.QDC_TOKEN }}" --json-report --json-report-file="${{ inputs.app }}-results.json" -k "${{ inputs.app }}"
 
       - name: Ensure json-report-file (Linux)
         if: ${{ always() && inputs.app_type != 'windows' }}
