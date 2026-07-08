@@ -4,9 +4,7 @@
 // ---------------------------------------------------------------------
 package com.quicinc.chatapp;
 
-/**
- * GenieWrapper: Class to connect JNI GenieWrapper and Java code
- */
+/** GenieWrapper: Class to connect JNI GenieWrapper and Java code */
 public class GenieWrapper {
     long genieWrapperNativeHandle;
 
@@ -30,9 +28,7 @@ public class GenieWrapper {
         getResponseForPrompt(genieWrapperNativeHandle, userInput, callback);
     }
 
-    /**
-     * finalize: Free previously loaded model
-     */
+    /** finalize: Free previously loaded model */
     @Override
     protected void finalize() {
         freeModel(genieWrapperNativeHandle);
@@ -54,7 +50,8 @@ public class GenieWrapper {
      * @param userInput user input to generate response for
      * @param callback callback to tunnel each generated token to
      */
-    private native void getResponseForPrompt(long nativeHandle, String userInput, StringCallback callback);
+    private native void getResponseForPrompt(
+            long nativeHandle, String userInput, StringCallback callback);
 
     /**
      * FreeModel: JNI method to free previously loaded model

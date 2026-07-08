@@ -50,30 +50,30 @@ public class SemanticSegmentation implements AutoCloseable {
     private Mat outputCategories;
 
     /**
-     * Create an Semantic Segmentor from the given model.
-     * Uses default compute units: NPU, GPU, CPU.
+     * Create an Semantic Segmentor from the given model. Uses default compute units: NPU, GPU, CPU.
      * Ignores compute units that fail to load.
      *
      * @param context App context.
      * @param modelPath Model path to load.
      * @throws IOException If the model can't be read from disk.
      */
-    public SemanticSegmentation(Context context,
-                               String modelPath,
-                               TFLiteHelpers.DelegateType[][] delegatePriorityOrder) throws IOException, NoSuchAlgorithmException {
+    public SemanticSegmentation(
+            Context context, String modelPath, TFLiteHelpers.DelegateType[][] delegatePriorityOrder)
+            throws IOException, NoSuchAlgorithmException {
         // Initialize OpenCV
         new OpenCVNativeLoader().init();
 
         // Load TF Lite model
-        Pair<MappedByteBuffer, String> modelAndHash = TFLiteHelpers.loadModelFile(context.getAssets(), modelPath);
-        Pair<Interpreter, Map<TFLiteHelpers.DelegateType, Delegate>> iResult = TFLiteHelpers.CreateInterpreterAndDelegatesFromOptions(
-                modelAndHash.first,
-                delegatePriorityOrder,
-                AIHubDefaults.numCPUThreads,
-                context.getApplicationInfo().nativeLibraryDir,
-                context.getCacheDir().getAbsolutePath(),
-                modelAndHash.second
-        );
+        Pair<MappedByteBuffer, String> modelAndHash =
+                TFLiteHelpers.loadModelFile(context.getAssets(), modelPath);
+        Pair<Interpreter, Map<TFLiteHelpers.DelegateType, Delegate>> iResult =
+                TFLiteHelpers.CreateInterpreterAndDelegatesFromOptions(
+                        modelAndHash.first,
+                        delegatePriorityOrder,
+                        AIHubDefaults.numCPUThreads,
+                        context.getApplicationInfo().nativeLibraryDir,
+                        context.getCacheDir().getAbsolutePath(),
+                        modelAndHash.second);
         tfLiteInterpreter = iResult.first;
         tfLiteDelegateStore = iResult.second;
 
@@ -82,7 +82,8 @@ public class SemanticSegmentation implements AutoCloseable {
         Tensor inputTensor = tfLiteInterpreter.getInputTensor(0);
         inputShape = inputTensor.shape();
         DataType inputType = inputTensor.dataType();
-        assert inputShape.length == 4; // 4D Input Tensor: [Batch, Input Height, Input Width, Color Channels]
+        assert inputShape.length
+                == 4; // 4D Input Tensor: [Batch, Input Height, Input Width, Color Channels]
         assert inputShape[0] == 1; // Batch size is 1
         assert inputShape[3] == 3; // Input tensor should have 3 channels
         assert inputType == DataType.FLOAT32; // Requires an unquantized FFNet variant
@@ -91,7 +92,8 @@ public class SemanticSegmentation implements AutoCloseable {
         Tensor outputTensor = tfLiteInterpreter.getOutputTensor(0);
         outputShape = outputTensor.shape();
         DataType outputType = outputTensor.dataType();
-        assert outputShape.length == 4; // 4D Output Tensor: [Batch, Output Height, Output Width, Classes]
+        assert outputShape.length
+                == 4; // 4D Output Tensor: [Batch, Output Height, Output Width, Classes]
         assert outputShape[0] == 1; // Batch size is 1
         assert outputShape[3] == NUM_CLASSES;
         assert outputType == DataType.FLOAT32; // Requires an unquantized FFNet variant
@@ -128,13 +130,11 @@ public class SemanticSegmentation implements AutoCloseable {
         return inputShape[1];
     }
 
-    /**
-     * Free resources used by the segmentor.
-     */
+    /** Free resources used by the segmentor. */
     @Override
     public void close() {
         tfLiteInterpreter.close();
-        for (Delegate delegate: tfLiteDelegateStore.values()) {
+        for (Delegate delegate : tfLiteDelegateStore.values()) {
             delegate.close();
         }
     }
@@ -162,10 +162,10 @@ public class SemanticSegmentation implements AutoCloseable {
 
     /**
      * Predicts and overlays
-     * @param image Input image
-     * @param sensorOrientation Sensor orientation in degrees. If input image is rotated this
-     *                          number of degrees clockwise, the image shoudl be upright.
      *
+     * @param image Input image
+     * @param sensorOrientation Sensor orientation in degrees. If input image is rotated this number
+     *     of degrees clockwise, the image shoudl be upright.
      * @return RGB bitmap of same size and orientation as input image, but with predictions overlay.
      */
     public Bitmap predict(Bitmap image, int sensorOrientation) {
@@ -210,7 +210,13 @@ public class SemanticSegmentation implements AutoCloseable {
 
         // Scale image to the network
         Mat scaledImage = new Mat(inputHeight, inputWidth, CvType.CV_8UC3);
-        Imgproc.resize(correctRotInputImageRgb, scaledImage, scaledImage.size(), 0, 0, Imgproc.INTER_LINEAR);
+        Imgproc.resize(
+                correctRotInputImageRgb,
+                scaledImage,
+                scaledImage.size(),
+                0,
+                0,
+                Imgproc.INTER_LINEAR);
         scaledImage.convertTo(scaledImage, CvType.CV_32FC3, 1 / 255f);
 
         //
@@ -242,21 +248,22 @@ public class SemanticSegmentation implements AutoCloseable {
         int outputWidth = outputShape[2];
 
         // Convert output to 3D OpenCV image
-        Mat outputs = new Mat(new int[]{outputHeight, outputWidth, NUM_CLASSES}, CvType.CV_32F);
+        Mat outputs = new Mat(new int[] {outputHeight, outputWidth, NUM_CLASSES}, CvType.CV_32F);
         ByteBuffer outputBuffer = tfLiteInterpreter.getOutputTensor(0).asReadOnlyBuffer();
         FloatBuffer floatBuf = outputBuffer.asFloatBuffer();
         float[] arr = new float[floatBuf.remaining()];
         floatBuf.get(arr);
-        outputs.put(new int[]{0, 0, 0}, arr);
+        outputs.put(new int[] {0, 0, 0}, arr);
 
         // Take argmax (top class prediction) and scale up
         Core.reduceArgMax(outputs, outputCategories, 2);
         outputCategories.convertTo(outputCategories, CvType.CV_8UC1);
-        outputCategories = outputCategories.reshape(1, new int[]{outputHeight, outputWidth});
+        outputCategories = outputCategories.reshape(1, new int[] {outputHeight, outputWidth});
 
         // Spread out the indices to fill up [0, 1]
         // This will make better use of the rainbow color map below
-        Core.multiply(outputCategories, new Scalar(255.0f / (float)(NUM_CLASSES - 1)), outputCategories);
+        Core.multiply(
+                outputCategories, new Scalar(255.0f / (float) (NUM_CLASSES - 1)), outputCategories);
 
         // Rotate output to match input
         switch (sensorOrientation) {
@@ -275,7 +282,8 @@ public class SemanticSegmentation implements AutoCloseable {
 
         // Resize back to input size
         Mat resizeImage = new Mat(image.getHeight(), image.getWidth(), CvType.CV_8UC1);
-        Imgproc.resize(outputCategories, resizeImage, resizeImage.size(), 0, 0, Imgproc.INTER_LINEAR);
+        Imgproc.resize(
+                outputCategories, resizeImage, resizeImage.size(), 0, 0, Imgproc.INTER_LINEAR);
 
         // Convert grayscale indices map to an RGB image (with rainbow color map)
         Mat mask = new Mat(image.getWidth(), image.getHeight(), CvType.CV_8UC3);
@@ -285,7 +293,9 @@ public class SemanticSegmentation implements AutoCloseable {
         Core.addWeighted(inputMatBgr, 0.7, mask, 0.3, 0.0, inputMatBgr);
 
         // Convert from OpenCV Mat to Android Bitmap
-        Bitmap outputBitmap = Bitmap.createBitmap(inputMatBgr.width(), inputMatBgr.height(), Bitmap.Config.ARGB_8888);
+        Bitmap outputBitmap =
+                Bitmap.createBitmap(
+                        inputMatBgr.width(), inputMatBgr.height(), Bitmap.Config.ARGB_8888);
         Utils.matToBitmap(inputMatBgr, outputBitmap);
         long endTime = System.nanoTime();
         postprocessingTime = endTime - postStartTime;

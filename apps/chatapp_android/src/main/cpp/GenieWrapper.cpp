@@ -3,20 +3,22 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // ---------------------------------------------------------------------
 
+#include "GenieWrapper.hpp"
+
 #include <android/log.h>
+#include <jni.h>
+
 #include <filesystem>
 #include <fstream>
 #include <iostream>
-#include <jni.h>
 #include <memory>
 
 #include "GenieCommon.h"
 #include "GenieDialog.h"
-#include "GenieWrapper.hpp"
-#include "PromptHandler.hpp"
 #include "json.hpp"
+#include "PromptHandler.hpp"
 
-using namespace App;
+using App::GenieWrapper;
 
 namespace
 {
@@ -83,7 +85,7 @@ std::string LoadModelConfig(const std::string& model_config_path,
     std::string content;
     std::getline(std::ifstream(model_config_path), content, '\0');
 
-    using namespace nlohmann;
+    using nlohmann::json;
     json config = json::parse(content);
 
     config["dialog"]["tokenizer"]["path"] = tokenizer_path;
@@ -221,7 +223,7 @@ std::string GenieWrapper::GetResponseForPrompt(const std::string& user_prompt,
 
     if (jsonData != nullptr)
     {
-        using namespace nlohmann;
+        using nlohmann::json;
 
         json j = json::parse(jsonData.get());
 

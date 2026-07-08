@@ -4,9 +4,7 @@
 // ---------------------------------------------------------------------
 package com.quicinc.chatapp;
 
-/**
- * StringCallBack - Callback to tunnel JNI output into Java
- */
+/** StringCallBack - Callback to tunnel JNI output into Java */
 public interface StringCallback {
     void onNewString(String str);
 }

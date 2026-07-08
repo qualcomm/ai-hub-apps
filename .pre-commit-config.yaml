@@ -22,7 +22,7 @@ repos:
             - --allow-past-years
             - --no-extra-eol
     -   id: insert-license
-        files: \.java$
+        files: \.(java|kts?)$
         args:
             - --license-filepath
             - .pre-commit-license-header.txt
@@ -65,6 +65,12 @@ repos:
     hooks:
     -   id: clang-format
         types_or: [c++, c, c#, cuda, objective-c, proto]
+-   repo: https://github.com/cpplint/cpplint
+    rev: 2.0.2
+    hooks:
+    -   id: cpplint
+        args: [--quiet]
+        types_or: [c++, c]
 -   repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.13.0
     hooks:
@@ -108,6 +114,24 @@ repos:
         files: ^tools/python/
 -   repo: local
     hooks:
+    -   id: google-java-format
+        name: google-java-format
+        files: \.java$
+        entry: tools/lint/run_google_java_format.sh
+        language: system
+        require_serial: true
+    -   id: checkstyle
+        name: checkstyle
+        files: \.java$
+        entry: tools/lint/run_checkstyle.sh
+        language: system
+        require_serial: true
+    -   id: ktlint
+        name: ktlint
+        files: \.kts?$
+        entry: tools/lint/run_ktlint.sh
+        language: system
+        require_serial: true
     -   id: mypy
         name: mypy (cli)
         files: ^cli/qai_hub_apps/.*\.(py|pyi)$

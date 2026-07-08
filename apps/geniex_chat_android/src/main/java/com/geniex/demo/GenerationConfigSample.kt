@@ -16,12 +16,12 @@ data class GenerationConfigSample(
     var imagePaths: List<String>? = null,
     var imageCount: Int = 0,
     var audioPaths: List<String>? = null,
-    var audioCount: Int = 0
+    var audioCount: Int = 0,
 ) {
     // Convert to GenerationConfig with minimal sampler setup for bridge compatibility
     // Sampler config uses bridge defaults (no custom parameters applied)
-    fun toGenerationConfig(): GenerationConfig {
-        return GenerationConfig(
+    fun toGenerationConfig(): GenerationConfig =
+        GenerationConfig(
             maxTokens = this.maxTokens,
             stopWords = this.stopWords?.toTypedArray(),
             stopCount = this.stopCount,
@@ -29,7 +29,6 @@ data class GenerationConfigSample(
             imagePaths = this.imagePaths?.toTypedArray(),
             imageCount = this.imageCount,
             audioPaths = this.audioPaths?.toTypedArray(),
-            audioCount = this.audioCount
+            audioCount = this.audioCount,
         )
-    }
 }

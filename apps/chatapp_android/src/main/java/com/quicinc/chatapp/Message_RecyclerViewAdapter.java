@@ -16,7 +16,8 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.ArrayList;
 
-public class Message_RecyclerViewAdapter extends RecyclerView.Adapter<Message_RecyclerViewAdapter.MyViewHolder> {
+public class Message_RecyclerViewAdapter
+        extends RecyclerView.Adapter<Message_RecyclerViewAdapter.MyViewHolder> {
 
     Context context;
     ArrayList<ChatMessage> messages = new ArrayList<ChatMessage>(1000);
@@ -28,7 +29,8 @@ public class Message_RecyclerViewAdapter extends RecyclerView.Adapter<Message_Re
 
     @NonNull
     @Override
-    public Message_RecyclerViewAdapter.MyViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+    public Message_RecyclerViewAdapter.MyViewHolder onCreateViewHolder(
+            @NonNull ViewGroup parent, int viewType) {
         LayoutInflater inflater = LayoutInflater.from(context);
         View view = inflater.inflate(R.layout.chat_row, parent, false);
 
@@ -36,7 +38,8 @@ public class Message_RecyclerViewAdapter extends RecyclerView.Adapter<Message_Re
     }
 
     @Override
-    public void onBindViewHolder(@NonNull Message_RecyclerViewAdapter.MyViewHolder holder, int position) {
+    public void onBindViewHolder(
+            @NonNull Message_RecyclerViewAdapter.MyViewHolder holder, int position) {
         ChatMessage msg = messages.get(position);
         if (msg.isMessageFromUser()) {
             holder.mUserMessage.setText(msg.getMessage());
@@ -78,7 +81,8 @@ public class Message_RecyclerViewAdapter extends RecyclerView.Adapter<Message_Re
         }
 
         if (lastMessageFromBot) {
-            messages.get(messages.size() - 1).mMessage = messages.get(messages.size() - 1).mMessage + bot_message;
+            messages.get(messages.size() - 1).mMessage =
+                    messages.get(messages.size() - 1).mMessage + bot_message;
         } else {
             addMessage(new ChatMessage(bot_message, MessageSender.BOT));
         }

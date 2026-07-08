@@ -36,10 +36,11 @@ public class SemanticSegmentationTest {
     @Before
     public void setUp() throws Exception {
         Context context = InstrumentationRegistry.getInstrumentation().getTargetContext();
-        segmentor = new SemanticSegmentation(
-                context,
-                context.getString(R.string.tfLiteModelAsset),
-                AIHubDefaults.delegatePriorityOrder);
+        segmentor =
+                new SemanticSegmentation(
+                        context,
+                        context.getString(R.string.tfLiteModelAsset),
+                        AIHubDefaults.delegatePriorityOrder);
     }
 
     @After
@@ -88,11 +89,9 @@ public class SemanticSegmentationTest {
         float fps = frames * 1000.0f / elapsedMs;
         long avgInferMs = totalInferNs / frames / 1_000_000;
 
+        assertTrue("FPS too low: " + fps + " (expected >= " + MIN_FPS + ")", fps >= MIN_FPS);
         assertTrue(
-            "FPS too low: " + fps + " (expected >= " + MIN_FPS + ")",
-            fps >= MIN_FPS);
-        assertTrue(
-            "Inference too slow: " + avgInferMs + "ms (expected <= " + MAX_INFER_MS + "ms)",
-            avgInferMs <= MAX_INFER_MS);
+                "Inference too slow: " + avgInferMs + "ms (expected <= " + MAX_INFER_MS + "ms)",
+                avgInferMs <= MAX_INFER_MS);
     }
 }

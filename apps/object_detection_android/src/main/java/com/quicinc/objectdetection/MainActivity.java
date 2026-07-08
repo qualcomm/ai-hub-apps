@@ -34,24 +34,22 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main_activity);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-        progressBar = (ProgressBar)findViewById(R.id.indeterminateBar);
+        progressBar = (ProgressBar) findViewById(R.id.indeterminateBar);
 
         // Load model
         createTFLiteClassifiersAsync();
     }
 
-    /**
-     * Method to request Camera permission
-     */
+    /** Method to request Camera permission */
     private void cameraPermission() {
-        requestPermissions(new String[]{Manifest.permission.CAMERA}, 1);
+        requestPermissions(new String[] {Manifest.permission.CAMERA}, 1);
     }
 
-    /**
-     * Method to navigate to CameraFragment
-     */
+    /** Method to navigate to CameraFragment */
     private void overToCamera() {
-        boolean passToFragment = MainActivity.this.checkSelfPermission(Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED;
+        boolean passToFragment =
+                MainActivity.this.checkSelfPermission(Manifest.permission.CAMERA)
+                        == PackageManager.PERMISSION_GRANTED;
         if (passToFragment) {
             if (detector != null) {
                 FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
@@ -68,9 +66,9 @@ public class MainActivity extends AppCompatActivity {
     }
 
     /**
-     * Create inference detector objects.
-     * Loading the TF Lite model takes time, so this is done asynchronously to the main UI thread.
-     * Disables the inference UI during load and reenables it afterwards.
+     * Create inference detector objects. Loading the TF Lite model takes time, so this is done
+     * asynchronously to the main UI thread. Disables the inference UI during load and reenables it
+     * afterwards.
      */
     void createTFLiteClassifiersAsync() {
         if (detector != null) {
@@ -79,32 +77,35 @@ public class MainActivity extends AppCompatActivity {
         setLoadingUI(true);
 
         // Exit the UI thread and instantiate the model in the background.
-        backgroundTaskExecutor.execute(() -> {
-            // Create a ObjectDetection object with all available compute units (NPU, GPU, CPU)
-            String tfLiteModelAsset = this.getResources().getString(R.string.tfLiteModelAsset);
-            String tfLiteLabelsAsset = this.getResources().getString(R.string.tfLiteLabelsAsset);
-            try {
-                detector = new ObjectDetection(
-                        this,
-                        tfLiteModelAsset,
-                        tfLiteLabelsAsset,
-                        AIHubDefaults.delegatePriorityOrder /* AI Hub Defaults */
-                );
-            } catch (IOException | NoSuchAlgorithmException e) {
-                throw new RuntimeException(e.getMessage());
-            }
-            setLoadingUI(false);
-            mainLooperHandler.post(this::overToCamera);
-        });
+        backgroundTaskExecutor.execute(
+                () -> {
+                    // Create a ObjectDetection object with all available compute units (NPU, GPU,
+                    // CPU)
+                    String tfLiteModelAsset =
+                            this.getResources().getString(R.string.tfLiteModelAsset);
+                    String tfLiteLabelsAsset =
+                            this.getResources().getString(R.string.tfLiteLabelsAsset);
+                    try {
+                        detector =
+                                new ObjectDetection(
+                                        this,
+                                        tfLiteModelAsset,
+                                        tfLiteLabelsAsset,
+                                        AIHubDefaults.delegatePriorityOrder /* AI Hub Defaults */);
+                    } catch (IOException | NoSuchAlgorithmException e) {
+                        throw new RuntimeException(e.getMessage());
+                    }
+                    setLoadingUI(false);
+                    mainLooperHandler.post(this::overToCamera);
+                });
     }
 
-
     @Override
-    protected void onResume()
-    {
+    protected void onResume() {
         super.onResume();
         overToCamera();
     }
+
     @Override
     protected void onStop() {
         super.onStop();

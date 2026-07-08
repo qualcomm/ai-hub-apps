@@ -67,6 +67,12 @@ if [ "$WITH_CLI" = true ]; then
     bash "$REPO_ROOT/tools/ci/install_cli.sh" --source source --venv "$VENV_PATH"
 fi
 
+# The precommit extra runs the Java/Kotlin pre-commit hooks, which need a JVM
+# toolchain (JDK + google-java-format + ktlint).
+if [ "$EXTRAS" = "precommit" ]; then
+    bash "$REPO_ROOT/tools/lint/install_lint_tools.sh"
+fi
+
 if [ "$WITH_QDC_SDK" = true ]; then
     echo "Downloading and installing QDC SDK wheel..."
     QDC_TMP_DIR="$(mktemp -d)"

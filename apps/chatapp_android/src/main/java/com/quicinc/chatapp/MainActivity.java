@@ -4,14 +4,14 @@
 // ---------------------------------------------------------------------
 package com.quicinc.chatapp;
 
-import androidx.appcompat.app.AppCompatActivity;
-
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
+
+import androidx.appcompat.app.AppCompatActivity;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -21,9 +21,6 @@ import java.io.OutputStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -35,11 +32,12 @@ public class MainActivity extends AppCompatActivity {
      * copyAssetsDir: Copies provided assets to output path
      *
      * @param inputAssetRelPath relative path to asset from asset root
-     * @param outputPath        output path to copy assets to
+     * @param outputPath output path to copy assets to
      * @throws IOException
      * @throws NullPointerException
      */
-    void copyAssetsDir(String inputAssetRelPath, String outputPath) throws IOException, NullPointerException {
+    void copyAssetsDir(String inputAssetRelPath, String outputPath)
+            throws IOException, NullPointerException {
         File outputAssetPath = new File(Paths.get(outputPath, inputAssetRelPath).toString());
 
         String[] subAssetList = this.getAssets().list(inputAssetRelPath);
@@ -66,7 +64,7 @@ public class MainActivity extends AppCompatActivity {
     /**
      * copyFile: Copies provided input file asset into output asset file
      *
-     * @param inputFilePath   relative file path from asset root directory
+     * @param inputFilePath relative file path from asset root directory
      * @param outputAssetFile output file to copy input asset file into
      * @throws IOException
      */
@@ -95,7 +93,10 @@ public class MainActivity extends AppCompatActivity {
 
             String socModel = android.os.Build.SOC_MODEL;
             if (!supportedSocModel.containsKey(socModel)) {
-                String errorMsg = "Unsupported device. Please ensure you have one of the following device to run the ChatApp: " + supportedSocModel.toString();
+                String errorMsg =
+                        "Unsupported device. Please ensure you have one of the following device to"
+                                + " run the ChatApp: "
+                                + supportedSocModel.toString();
                 Log.e("ChatApp", errorMsg);
                 Toast.makeText(this, errorMsg, Toast.LENGTH_LONG).show();
                 finish();
@@ -105,32 +106,39 @@ public class MainActivity extends AppCompatActivity {
             //  - <assets>/models
             //      - has list of models with tokenizer.json, genie_config.json and model binaries
             //  - <assets>/htp_config/
-            //      - has SM8750.json and SM8650.json and picked up according to device SOC Model at runtime.
+            //      - has SM8750.json and SM8650.json and picked up according to device SOC Model at
+            // runtime.
             String externalDir = getExternalCacheDir().getAbsolutePath();
             try {
                 // Copy assets to External cache if not already present
                 copyAssetsDir("models", externalDir.toString());
                 copyAssetsDir("htp_config", externalDir.toString());
             } catch (IOException e) {
-                String errorMsg = "Error during copying model asset to external storage: " + e.toString();
+                String errorMsg =
+                        "Error during copying model asset to external storage: " + e.toString();
                 Log.e("ChatApp", errorMsg);
                 Toast.makeText(this, errorMsg, Toast.LENGTH_SHORT).show();
                 finish();
             }
-            Path htpExtConfigPath = Paths.get(externalDir, "htp_config", supportedSocModel.get(socModel));
+            Path htpExtConfigPath =
+                    Paths.get(externalDir, "htp_config", supportedSocModel.get(socModel));
 
             // Read model name from metadata.json (downloaded alongside model binaries)
             String modelName = "No Model Found";
-            File metadataFile = new File(Paths.get(externalDir, "models", "llm", "metadata.json").toString());
+            File metadataFile =
+                    new File(Paths.get(externalDir, "models", "llm", "metadata.json").toString());
             if (metadataFile.exists()) {
                 try {
-                    String content = new String(java.nio.file.Files.readAllBytes(metadataFile.toPath()));
+                    String content =
+                            new String(java.nio.file.Files.readAllBytes(metadataFile.toPath()));
                     org.json.JSONObject metadata = new org.json.JSONObject(content);
                     if (metadata.has("model_name")) {
                         modelName = metadata.getString("model_name");
                     }
                 } catch (Exception e) {
-                    Log.w("ChatApp", "Could not read model_name from metadata.json: " + e.getMessage());
+                    Log.w(
+                            "ChatApp",
+                            "Could not read model_name from metadata.json: " + e.getMessage());
                 }
             } else {
                 Log.w("ChatApp", "metadata.json not found at: " + metadataFile.getAbsolutePath());
@@ -140,15 +148,18 @@ public class MainActivity extends AppCompatActivity {
             setContentView(R.layout.activity_main);
             Button llm = (Button) findViewById(R.id.llm);
             llm.setText("Chat with " + finalModelName);
-            llm.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-                    Intent intent = new Intent(MainActivity.this, Conversation.class);
-                    intent.putExtra(Conversation.cConversationActivityKeyHtpConfig, htpExtConfigPath.toString());
-                    intent.putExtra(Conversation.cConversationActivityKeyModelName, "llm");
-                    startActivity(intent);
-                }
-            });
+            llm.setOnClickListener(
+                    new View.OnClickListener() {
+                        @Override
+                        public void onClick(View view) {
+                            Intent intent = new Intent(MainActivity.this, Conversation.class);
+                            intent.putExtra(
+                                    Conversation.cConversationActivityKeyHtpConfig,
+                                    htpExtConfigPath.toString());
+                            intent.putExtra(Conversation.cConversationActivityKeyModelName, "llm");
+                            startActivity(intent);
+                        }
+                    });
         } catch (Exception e) {
             String errorMsg = "Unexpected error occurred while running ChatApp:" + e.toString();
             Log.e("ChatApp", errorMsg);

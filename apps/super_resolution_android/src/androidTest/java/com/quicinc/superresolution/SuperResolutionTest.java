@@ -47,9 +47,10 @@ public class SuperResolutionTest {
         device.findObject(By.res(PACKAGE, "imageSelector")).click();
         device.wait(Until.findObject(By.text(sampleName)), LAUNCH_TIMEOUT_MS).click();
 
-        UiObject2 runButton = device.wait(
-                Until.findObject(By.res(PACKAGE, "runModelButton").enabled(true)),
-                LAUNCH_TIMEOUT_MS);
+        UiObject2 runButton =
+                device.wait(
+                        Until.findObject(By.res(PACKAGE, "runModelButton").enabled(true)),
+                        LAUNCH_TIMEOUT_MS);
         runButton.click();
 
         device.wait(

@@ -19,6 +19,18 @@ IndentCaseLabels: false
 IndentWidth: 4
 PointerAlignment: Left
 Standard: c++17
+SortIncludes: CaseInsensitive
+IncludeBlocks: Regroup
+IncludeCategories:
+  - Regex:           '<.*\.hpp>'
+    Priority:        4
+  - Regex:           '<.*\.h>'
+    Priority:        2
+  - Regex:           '<.*>'
+    Priority:        3
+  - Regex:           '".*"'
+    Priority:        4
+IncludeIsMainRegex: '(\.hpp)?$'
 ---
 Language: Proto
 DisableFormat: true

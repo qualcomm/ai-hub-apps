@@ -23,59 +23,82 @@ import io.noties.markwon.inlineparser.MarkwonInlineParserPlugin
 import io.noties.markwon.linkify.LinkifyPlugin
 import java.io.File
 
-
 data class Message(
     val content: String,
     val type: MessageType,
     val images: List<File> = emptyList(),
-    val audio: List<File> = emptyList()
+    val audio: List<File> = emptyList(),
 )
 
-enum class MessageType(val value: Int) {
+enum class MessageType(
+    val value: Int,
+) {
     USER(0),
     ASSISTANT(1),
     PROFILE(2),
     IMAGES(3),
     ASSISTANT_IMAGES(4),
-    LOADING(5);
+    LOADING(5),
+    ;
 
     companion object {
-        fun from(value: Int): MessageType =
-            entries.firstOrNull { it.value == value } ?: PROFILE
+        fun from(value: Int): MessageType = entries.firstOrNull { it.value == value } ?: PROFILE
     }
 }
 
-class ChatAdapter(private val messages: List<Message>) :
-    RecyclerView.Adapter<RecyclerView.ViewHolder>() {
-
+class ChatAdapter(
+    private val messages: List<Message>,
+) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
     override fun getItemViewType(position: Int): Int {
         val message = messages[position]
         return message.type.value
     }
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+    override fun onCreateViewHolder(
+        parent: ViewGroup,
+        viewType: Int,
+    ): RecyclerView.ViewHolder {
         val inflater = LayoutInflater.from(parent.context)
         val type = MessageType.from(viewType)
         return when (type) {
-            MessageType.USER -> UserViewHolder(inflater.inflate(R.layout.item_user_message, parent, false))
-            MessageType.ASSISTANT -> AiViewHolder(inflater.inflate(R.layout.item_ai_message, parent, false))
-            MessageType.IMAGES -> ImagesViewHolder(inflater.inflate(R.layout.item_image_message, parent, false))
-            MessageType.ASSISTANT_IMAGES -> ImagesViewHolder(
-                inflater.inflate(
-                    R.layout.item_assistant_image_message,
-                    parent,
-                    false
-                )
-            )
-            MessageType.LOADING -> LoadingViewHolder(
-                inflater.inflate(R.layout.item_loading_message, parent, false)
-            )
+            MessageType.USER -> {
+                UserViewHolder(inflater.inflate(R.layout.item_user_message, parent, false))
+            }
 
-            else -> ProfileViewHolder(inflater.inflate(R.layout.item_profile_message, parent, false))
+            MessageType.ASSISTANT -> {
+                AiViewHolder(inflater.inflate(R.layout.item_ai_message, parent, false))
+            }
+
+            MessageType.IMAGES -> {
+                ImagesViewHolder(inflater.inflate(R.layout.item_image_message, parent, false))
+            }
+
+            MessageType.ASSISTANT_IMAGES -> {
+                ImagesViewHolder(
+                    inflater.inflate(
+                        R.layout.item_assistant_image_message,
+                        parent,
+                        false,
+                    ),
+                )
+            }
+
+            MessageType.LOADING -> {
+                LoadingViewHolder(
+                    inflater.inflate(R.layout.item_loading_message, parent, false),
+                )
+            }
+
+            else -> {
+                ProfileViewHolder(inflater.inflate(R.layout.item_profile_message, parent, false))
+            }
         }
     }
 
-    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+    override fun onBindViewHolder(
+        holder: RecyclerView.ViewHolder,
+        position: Int,
+    ) {
         val message = messages[position]
         if (holder is UserViewHolder) holder.bind(message)
         if (holder is AiViewHolder) holder.bind(message)
@@ -85,25 +108,33 @@ class ChatAdapter(private val messages: List<Message>) :
 
     override fun getItemCount() = messages.size
 
-    class UserViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+    class UserViewHolder(
+        itemView: View,
+    ) : RecyclerView.ViewHolder(itemView) {
         private val tvMessage: TextView = itemView.findViewById(R.id.tv_message)
+
         fun bind(message: Message) {
             tvMessage.text = message.content
         }
     }
 
-    class AiViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+    class AiViewHolder(
+        itemView: View,
+    ) : RecyclerView.ViewHolder(itemView) {
         private val tvMessage: TextView = itemView.findViewById(R.id.tv_message)
-        private val markwon: Markwon = Markwon.builder(itemView.context)
-            .usePlugin(StrikethroughPlugin.create())
-            .usePlugin(TablePlugin.create(itemView.context))
-            .usePlugin(LinkifyPlugin.create())
-            .usePlugin(MarkwonInlineParserPlugin.create())
-            .usePlugin(JLatexMathPlugin.create(tvMessage.textSize) { builder ->
-                builder.inlinesEnabled(true)
-                builder.blocksEnabled(true)
-            })
-            .build()
+        private val markwon: Markwon =
+            Markwon
+                .builder(itemView.context)
+                .usePlugin(StrikethroughPlugin.create())
+                .usePlugin(TablePlugin.create(itemView.context))
+                .usePlugin(LinkifyPlugin.create())
+                .usePlugin(MarkwonInlineParserPlugin.create())
+                .usePlugin(
+                    JLatexMathPlugin.create(tvMessage.textSize) { builder ->
+                        builder.inlinesEnabled(true)
+                        builder.blocksEnabled(true)
+                    },
+                ).build()
 
         fun bind(message: Message) {
             markwon.setMarkdown(tvMessage, message.content.trim())
@@ -111,30 +142,40 @@ class ChatAdapter(private val messages: List<Message>) :
         }
     }
 
-    class ProfileViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+    class ProfileViewHolder(
+        itemView: View,
+    ) : RecyclerView.ViewHolder(itemView) {
         private val tvMessage: TextView = itemView.findViewById(R.id.tv_message)
 
         fun bind(message: Message) {
             tvMessage.text = message.content
         }
 
-        private fun dpToPx(dp: Int, context: android.content.Context): Int {
-            return (dp * context.resources.displayMetrics.density).toInt()
-        }
+        private fun dpToPx(
+            dp: Int,
+            context: android.content.Context,
+        ): Int = (dp * context.resources.displayMetrics.density).toInt()
     }
 
-    class LoadingViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView)
+    class LoadingViewHolder(
+        itemView: View,
+    ) : RecyclerView.ViewHolder(itemView)
 
-    class ImagesViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+    class ImagesViewHolder(
+        itemView: View,
+    ) : RecyclerView.ViewHolder(itemView) {
         private val imageContainer: LinearLayout = itemView.findViewById(R.id.image_container)
+
         fun bind(message: Message) {
             val savedImageFiles = message.images
             imageContainer.removeAllViews()
             val context = itemView.context
 
             for (file in savedImageFiles) {
-                val itemView = LayoutInflater.from(context)
-                    .inflate(R.layout.item_image_item_message, imageContainer, false)
+                val itemView =
+                    LayoutInflater
+                        .from(context)
+                        .inflate(R.layout.item_image_item_message, imageContainer, false)
                 val ivImage = itemView.findViewById<ImageView>(R.id.iv_image)
                 val bitmap = BitmapFactory.decodeFile(file.absolutePath)
                 if (bitmap != null) {

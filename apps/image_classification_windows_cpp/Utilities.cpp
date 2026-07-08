@@ -2,15 +2,16 @@
 // Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 // ---------------------------------------------------------------------
+#include "Utilities.hpp"
+
 #include <fstream>
-#include <opencv2/core.hpp>
-#include <opencv2/imgcodecs.hpp>
-#include <opencv2/imgproc/imgproc.hpp>
 #include <sstream>
 #include <string>
 #include <vector>
 
-#include "Utilities.hpp"
+#include <opencv2/core.hpp>
+#include <opencv2/imgcodecs.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
 
 namespace Utils
 {

@@ -25,7 +25,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
-
 public class Conversation extends AppCompatActivity {
 
     ArrayList<ChatMessage> messages = new ArrayList<ChatMessage>(1000);
@@ -46,7 +45,7 @@ public class Conversation extends AppCompatActivity {
 
         // Disable change animations
         RecyclerView.ItemAnimator animator = recyclerView.getItemAnimator();
-        if (animator instanceof SimpleItemAnimator){
+        if (animator instanceof SimpleItemAnimator) {
             ((SimpleItemAnimator) animator).setSupportsChangeAnimations(false);
         }
 
@@ -66,7 +65,8 @@ public class Conversation extends AppCompatActivity {
             Bundle bundle = getIntent().getExtras();
             if (bundle == null) {
                 Log.e("ChatApp", "Error getting additional info from bundle.");
-                Toast.makeText(this, "Unexpected error observed. Exiting app.", Toast.LENGTH_LONG).show();
+                Toast.makeText(this, "Unexpected error observed. Exiting app.", Toast.LENGTH_LONG)
+                        .show();
                 finish();
             }
 
@@ -82,76 +82,134 @@ public class Conversation extends AppCompatActivity {
             messages.add(new ChatMessage(cWelcomeMessage, MessageSender.BOT));
 
             // Get response from Bot once user message is sent
-            sendUserMsgButton.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View view) {
+            sendUserMsgButton.setOnClickListener(
+                    new View.OnClickListener() {
+                        @Override
+                        public void onClick(View view) {
 
-                    if (userMsg.getTextSize() != 0) {
-                        String userInputMsg = userMsg.getText().toString();
-                        // Reset user message box
-                        userMsg.setText("");
+                            if (userMsg.getTextSize() != 0) {
+                                String userInputMsg = userMsg.getText().toString();
+                                // Reset user message box
+                                userMsg.setText("");
 
-                        // Insert user message in the conversation
-                        int start = adapter.getItemCount();
-                        adapter.addMessage(new ChatMessage(userInputMsg, MessageSender.USER));
-                        adapter.addMessage(new ChatMessage("", MessageSender.BOT));
-                        adapter.notifyItemRangeInserted(start, 2);
+                                // Insert user message in the conversation
+                                int start = adapter.getItemCount();
+                                adapter.addMessage(
+                                        new ChatMessage(userInputMsg, MessageSender.USER));
+                                adapter.addMessage(new ChatMessage("", MessageSender.BOT));
+                                adapter.notifyItemRangeInserted(start, 2);
 
-                        int botResponseMsgIndex = adapter.getItemCount() - 1;
-                        recyclerView.smoothScrollToPosition(botResponseMsgIndex);
+                                int botResponseMsgIndex = adapter.getItemCount() - 1;
+                                recyclerView.smoothScrollToPosition(botResponseMsgIndex);
 
-                        long inferenceStartTime = SystemClock.elapsedRealtimeNanos();
-                        AtomicLong firstTokenTime = new AtomicLong(-1);
-                        AtomicLong lastTokenTime  = new AtomicLong(-1);
-                        AtomicInteger tokenCount  = new AtomicInteger(0);
+                                long inferenceStartTime = SystemClock.elapsedRealtimeNanos();
+                                AtomicLong firstTokenTime = new AtomicLong(-1);
+                                AtomicLong lastTokenTime = new AtomicLong(-1);
+                                AtomicInteger tokenCount = new AtomicInteger(0);
 
-                        ExecutorService service = Executors.newSingleThreadExecutor();
-                        service.execute(new Runnable() {
-                            @Override
-                            public void run() {
-                                genieWrapper.getResponseForPrompt(userInputMsg, new StringCallback() {
-                                    @Override
-                                    public void onNewString(String response) {
-                                        long now = SystemClock.elapsedRealtimeNanos();
-                                        tokenCount.incrementAndGet();
-                                        lastTokenTime.set(now);
-                                        firstTokenTime.compareAndSet(-1, now);
+                                ExecutorService service = Executors.newSingleThreadExecutor();
+                                service.execute(
+                                        new Runnable() {
+                                            @Override
+                                            public void run() {
+                                                genieWrapper.getResponseForPrompt(
+                                                        userInputMsg,
+                                                        new StringCallback() {
+                                                            @Override
+                                                            public void onNewString(
+                                                                    String response) {
+                                                                long now =
+                                                                        SystemClock
+                                                                                .elapsedRealtimeNanos();
+                                                                tokenCount.incrementAndGet();
+                                                                lastTokenTime.set(now);
+                                                                firstTokenTime.compareAndSet(
+                                                                        -1, now);
 
-                                        runOnUiThread(() -> {
-                                            // Update the last item in the adapter
-                                            adapter.updateBotMessage(response);
-                                            adapter.notifyItemChanged(botResponseMsgIndex);
+                                                                runOnUiThread(
+                                                                        () -> {
+                                                                            // Update the last item
+                                                                            // in the adapter
+                                                                            adapter
+                                                                                    .updateBotMessage(
+                                                                                            response);
+                                                                            adapter
+                                                                                    .notifyItemChanged(
+                                                                                            botResponseMsgIndex);
 
-                                            RecyclerView.LayoutManager lm = recyclerView.getLayoutManager();
-                                            if (lm instanceof LinearLayoutManager) {
-                                                LinearLayoutManager layoutManager = (LinearLayoutManager) lm;
-                                                int lastVisible = layoutManager.findLastVisibleItemPosition();
+                                                                            RecyclerView
+                                                                                            .LayoutManager
+                                                                                    lm =
+                                                                                            recyclerView
+                                                                                                    .getLayoutManager();
+                                                                            if (lm
+                                                                                    instanceof
+                                                                                    LinearLayoutManager) {
+                                                                                LinearLayoutManager
+                                                                                        layoutManager =
+                                                                                                (LinearLayoutManager)
+                                                                                                        lm;
+                                                                                int lastVisible =
+                                                                                        layoutManager
+                                                                                                .findLastVisibleItemPosition();
 
-                                                if (lastVisible == messages.size() - 1) {
-                                                    recyclerView.scrollToPosition(messages.size() - 1);
-                                                }
+                                                                                if (lastVisible
+                                                                                        == messages
+                                                                                                        .size()
+                                                                                                - 1) {
+                                                                                    recyclerView
+                                                                                            .scrollToPosition(
+                                                                                                    messages
+                                                                                                                    .size()
+                                                                                                            - 1);
+                                                                                }
+                                                                            }
+
+                                                                            long ttftMs =
+                                                                                    (firstTokenTime
+                                                                                                            .get()
+                                                                                                    - inferenceStartTime)
+                                                                                            / 1_000_000;
+                                                                            double tps = 0;
+                                                                            if (tokenCount.get() > 1
+                                                                                    && lastTokenTime
+                                                                                                    .get()
+                                                                                            > firstTokenTime
+                                                                                                    .get()) {
+                                                                                tps =
+                                                                                        (tokenCount
+                                                                                                                .get()
+                                                                                                        - 1.0)
+                                                                                                * 1e9
+                                                                                                / (lastTokenTime
+                                                                                                                .get()
+                                                                                                        - firstTokenTime
+                                                                                                                .get());
+                                                                            }
+                                                                            statsBar.setText(
+                                                                                    String.format(
+                                                                                            "TTFT:"
+                                                                                                + " %d ms"
+                                                                                                + "  |  TPS:"
+                                                                                                + " %.1f"
+                                                                                                + " tok/s",
+                                                                                            ttftMs,
+                                                                                            tps));
+                                                                            statsBar.setVisibility(
+                                                                                    View.VISIBLE);
+                                                                        });
+                                                            }
+                                                        });
                                             }
-
-                                            long ttftMs = (firstTokenTime.get() - inferenceStartTime) / 1_000_000;
-                                            double tps = 0;
-                                            if (tokenCount.get() > 1 && lastTokenTime.get() > firstTokenTime.get()) {
-                                                tps = (tokenCount.get() - 1.0) * 1e9 / (lastTokenTime.get() - firstTokenTime.get());
-                                            }
-                                            statsBar.setText(String.format("TTFT: %d ms  |  TPS: %.1f tok/s", ttftMs, tps));
-                                            statsBar.setVisibility(View.VISIBLE);
                                         });
-                                    }
-                                });
                             }
-                        });
-
-                    }
-                }
-            });
+                        }
+                    });
 
         } catch (Exception e) {
             Log.e("ChatApp", "Error during conversation with Chatbot: " + e.toString());
-            Toast.makeText(this, "Unexpected error observed. Exiting app.", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Unexpected error observed. Exiting app.", Toast.LENGTH_SHORT)
+                    .show();
             finish();
         }
     }

@@ -31,13 +31,13 @@ import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.nio.MappedByteBuffer;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.ArrayList;
 import java.util.stream.Collectors;
 
-public class ObjectDetection  implements AutoCloseable {
+public class ObjectDetection implements AutoCloseable {
     private final Interpreter tfLiteInterpreter;
     private final Map<TFLiteHelpers.DelegateType, Delegate> tfLiteDelegateStore;
     private final List<String> labelList;
@@ -56,40 +56,42 @@ public class ObjectDetection  implements AutoCloseable {
     private final Mat inputMatAbgr;
     private final Mat inputMatRgb;
 
-    private final static float INVALID_ANCHOR = -10000.0f;
-
+    private static final float INVALID_ANCHOR = -10000.0f;
 
     /**
-     * Create an Object Detector from the given model.
-     * Uses default compute units: NPU, GPU, CPU.
+     * Create an Object Detector from the given model. Uses default compute units: NPU, GPU, CPU.
      * Ignores compute units that fail to load.
      *
      * @param context App context.
      * @param modelPath Model path to load.
      * @throws IOException If the model can't be read from disk.
      */
-    public ObjectDetection(Context context,
-                           String modelPath,
-                           String labelsPath,
-                           TFLiteHelpers.DelegateType[][] delegatePriorityOrder) throws IOException, NoSuchAlgorithmException {
+    public ObjectDetection(
+            Context context,
+            String modelPath,
+            String labelsPath,
+            TFLiteHelpers.DelegateType[][] delegatePriorityOrder)
+            throws IOException, NoSuchAlgorithmException {
         // Initialize OpenCV
         new OpenCVNativeLoader().init();
 
         // Load labels
-        try (BufferedReader labelsFile = new BufferedReader(new InputStreamReader(context.getAssets().open(labelsPath)))) {
+        try (BufferedReader labelsFile =
+                new BufferedReader(new InputStreamReader(context.getAssets().open(labelsPath)))) {
             labelList = labelsFile.lines().collect(Collectors.toCollection(ArrayList::new));
         }
 
         // Load TF Lite model
-        Pair<MappedByteBuffer, String> modelAndHash = TFLiteHelpers.loadModelFile(context.getAssets(), modelPath);
-        Pair<Interpreter, Map<TFLiteHelpers.DelegateType, Delegate>> iResult = TFLiteHelpers.CreateInterpreterAndDelegatesFromOptions(
-                modelAndHash.first,
-                delegatePriorityOrder,
-                AIHubDefaults.numCPUThreads,
-                context.getApplicationInfo().nativeLibraryDir,
-                context.getCacheDir().getAbsolutePath(),
-                modelAndHash.second
-        );
+        Pair<MappedByteBuffer, String> modelAndHash =
+                TFLiteHelpers.loadModelFile(context.getAssets(), modelPath);
+        Pair<Interpreter, Map<TFLiteHelpers.DelegateType, Delegate>> iResult =
+                TFLiteHelpers.CreateInterpreterAndDelegatesFromOptions(
+                        modelAndHash.first,
+                        delegatePriorityOrder,
+                        AIHubDefaults.numCPUThreads,
+                        context.getApplicationInfo().nativeLibraryDir,
+                        context.getCacheDir().getAbsolutePath(),
+                        modelAndHash.second);
         tfLiteInterpreter = iResult.first;
         tfLiteDelegateStore = iResult.second;
 
@@ -101,7 +103,8 @@ public class ObjectDetection  implements AutoCloseable {
         Tensor inputTensor = tfLiteInterpreter.getInputTensor(0);
         inputShape = inputTensor.shape();
         DataType inputType = inputTensor.dataType();
-        assert inputShape.length == 4; // 4D Input Tensor: [Batch, Input Height, Input Width, Color Channels]
+        assert inputShape.length
+                == 4; // 4D Input Tensor: [Batch, Input Height, Input Width, Color Channels]
         assert inputShape[0] == batchSize;
         assert inputShape[3] == 3; // Input tensor should have 3 channels
         assert inputType == DataType.FLOAT32; // Requires an unquantized YOLO variant
@@ -163,13 +166,11 @@ public class ObjectDetection  implements AutoCloseable {
         return inputShape[1];
     }
 
-    /**
-     * Free resources used by the detector.
-     */
+    /** Free resources used by the detector. */
     @Override
     public void close() {
         tfLiteInterpreter.close();
-        for (Delegate delegate: tfLiteDelegateStore.values()) {
+        for (Delegate delegate : tfLiteDelegateStore.values()) {
             delegate.close();
         }
     }
@@ -197,10 +198,10 @@ public class ObjectDetection  implements AutoCloseable {
 
     /**
      * Predicts and overlays
-     * @param image Input image
-     * @param sensorOrientation Sensor orientation in degrees. If input image is rotated this
-     *                          number of degrees clockwise, the image should be upright.
      *
+     * @param image Input image
+     * @param sensorOrientation Sensor orientation in degrees. If input image is rotated this number
+     *     of degrees clockwise, the image should be upright.
      * @return RGB bitmap of same size and orientation as input image, but with predictions overlay.
      */
     public void predict(Bitmap image, int sensorOrientation, ArrayList<RectangleBox> BBlist) {
@@ -244,7 +245,13 @@ public class ObjectDetection  implements AutoCloseable {
 
         // Scale image to the network
         Mat scaledImage = new Mat(inputHeight, inputWidth, CvType.CV_8UC3);
-        Imgproc.resize(correctRotInputImageRgb, scaledImage, scaledImage.size(), 0, 0, Imgproc.INTER_LINEAR);
+        Imgproc.resize(
+                correctRotInputImageRgb,
+                scaledImage,
+                scaledImage.size(),
+                0,
+                0,
+                Imgproc.INTER_LINEAR);
         scaledImage.convertTo(scaledImage, CvType.CV_32FC3, 1 / 255f);
 
         //
@@ -262,7 +269,7 @@ public class ObjectDetection  implements AutoCloseable {
         preprocessingTime = inferenceStartTime - preStartTime;
 
         // Run inference
-        ByteBuffer[] inputs = new ByteBuffer[]{inputByteBuffer};
+        ByteBuffer[] inputs = new ByteBuffer[] {inputByteBuffer};
         tfLiteInterpreter.runForMultipleInputsOutputs(inputs, new HashMap<>());
 
         //
@@ -356,7 +363,7 @@ public class ObjectDetection  implements AutoCloseable {
             tempbox.top = temp_boxes[3] * scaleHeight;
             tempbox.confidence = scores[index];
             tempbox.classIdx = (int) classIdx[index];
-            tempbox.label = labelList.get((int)classIdx[index] % labelList.size());
+            tempbox.label = labelList.get((int) classIdx[index] % labelList.size());
             BBlist.add(tempbox);
         }
         long endTime = System.nanoTime();
@@ -364,7 +371,7 @@ public class ObjectDetection  implements AutoCloseable {
     }
 
     public class NMS {
-        private float computeOverlapAreaRate(float[] anchor1, float[] anchor2){
+        private float computeOverlapAreaRate(float[] anchor1, float[] anchor2) {
 
             float xx1 = Math.max(anchor1[0], anchor2[0]);
             float yy1 = Math.max(anchor1[1], anchor2[1]);
@@ -373,31 +380,31 @@ public class ObjectDetection  implements AutoCloseable {
 
             float w = xx2 - xx1 + 1;
             float h = yy2 - yy1 + 1;
-            if(w<0||h<0){
+            if (w < 0 || h < 0) {
                 return 0;
             }
 
             float inter = w * h;
 
-            float anchor1_area1 = (anchor1[2] - anchor1[0] + 1)*(anchor1[3] - anchor1[1] + 1);
-            float anchor2_area1 = (anchor2[2] - anchor2[0] + 1)*(anchor2[3] - anchor2[1] + 1);
+            float anchor1_area1 = (anchor1[2] - anchor1[0] + 1) * (anchor1[3] - anchor1[1] + 1);
+            float anchor2_area1 = (anchor2[2] - anchor2[0] + 1) * (anchor2[3] - anchor2[1] + 1);
 
             return inter / (anchor1_area1 + anchor2_area1 - inter);
         }
 
-        public  int[] nmsScoreFilter(float[][] anchors, float[] score, int topN, float thresh){
+        public int[] nmsScoreFilter(float[][] anchors, float[] score, int topN, float thresh) {
             int length = anchors.length;
             int count = 0;
 
-            for(int i=0;i<length;i++){
-                if(score[i]==INVALID_ANCHOR){
+            for (int i = 0; i < length; i++) {
+                if (score[i] == INVALID_ANCHOR) {
                     continue;
                 }
                 if (++count >= topN) {
                     break;
                 }
-                for(int j=i+1;j<length;j++){
-                    if(score[j]!=INVALID_ANCHOR) {
+                for (int j = i + 1; j < length; j++) {
+                    if (score[j] != INVALID_ANCHOR) {
                         if (computeOverlapAreaRate(anchors[i], anchors[j]) > thresh) {
                             score[j] = INVALID_ANCHOR;
                         }
@@ -406,8 +413,8 @@ public class ObjectDetection  implements AutoCloseable {
             }
             int outputIndex[] = new int[count];
             int j = 0;
-            for(int i=0;i<length && count>0;i++){
-                if(score[i]!=INVALID_ANCHOR){
+            for (int i = 0; i < length && count > 0; i++) {
+                if (score[i] != INVALID_ANCHOR) {
                     outputIndex[j++] = i;
                     count--;
                 }

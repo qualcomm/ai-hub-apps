@@ -9,8 +9,9 @@ import android.content.DialogInterface
 import android.view.View
 
 abstract class CustomDialogInterface : DialogInterface {
-
-    abstract class OnClickListener : View.OnClickListener, DialogInterface.OnClickListener {
+    abstract class OnClickListener :
+        View.OnClickListener,
+        DialogInterface.OnClickListener {
         private var dialog: DialogInterface? = null
 
         constructor()
@@ -48,15 +49,20 @@ abstract class CustomDialogInterface : DialogInterface {
             resetButton(dialog, DialogInterface.BUTTON_POSITIVE)
         }
 
-        private fun resetButton(dialog: DialogInterface, which: Int) {
+        private fun resetButton(
+            dialog: DialogInterface,
+            which: Int,
+        ) {
             this.dialog = dialog
             if (dialog is AlertDialog) {
                 dialog.getButton(which)
-            } else if (dialog is androidx.appcompat.app.AlertDialog) {
-                dialog.getButton(which)
             } else {
-                null
-            }?.setOnClickListener(this)
+                if (dialog is androidx.appcompat.app.AlertDialog) {
+                    dialog.getButton(which)
+                } else {
+                    null
+                }?.setOnClickListener(this)
+            }
         }
     }
 

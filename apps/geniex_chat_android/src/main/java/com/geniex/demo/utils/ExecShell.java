@@ -16,7 +16,7 @@ public class ExecShell {
     private static String LOG_TAG = ExecShell.class.getName();
 
     public enum SHELL_CMD {
-        check_su_binary(new String[]{"/system/xbin/which", "su"});
+        check_su_binary(new String[] {"/system/xbin/which", "su"});
         String[] command;
 
         SHELL_CMD(String[] command) {
@@ -34,8 +34,10 @@ public class ExecShell {
             Log.e(LOG_TAG, "Command line execution failed", e);
             return null;
         }
-        BufferedWriter out = new BufferedWriter(new OutputStreamWriter(localProcess.getOutputStream()));
-        BufferedReader in = new BufferedReader(new InputStreamReader(localProcess.getInputStream()));
+        BufferedWriter out =
+                new BufferedWriter(new OutputStreamWriter(localProcess.getOutputStream()));
+        BufferedReader in =
+                new BufferedReader(new InputStreamReader(localProcess.getInputStream()));
         try {
             while ((line = in.readLine()) != null) {
                 fullResponse.add(line);

@@ -50,50 +50,51 @@ public class ImageClassification implements AutoCloseable {
     private final ImageProcessor imageProcessor;
 
     /**
-     * Create an Image Classifier from the given model.
-     * Uses default compute units: NPU, GPU, CPU.
+     * Create an Image Classifier from the given model. Uses default compute units: NPU, GPU, CPU.
      * Ignores compute units that fail to load.
      *
-     * @param context    App context.
-     * @param modelPath  Model path to load.
+     * @param context App context.
+     * @param modelPath Model path to load.
      * @param labelsPath Labels path to load.
      * @throws IOException If the model can't be read from disk.
      */
-    public ImageClassification(Context context,
-                               String modelPath,
-                               String labelsPath) throws IOException, NoSuchAlgorithmException {
+    public ImageClassification(Context context, String modelPath, String labelsPath)
+            throws IOException, NoSuchAlgorithmException {
         this(context, modelPath, labelsPath, AIHubDefaults.delegatePriorityOrder);
     }
 
     /**
-     * Create an Image Classifier from the given model.
-     * Ignores compute units that fail to load.
+     * Create an Image Classifier from the given model. Ignores compute units that fail to load.
      *
-     * @param context     App context.
-     * @param modelPath   Model path to load.
-     * @param labelsPath  Labels path to load.
+     * @param context App context.
+     * @param modelPath Model path to load.
+     * @param labelsPath Labels path to load.
      * @param delegatePriorityOrder Priority order of delegate sets to enable.
      * @throws IOException If the model can't be read from disk.
      */
-    public ImageClassification(Context context,
-                               String modelPath,
-                               String labelsPath,
-                               TFLiteHelpers.DelegateType[][] delegatePriorityOrder) throws IOException, NoSuchAlgorithmException {
+    public ImageClassification(
+            Context context,
+            String modelPath,
+            String labelsPath,
+            TFLiteHelpers.DelegateType[][] delegatePriorityOrder)
+            throws IOException, NoSuchAlgorithmException {
         // Load labels
-        try (BufferedReader labelsFile = new BufferedReader(new InputStreamReader(context.getAssets().open(labelsPath)))) {
+        try (BufferedReader labelsFile =
+                new BufferedReader(new InputStreamReader(context.getAssets().open(labelsPath)))) {
             labelList = labelsFile.lines().collect(Collectors.toCollection(ArrayList::new));
         }
 
         // Load TF Lite model
-        Pair<MappedByteBuffer, String> modelAndHash = TFLiteHelpers.loadModelFile(context.getAssets(), modelPath);
-        Pair<Interpreter, Map<TFLiteHelpers.DelegateType, Delegate>> iResult = TFLiteHelpers.CreateInterpreterAndDelegatesFromOptions(
-            modelAndHash.first,
-            delegatePriorityOrder,
-            AIHubDefaults.numCPUThreads,
-            context.getApplicationInfo().nativeLibraryDir,
-            context.getCacheDir().getAbsolutePath(),
-            modelAndHash.second
-        );
+        Pair<MappedByteBuffer, String> modelAndHash =
+                TFLiteHelpers.loadModelFile(context.getAssets(), modelPath);
+        Pair<Interpreter, Map<TFLiteHelpers.DelegateType, Delegate>> iResult =
+                TFLiteHelpers.CreateInterpreterAndDelegatesFromOptions(
+                        modelAndHash.first,
+                        delegatePriorityOrder,
+                        AIHubDefaults.numCPUThreads,
+                        context.getApplicationInfo().nativeLibraryDir,
+                        context.getCacheDir().getAbsolutePath(),
+                        modelAndHash.second);
         tfLiteInterpreter = iResult.first;
         tfLiteDelegateStore = iResult.second;
 
@@ -105,7 +106,8 @@ public class ImageClassification implements AutoCloseable {
         assert inputShape.length == 4; // 4D Input Tensor: [Batch, Height, Width, Channels]
         assert inputShape[0] == 1; // Batch size is 1
         assert inputShape[3] == 3; // Input tensor should have 3 channels
-        assert inputType == DataType.UINT8 || inputType == DataType.FLOAT32; // INT8 (Quantized) and FP32 Input Supported
+        assert inputType == DataType.UINT8
+                || inputType == DataType.FLOAT32; // INT8 (Quantized) and FP32 Input Supported
 
         assert tfLiteInterpreter.getOutputTensorCount() == 1;
         Tensor outputTensor = tfLiteInterpreter.getOutputTensor(0);
@@ -114,19 +116,20 @@ public class ImageClassification implements AutoCloseable {
         assert outputShape.length == 2; // 2D Output Tensor: [Batch, # of Labels]
         assert inputShape[0] == 1; // Batch size is 1
         assert outputShape[1] == labelList.size(); // # of labels == output dim
-        assert outputType == DataType.UINT8 || outputType == DataType.INT8 | outputType == DataType.FLOAT32; // U/INT8 (Quantized) and FP32 Output Supported
+        assert outputType == DataType.UINT8
+                || outputType == DataType.INT8
+                        | outputType
+                                == DataType.FLOAT32; // U/INT8 (Quantized) and FP32 Output Supported
 
         // Set-up preprocessor
         imageProcessor = new ImageProcessor.Builder().add(new NormalizeOp(0.0f, 255.0f)).build();
     }
 
-    /**
-     * Free resources used by the classifier.
-     */
+    /** Free resources used by the classifier. */
     @Override
     public void close() {
         tfLiteInterpreter.close();
-        for (Delegate delegate: tfLiteDelegateStore.values()) {
+        for (Delegate delegate : tfLiteDelegateStore.values()) {
             delegate.close();
         }
     }
@@ -136,7 +139,8 @@ public class ImageClassification implements AutoCloseable {
      */
     public long getLastPreprocessingTime() {
         if (preprocessingTime == 0) {
-            throw new RuntimeException("Cannot get preprocessing time as model has not yet been executed.");
+            throw new RuntimeException(
+                    "Cannot get preprocessing time as model has not yet been executed.");
         }
         return preprocessingTime;
     }
@@ -153,15 +157,15 @@ public class ImageClassification implements AutoCloseable {
      */
     public long getLastPostprocessingTime() {
         if (postprocessingTime == 0) {
-            throw new RuntimeException("Cannot get postprocessing time as model has not yet been executed.");
+            throw new RuntimeException(
+                    "Cannot get postprocessing time as model has not yet been executed.");
         }
         return postprocessingTime;
     }
 
-
     /**
-     * Preprocess using the provided image (resize, convert to model input data type).
-     * Sets the input buffer held by this.tfLiteModel to the processed input.
+     * Preprocess using the provided image (resize, convert to model input data type). Sets the
+     * input buffer held by this.tfLiteModel to the processed input.
      *
      * @param image RGBA-8888 Bitmap to preprocess.
      * @return Array of inputs to pass to the interpreter.
@@ -172,7 +176,9 @@ public class ImageClassification implements AutoCloseable {
 
         // Resize input image
         if (image.getHeight() != inputShape[1] || image.getWidth() != inputShape[2]) {
-            resizedImg = ImageProcessing.resizeAndPadMaintainAspectRatio(image, inputShape[1], inputShape[2], 0);
+            resizedImg =
+                    ImageProcessing.resizeAndPadMaintainAspectRatio(
+                            image, inputShape[1], inputShape[2], 0);
         } else {
             resizedImg = image;
         }
@@ -192,7 +198,6 @@ public class ImageClassification implements AutoCloseable {
         return new ByteBuffer[] {inputBuffer};
     }
 
-
     /**
      * Reads the output buffers on tfLiteModel and processes them into readable output classes.
      *
@@ -208,7 +213,10 @@ public class ImageClassification implements AutoCloseable {
         } else {
             indexList = findTopKByteIndices(outputBuffer, TOPK);
         }
-        ArrayList<String> labels = indexList.stream().map(labelList::get).collect(Collectors.toCollection(ArrayList<String>::new));
+        ArrayList<String> labels =
+                indexList.stream()
+                        .map(labelList::get)
+                        .collect(Collectors.toCollection(ArrayList<String>::new));
 
         postprocessingTime = System.nanoTime() - postStartTime;
         Log.d(TAG, "Postprocessing Time: " + postprocessingTime / 1000000 + " ms");
@@ -241,11 +249,12 @@ public class ImageClassification implements AutoCloseable {
      * @return The indices of the top K elements in the buffer.
      */
     private static List<Integer> findTopKFloatIndices(FloatBuffer fb, int k) {
-        class ValueAndIdx implements Comparable<ValueAndIdx>{
+        class ValueAndIdx implements Comparable<ValueAndIdx> {
             public float value;
             public int idx;
 
-            @Override public int compareTo(ValueAndIdx other) {
+            @Override
+            public int compareTo(ValueAndIdx other) {
                 return Float.compare(value, other.value);
             }
 
@@ -265,7 +274,8 @@ public class ImageClassification implements AutoCloseable {
             i++;
         }
 
-        ArrayList<Integer> topKList = maxHeap.stream().map(x -> x.idx).collect(Collectors.toCollection(ArrayList::new));
+        ArrayList<Integer> topKList =
+                maxHeap.stream().map(x -> x.idx).collect(Collectors.toCollection(ArrayList::new));
         Collections.reverse(topKList);
         return topKList;
     }
@@ -278,11 +288,12 @@ public class ImageClassification implements AutoCloseable {
      * @return The indices of the top K elements in the buffer.
      */
     private static List<Integer> findTopKByteIndices(ByteBuffer bb, int k) {
-        class ValueAndIdx implements Comparable<ValueAndIdx>{
+        class ValueAndIdx implements Comparable<ValueAndIdx> {
             public byte value;
             public int idx;
 
-            @Override public int compareTo(ValueAndIdx other) {
+            @Override
+            public int compareTo(ValueAndIdx other) {
                 return Byte.compare(value, other.value);
             }
 
@@ -302,7 +313,8 @@ public class ImageClassification implements AutoCloseable {
             i++;
         }
 
-        ArrayList<Integer> topKList = maxHeap.stream().map(x -> x.idx).collect(Collectors.toCollection(ArrayList::new));
+        ArrayList<Integer> topKList =
+                maxHeap.stream().map(x -> x.idx).collect(Collectors.toCollection(ArrayList::new));
         Collections.reverse(topKList);
         return topKList;
     }

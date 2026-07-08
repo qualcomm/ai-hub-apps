@@ -9,24 +9,22 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.Typeface;
-import android.graphics.Matrix;
+import android.util.AttributeSet;
 import android.util.Size;
+import android.view.View;
 
 import androidx.annotation.ColorInt;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import android.util.AttributeSet;
-import android.view.View;
-import java.util.concurrent.locks.ReentrantLock;
+
 import java.util.ArrayList;
+import java.util.concurrent.locks.ReentrantLock;
 
-/**
- * FragmentRender draws the final prediction image and overlays debugging text.
- */
-
+/** FragmentRender draws the final prediction image and overlays debugging text. */
 public class FragmentRender extends View {
     private final ReentrantLock mLock = new ReentrantLock();
     private Bitmap mBitmap = null;
@@ -47,27 +45,28 @@ public class FragmentRender extends View {
 
     public static @ColorInt int labelColor(int label, int alpha) {
         // Generic colors that do not correspond to a dataset
-        final int[] baseColors = new int[]{
-                0xFFF44336, // Red
-                0xFFE91E63, // Pink
-                0xFF9C27B0, // Purple
-                0xFF673AB7, // Deep Purple
-                0xFF3F51B5, // Indigo
-                0xFF2196F3, // Blue
-                0xFF03A9F4, // Light Blue
-                0xFF00BCD4, // Cyan
-                0xFF009688, // Teal
-                0xFF4CAF50, // Green
-                0xFF8BC34A, // Light Green
-                0xFFCDDC39, // Lime
-                0xFFFFEB3B, // Yellow
-                0xFFFFC107, // Amber
-                0xFFFF9800, // Orange
-                0xFFFF5722, // Deep Orange
-                0xFF795548, // Brown
-                0xFF9E9E9E, // Gray
-                0xFF607D8B  // Blue Gray
-        };
+        final int[] baseColors =
+                new int[] {
+                    0xFFF44336, // Red
+                    0xFFE91E63, // Pink
+                    0xFF9C27B0, // Purple
+                    0xFF673AB7, // Deep Purple
+                    0xFF3F51B5, // Indigo
+                    0xFF2196F3, // Blue
+                    0xFF03A9F4, // Light Blue
+                    0xFF00BCD4, // Cyan
+                    0xFF009688, // Teal
+                    0xFF4CAF50, // Green
+                    0xFF8BC34A, // Light Green
+                    0xFFCDDC39, // Lime
+                    0xFFFFEB3B, // Yellow
+                    0xFFFFC107, // Amber
+                    0xFFFF9800, // Orange
+                    0xFFFF5722, // Deep Orange
+                    0xFF795548, // Brown
+                    0xFF9E9E9E, // Gray
+                    0xFF607D8B // Blue Gray
+                };
 
         int index = Math.abs(label % baseColors.length);
         int color = baseColors[index];
@@ -91,21 +90,26 @@ public class FragmentRender extends View {
         mLock.lock();
         postInvalidate();
 
-        if (boxlist==null)
-        {
+        if (boxlist == null) {
             mLock.unlock();
             return;
         }
         boxlist.clear();
-        for(int j=0;j<t_boxlist.size();j++) {
+        for (int j = 0; j < t_boxlist.size(); j++) {
             boxlist.add(t_boxlist.get(j));
         }
         mLock.unlock();
         postInvalidate();
     }
 
-    public void render(Bitmap image, Size cameraSize, float fps, long inferTime, long preprocessTime, long postprocessTime, int displayRotation)
-    {
+    public void render(
+            Bitmap image,
+            Size cameraSize,
+            float fps,
+            long inferTime,
+            long preprocessTime,
+            long postprocessTime,
+            int displayRotation) {
         this.mBitmap = image;
         this.mCameraSize = cameraSize;
         this.fps = fps;
@@ -141,11 +145,11 @@ public class FragmentRender extends View {
             float scaleX;
             float scaleY;
             if (mDisplayRotation == 0 || mDisplayRotation == 2) {
-                scaleX = (float)mCameraSize.getHeight() / (float)getWidth();
-                scaleY = (float)mCameraSize.getWidth() / (float)getHeight();
+                scaleX = (float) mCameraSize.getHeight() / (float) getWidth();
+                scaleY = (float) mCameraSize.getWidth() / (float) getHeight();
             } else {
-                scaleX = (float)mCameraSize.getWidth() / (float)getWidth();
-                scaleY = (float)mCameraSize.getHeight() / (float)getHeight();
+                scaleX = (float) mCameraSize.getWidth() / (float) getWidth();
+                scaleY = (float) mCameraSize.getHeight() / (float) getHeight();
             }
 
             if (scaleX < scaleY) {
@@ -156,8 +160,8 @@ public class FragmentRender extends View {
                 scaleX = 1.0f;
             }
 
-            float tx = (float)getWidth() / 2.0f;
-            float ty = (float)getHeight() / 2.0f;
+            float tx = (float) getWidth() / 2.0f;
+            float ty = (float) getHeight() / 2.0f;
 
             mTransform.reset();
             switch (mDisplayRotation) {
@@ -169,17 +173,13 @@ public class FragmentRender extends View {
                 case 1:
                     mTransform.preRotate(-90, tx, ty);
                     mTransform.preTranslate(tx, ty);
-                    mTransform.preScale(
-                            scaleY * ty / tx,
-                            scaleX * tx / ty);
+                    mTransform.preScale(scaleY * ty / tx, scaleX * tx / ty);
                     mTransform.preTranslate(-tx, -ty);
                     break;
                 case 3:
                     mTransform.preRotate(90, tx, ty);
                     mTransform.preTranslate(tx, ty);
-                    mTransform.preScale(
-                            scaleY * ty / tx,
-                            scaleX * tx / ty);
+                    mTransform.preScale(scaleY * ty / tx, scaleX * tx / ty);
                     mTransform.preTranslate(-tx, -ty);
                     break;
                 default:
@@ -198,10 +198,16 @@ public class FragmentRender extends View {
 
             // Useful for debugging
             // canvas.drawText("FPS: " + String.format("%.0f", fps), 15, 50, mTextColor);
-            // canvas.drawText("Preprocess: " + String.format("%.0f", (float)preprocessTime / 1_000_000) + "ms", 15, 55 + 60 * 2, mTextColor);
-            // canvas.drawText("Infer: " + String.format("%.0f", (float)inferTime / 1_000_000) + "ms", 15, 55 + 60 * 3, mTextColor);
-            // canvas.drawText("Postprocess: " + String.format("%.0f", (float)postprocessTime / 1_000_000) + "ms", 15, 55 + 60 * 4, mTextColor);
-            for(int j=0;j<boxlist.size();j++) {
+            // canvas.drawText("Preprocess: " + String.format("%.0f", (float)preprocessTime /
+            // 1_000_000) +
+            // "ms", 15, 55 + 60 * 2, mTextColor);
+            // canvas.drawText("Infer: " + String.format("%.0f", (float)inferTime / 1_000_000) +
+            // "ms", 15,
+            // 55 + 60 * 3, mTextColor);
+            // canvas.drawText("Postprocess: " + String.format("%.0f", (float)postprocessTime /
+            // 1_000_000)
+            // + "ms", 15, 55 + 60 * 4, mTextColor);
+            for (int j = 0; j < boxlist.size(); j++) {
 
                 RectangleBox rbox = boxlist.get(j);
 
@@ -213,7 +219,7 @@ public class FragmentRender extends View {
                 float left = Math.min(p0[0], p1[0]);
                 float upper = Math.min(p0[1], p1[1]);
 
-                int alpha = (int)(255 * rbox.confidence);
+                int alpha = (int) (255 * rbox.confidence);
                 int color = labelColor(rbox.classIdx, alpha);
 
                 mFramePaint.setColor(color);
@@ -230,13 +236,23 @@ public class FragmentRender extends View {
 
                 float buf = 2.0f;
                 float textWidth = mTextPaint.measureText(rbox.label);
-                float textHeight = mTextPaint.getFontMetrics().bottom - mTextPaint.getFontMetrics().top - 8.0f;
+                float textHeight =
+                        mTextPaint.getFontMetrics().bottom - mTextPaint.getFontMetrics().top - 8.0f;
 
                 mLabelFramePaint.setColor(color);
                 mLabelFramePaint.setStyle(Paint.Style.FILL);
 
-                canvas.drawRect(left, upper, left+textWidth+2*buf, upper-textHeight-2*buf, mLabelFramePaint);
-                canvas.drawText(rbox.label, left+buf, upper+mTextPaint.getFontMetrics().top+buf+17.0f, mTextPaint);
+                canvas.drawRect(
+                        left,
+                        upper,
+                        left + textWidth + 2 * buf,
+                        upper - textHeight - 2 * buf,
+                        mLabelFramePaint);
+                canvas.drawText(
+                        rbox.label,
+                        left + buf,
+                        upper + mTextPaint.getFontMetrics().top + buf + 17.0f,
+                        mTextPaint);
             }
         }
         mLock.unlock();

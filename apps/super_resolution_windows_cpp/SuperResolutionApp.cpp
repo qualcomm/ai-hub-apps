@@ -3,21 +3,21 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // ---------------------------------------------------------------------
 #include "SuperResolutionApp.hpp"
-#include "Utilities.hpp"
+
+#include <onnxruntime_cxx_api.h>
+#include <onnxruntime_session_options_config_keys.h>
 
 #include <filesystem>
 #include <iostream>
 #include <sstream>
-
-#include <onnxruntime_cxx_api.h>
-#include <onnxruntime_session_options_config_keys.h>
-#include <sstream>
 #include <unordered_map>
 
+#include "Utilities.hpp"
 #include <opencv2/core.hpp>
 #include <opencv2/highgui.hpp>
 
-using namespace App;
+using App::BackendOption;
+using App::SuperResolutionApp;
 
 namespace
 {

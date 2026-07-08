@@ -15,5 +15,6 @@ inline fun <reified VB : ViewBinding> Activity.inflate() =
 
 @Suppress("UNCHECKED_CAST")
 inline fun <reified VB : ViewBinding> inflateBinding(layoutInflater: LayoutInflater) =
-    VB::class.java.getMethod("inflate", LayoutInflater::class.java)
+    VB::class.java
+        .getMethod("inflate", LayoutInflater::class.java)
         .invoke(null, layoutInflater) as VB

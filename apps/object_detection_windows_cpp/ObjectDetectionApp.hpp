@@ -4,13 +4,12 @@
 // ---------------------------------------------------------------------
 #pragma once
 
+#include <onnxruntime_cxx_api.h>
+
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
-
-#include <optional>
-
-#include <onnxruntime_cxx_api.h>
 
 namespace App
 {

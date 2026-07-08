@@ -7,16 +7,15 @@ package com.geniex.demo.activity
 import android.app.Activity
 import android.graphics.Color
 import android.os.Bundle
-import com.gyf.immersionbar.ktx.immersionBar
 import com.geniex.demo.databinding.ActivityFileContentBinding
 import com.geniex.demo.utils.inflate
+import com.gyf.immersionbar.ktx.immersionBar
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.io.File
 
 class FileContentActivity : Activity() {
-
     private val binding by inflate<ActivityFileContentBinding>()
     private var filePath: String? = null
     private var promptContent: String? = null

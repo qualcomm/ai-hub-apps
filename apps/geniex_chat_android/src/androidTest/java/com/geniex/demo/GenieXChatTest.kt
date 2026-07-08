@@ -10,9 +10,9 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.By
+import androidx.test.uiautomator.StaleObjectException
 import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.UiObject2
-import androidx.test.uiautomator.StaleObjectException
 import androidx.test.uiautomator.Until
 import org.junit.After
 import org.junit.Assert.assertFalse
@@ -39,7 +39,6 @@ import org.junit.runner.RunWith
  */
 @RunWith(AndroidJUnit4::class)
 class GenieXChatTest {
-
     private val device: UiDevice =
         UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
 
@@ -65,7 +64,7 @@ class GenieXChatTest {
         context.startActivity(intent)
         assertTrue(
             "App did not launch",
-            device.wait(Until.hasObject(By.pkg(PACKAGE).depth(0)), LAUNCH_TIMEOUT_MS)
+            device.wait(Until.hasObject(By.pkg(PACKAGE).depth(0)), LAUNCH_TIMEOUT_MS),
         )
     }
 
@@ -97,7 +96,7 @@ class GenieXChatTest {
         // Confirm the intended model is the active selection before proceeding.
         assertTrue(
             "Model '$MODEL_DISPLAY_NAME' is not the active selection",
-            device.wait(Until.hasObject(By.text(MODEL_DISPLAY_NAME)), UI_TIMEOUT_MS)
+            device.wait(Until.hasObject(By.text(MODEL_DISPLAY_NAME)), UI_TIMEOUT_MS),
         )
 
         // 2. Download the model. The download panel (ll_downloading) appears
@@ -109,7 +108,7 @@ class GenieXChatTest {
         device.wait(Until.hasObject(By.res(PACKAGE, "ll_downloading")), UI_TIMEOUT_MS)
         assertTrue(
             "Model download did not complete within ${DOWNLOAD_TIMEOUT_MS / 1000}s",
-            device.wait(Until.gone(By.res(PACKAGE, "ll_downloading")), DOWNLOAD_TIMEOUT_MS)
+            device.wait(Until.gone(By.res(PACKAGE, "ll_downloading")), DOWNLOAD_TIMEOUT_MS),
         )
 
         // 3. Load and chat on each compute unit the model offers. A GGUF model
@@ -143,7 +142,7 @@ class GenieXChatTest {
         // Load success reveals the Unload button (gone until a model loads).
         assertTrue(
             "Model did not load on ${unit.label} within ${LOAD_TIMEOUT_MS / 1000}s",
-            device.wait(Until.hasObject(By.res(PACKAGE, "btn_unload_model")), LOAD_TIMEOUT_MS)
+            device.wait(Until.hasObject(By.res(PACKAGE, "btn_unload_model")), LOAD_TIMEOUT_MS),
         )
 
         // Send a prompt.
@@ -179,7 +178,7 @@ class GenieXChatTest {
         device.wait(Until.findObject(By.res(PACKAGE, "btn_unload_model")), UI_TIMEOUT_MS).click()
         assertTrue(
             "Model did not unload within ${UI_TIMEOUT_MS / 1000}s",
-            device.wait(Until.gone(By.res(PACKAGE, "btn_unload_model")), UI_TIMEOUT_MS)
+            device.wait(Until.gone(By.res(PACKAGE, "btn_unload_model")), UI_TIMEOUT_MS),
         )
     }
 
@@ -204,7 +203,10 @@ class GenieXChatTest {
     }
 
     /** A compute unit offered in the load dialog, identified by its radio id. */
-    private data class ComputeUnit(val label: String, val radioId: String)
+    private data class ComputeUnit(
+        val label: String,
+        val radioId: String,
+    )
 
     companion object {
         private const val PACKAGE = "com.geniex.demo"
@@ -215,17 +217,18 @@ class GenieXChatTest {
         private const val TEST_PROMPT = "What is gravity? Answer in under 30 words."
 
         // Compute units the GGUF model offers, NPU first (most likely to fail).
-        private val COMPUTE_UNITS = listOf(
-            ComputeUnit("NPU", "rb_npu"),
-            ComputeUnit("GPU", "rb_gpu"),
-            ComputeUnit("CPU", "rb_cpu"),
-        )
+        private val COMPUTE_UNITS =
+            listOf(
+                ComputeUnit("NPU", "rb_npu"),
+                ComputeUnit("GPU", "rb_gpu"),
+                ComputeUnit("CPU", "rb_cpu"),
+            )
 
         private const val LAUNCH_TIMEOUT_MS = 15_000L
         private const val UI_TIMEOUT_MS = 10_000L
-        private const val DOWNLOAD_TIMEOUT_MS = 600_000L   // up to 10 min for the model pull
-        private const val LOAD_TIMEOUT_MS = 120_000L        // model load onto a compute unit
-        private const val RESPONSE_TIMEOUT_MS = 120_000L    // first non-empty generation
+        private const val DOWNLOAD_TIMEOUT_MS = 600_000L // up to 10 min for the model pull
+        private const val LOAD_TIMEOUT_MS = 120_000L // model load onto a compute unit
+        private const val RESPONSE_TIMEOUT_MS = 120_000L // first non-empty generation
         private const val POLL_INTERVAL_MS = 2_000L
         private const val DROPDOWN_RETRIES = 3
     }

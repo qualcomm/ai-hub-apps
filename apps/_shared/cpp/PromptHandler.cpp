@@ -6,13 +6,13 @@
 // nlohmann/json single-header. To use this shared utility, have your build system
 // download json.hpp from:
 // https://raw.githubusercontent.com/nlohmann/json/55f93686c01528224f448c19128836e7df245f72/single_include/nlohmann/json.hpp
-#include "json.hpp"
-
 #include <filesystem>
 #include <fstream>
 #include <stdexcept>
 
-using namespace AppUtils;
+#include "json.hpp"
+
+using AppUtils::PromptHandler;
 
 PromptHandler::PromptHandler(const std::string& models_path)
 {
@@ -30,7 +30,7 @@ PromptHandler::PromptHandler(const std::string& models_path)
     if (!file.read(content.data(), content.size()))
         throw std::runtime_error("Failed to read metadata.json: " + metadata_path.string());
 
-    using namespace nlohmann;
+    using nlohmann::json;
     try
     {
         json parsed = json::parse(content);

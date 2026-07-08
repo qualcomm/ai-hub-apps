@@ -30,6 +30,9 @@ __pycache__/
 .python-version
 qaiha-dev
 
+# lint toolchain (JDK, google-java-format, ktlint) provisioned by tools/lint/
+.lint-tools/
+
 # mypy
 .mypy_cache/
 

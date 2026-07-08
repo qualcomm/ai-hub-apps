@@ -27,7 +27,6 @@ import android.view.View
 import android.view.inputmethod.InputMethodManager
 import android.widget.AdapterView
 import android.widget.Button
-import androidx.core.widget.doAfterTextChanged
 import android.widget.EditText
 import android.widget.HorizontalScrollView
 import android.widget.ImageButton
@@ -43,9 +42,9 @@ import androidx.appcompat.app.AlertDialog
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
+import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.FragmentActivity
 import androidx.recyclerview.widget.RecyclerView
-import com.gyf.immersionbar.ktx.immersionBar
 import com.geniex.demo.bean.ModelData
 import com.geniex.demo.bean.getSupportPluginIds
 import com.geniex.demo.bean.isNpuModel
@@ -55,11 +54,12 @@ import com.geniex.demo.listeners.CustomDialogInterface
 import com.geniex.demo.utils.ExecShell
 import com.geniex.demo.utils.ImgUtil
 import com.geniex.demo.utils.inflate
-import com.geniex.sdk.LlmWrapper
 import com.geniex.sdk.GenieXSdk
+import com.geniex.sdk.LlmWrapper
 import com.geniex.sdk.ModelManagerWrapper
 import com.geniex.sdk.VlmWrapper
 import com.geniex.sdk.bean.ChatMessage
+import com.geniex.sdk.bean.ComputeUnitValue
 import com.geniex.sdk.bean.HubSource
 import com.geniex.sdk.bean.LlmCreateInput
 import com.geniex.sdk.bean.LlmStreamResult
@@ -68,7 +68,7 @@ import com.geniex.sdk.bean.ModelPullInput
 import com.geniex.sdk.bean.VlmChatMessage
 import com.geniex.sdk.bean.VlmContent
 import com.geniex.sdk.bean.VlmCreateInput
-import com.geniex.sdk.bean.ComputeUnitValue
+import com.gyf.immersionbar.ktx.immersionBar
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -80,7 +80,6 @@ import java.io.FileOutputStream
 import java.util.Locale
 
 class MainActivity : FragmentActivity() {
-
     private val binding: ActivityMainBinding by inflate()
     private var downloadJob: Job? = null
     private var downloadingModelData: ModelData? = null
@@ -148,28 +147,38 @@ class MainActivity : FragmentActivity() {
         tvDownloadProgress = findViewById(R.id.tv_download_progress)
         pbDownloading = findViewById(R.id.pb_downloading)
         spModelList = findViewById(R.id.sp_model_list)
-        spModelList.adapter = object : SimpleAdapter(this, modelList.map {
-            val map = mutableMapOf<String, String>()
-            map["displayName"] = it.displayName
-            map
-        }, R.layout.item_model, arrayOf("displayName"), intArrayOf(R.id.tv_model_id)) {
-
-        }
-        spModelList.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(
-                parent: AdapterView<*>?, view: View?, position: Int, id: Long
+        spModelList.adapter =
+            object : SimpleAdapter(
+                this,
+                modelList.map {
+                    val map = mutableMapOf<String, String>()
+                    map["displayName"] = it.displayName
+                    map
+                },
+                R.layout.item_model,
+                arrayOf("displayName"),
+                intArrayOf(R.id.tv_model_id),
             ) {
-                selectModelId = modelList[position].id
-
-                messages.clear()
-                adapter.notifyDataSetChanged()
-                binding.rvChat.scrollTo(0, 0)
             }
+        spModelList.onItemSelectedListener =
+            object : AdapterView.OnItemSelectedListener {
+                override fun onItemSelected(
+                    parent: AdapterView<*>?,
+                    view: View?,
+                    position: Int,
+                    id: Long,
+                ) {
+                    selectModelId = modelList[position].id
 
-            override fun onNothingSelected(parent: AdapterView<*>?) {
-                selectModelId = ""
+                    messages.clear()
+                    adapter.notifyDataSetChanged()
+                    binding.rvChat.scrollTo(0, 0)
+                }
+
+                override fun onNothingSelected(parent: AdapterView<*>?) {
+                    selectModelId = ""
+                }
             }
-        }
         btnDownload = findViewById(R.id.btn_download)
         btnLoadModel = findViewById(R.id.btn_load_model)
         btnUnloadModel = findViewById(R.id.btn_unload_model)
@@ -193,14 +202,15 @@ class MainActivity : FragmentActivity() {
                 chmodProcess.waitFor()
                 Log.d(TAG, "exeFile exe? ${exeFile.canExecute()}")
                 Log.d(TAG, "Exe Thread:${Thread.currentThread().name}")
-                ExecShell().executeCommand(
-                    arrayOf(
-                        "cat",
-                        "/sys/devices/soc0/sku",
-                    ),
-                ).forEach {
-                    Log.d(TAG, "cmd:$it")
-                }
+                ExecShell()
+                    .executeCommand(
+                        arrayOf(
+                            "cat",
+                            "/sys/devices/soc0/sku",
+                        ),
+                    ).forEach {
+                        Log.d(TAG, "cmd:$it")
+                    }
             }.start()
         }
 
@@ -232,21 +242,27 @@ class MainActivity : FragmentActivity() {
      * Step 1. initGenieXSdk environment
      */
     private fun initGenieXSdk() {
-        GenieXSdk.getInstance().init(this, object : GenieXSdk.InitCallback {
-            override fun onSuccess() {
-            }
+        GenieXSdk.getInstance().init(
+            this,
+            object : GenieXSdk.InitCallback {
+                override fun onSuccess() {
+                }
 
-            override fun onFailure(reason: String) {
-                Log.e(TAG, "GenieXSdk init failed: $reason")
-            }
-        })
+                override fun onFailure(reason: String) {
+                    Log.e(TAG, "GenieXSdk init failed: $reason")
+                }
+            },
+        )
     }
 
     private fun onLoadModelSuccess(tip: String) {
         runOnUiThread {
-            Toast.makeText(
-                this@MainActivity, tip, Toast.LENGTH_SHORT
-            ).show()
+            Toast
+                .makeText(
+                    this@MainActivity,
+                    tip,
+                    Toast.LENGTH_SHORT,
+                ).show()
             // change UI
             btnAddImage.visibility = View.INVISIBLE
             if (isLoadVlmModel) {
@@ -270,9 +286,7 @@ class MainActivity : FragmentActivity() {
         }
     }
 
-    private fun hasLoadedModel(): Boolean {
-        return isLoadLlmModel || isLoadVlmModel
-    }
+    private fun hasLoadedModel(): Boolean = isLoadLlmModel || isLoadVlmModel
 
     /**
      * Send is enabled only when (a) a model is loaded, (b) no inference
@@ -293,15 +307,13 @@ class MainActivity : FragmentActivity() {
      * and `qualcomm/<repo>` map to the same on-disk entry) and returns
      * null while the pull is still in `.inflight/`.
      */
-    private suspend fun isModelDownloaded(modelData: ModelData): Boolean {
-        return ModelManagerWrapper.getPaths(modelData.modelName) != null
-    }
+    private suspend fun isModelDownloaded(modelData: ModelData): Boolean = ModelManagerWrapper.getPaths(modelData.modelName) != null
 
     private fun loadModel(
         selectModelData: ModelData,
         modelDataPluginId: String,
         nGpuLayers: Int,
-        deviceId: String? = null
+        deviceId: String? = null,
     ) {
         modelScope.launch {
             resetLoadState()
@@ -320,49 +332,55 @@ class MainActivity : FragmentActivity() {
                     // time in the AI Hub bundle) — and the Kotlin ModelConfig defaults
                     // are non-zero, so zero them explicitly for the qairt path.
                     val isQairt = pluginId == "qairt"
-                    val conf = if (isQairt) {
-                        ModelConfig(nCtx = 0, nGpuLayers = 0, enable_thinking = enableThinking)
-                    } else {
-                        ModelConfig(
-                            nCtx = 1024,
-                            nGpuLayers = nGpuLayers,
-                            enable_thinking = enableThinking,
-                        )
-                    }
-                    LlmWrapper.builder().llmCreateInput(
-                        LlmCreateInput(
-                            model_name = paths.model_name,
-                            model_path = paths.model_path,
-                            tokenizer_path = paths.tokenizer_path,
-                            config = conf,
-                            runtime_id = pluginId,
-                            compute_unit = resolvedDeviceId ?: ComputeUnitValue.NPU.value,
-                        )
-                    ).build().onSuccess { wrapper ->
-                        isLoadLlmModel = true
-                        llmWrapper = wrapper
-                        onLoadModelSuccess("llm model loaded")
-                    }.onFailure { error ->
-                        onLoadModelFailed(error.message.toString())
-                    }
+                    val conf =
+                        if (isQairt) {
+                            ModelConfig(nCtx = 0, nGpuLayers = 0, enable_thinking = enableThinking)
+                        } else {
+                            ModelConfig(
+                                nCtx = 1024,
+                                nGpuLayers = nGpuLayers,
+                                enable_thinking = enableThinking,
+                            )
+                        }
+                    LlmWrapper
+                        .builder()
+                        .llmCreateInput(
+                            LlmCreateInput(
+                                model_name = paths.model_name,
+                                model_path = paths.model_path,
+                                tokenizer_path = paths.tokenizer_path,
+                                config = conf,
+                                runtime_id = pluginId,
+                                compute_unit = resolvedDeviceId ?: ComputeUnitValue.NPU.value,
+                            ),
+                        ).build()
+                        .onSuccess { wrapper ->
+                            isLoadLlmModel = true
+                            llmWrapper = wrapper
+                            onLoadModelSuccess("llm model loaded")
+                        }.onFailure { error ->
+                            onLoadModelFailed(error.message.toString())
+                        }
                 }
 
                 "multimodal", "vlm" -> {
                     val isNpuVlm = pluginId == "qairt"
-                    val config = if (isNpuVlm) {
-                        // QAIRT rejects non-zero n_ctx / n_gpu_layers for VLM too.
-                        ModelConfig(nCtx = 0, nGpuLayers = 0, nThreads = 8, enable_thinking = enableThinking)
-                    } else {
-                        ModelConfig(
-                            nCtx = 1024,
-                            nThreads = 4,
-                            nBatch = 1,
-                            nUBatch = 1,
-                            nGpuLayers = nGpuLayers,
-                            enable_thinking = enableThinking,
-                        )
-                    }
-                    VlmWrapper.builder()
+                    val config =
+                        if (isNpuVlm) {
+                            // QAIRT rejects non-zero n_ctx / n_gpu_layers for VLM too.
+                            ModelConfig(nCtx = 0, nGpuLayers = 0, nThreads = 8, enable_thinking = enableThinking)
+                        } else {
+                            ModelConfig(
+                                nCtx = 1024,
+                                nThreads = 4,
+                                nBatch = 1,
+                                nUBatch = 1,
+                                nGpuLayers = nGpuLayers,
+                                enable_thinking = enableThinking,
+                            )
+                        }
+                    VlmWrapper
+                        .builder()
                         .vlmCreateInput(
                             VlmCreateInput(
                                 model_name = paths.model_name,
@@ -371,9 +389,9 @@ class MainActivity : FragmentActivity() {
                                 config = config,
                                 runtime_id = pluginId,
                                 compute_unit = resolvedDeviceId ?: "HTP0",
-                            )
-                        )
-                        .build().onSuccess {
+                            ),
+                        ).build()
+                        .onSuccess {
                             isLoadVlmModel = true
                             vlmWrapper = it
                             onLoadModelSuccess("vlm model loaded")
@@ -395,7 +413,12 @@ class MainActivity : FragmentActivity() {
             return
         }
         if (downloadJob?.isActive == true) {
-            Toast.makeText(this@MainActivity, "${downloadingModelData?.displayName ?: "a model"} is already downloading", Toast.LENGTH_SHORT).show()
+            Toast
+                .makeText(
+                    this@MainActivity,
+                    "${downloadingModelData?.displayName ?: "a model"} is already downloading",
+                    Toast.LENGTH_SHORT,
+                ).show()
             return
         }
 
@@ -403,81 +426,94 @@ class MainActivity : FragmentActivity() {
         llDownloading.visibility = View.VISIBLE
         tvDownloadProgress.text = "0%"
 
-        val hub = runCatching { HubSource.valueOf(selectModelData.hub ?: "AUTO") }
-            .getOrDefault(HubSource.AUTO)
+        val hub =
+            runCatching { HubSource.valueOf(selectModelData.hub ?: "AUTO") }
+                .getOrDefault(HubSource.AUTO)
         // AI Hub pulls route through chipset-matched assets. The Rust side
         // can auto-detect the host only on Windows-on-Snapdragon, so on
         // Android we must pass an explicit chipset for anything that ends
         // up on the AI Hub path — whether hub is AIHUB or AUTO + ai-hub-models/*
         // (or its canonical alias qualcomm/*).
         val name = selectModelData.modelName
-        val isAiHubName = name.startsWith("ai-hub-models/", ignoreCase = true) ||
-            name.startsWith("qualcomm/", ignoreCase = true)
-        val willUseAiHub = hub == HubSource.AIHUB ||
-            (hub == HubSource.AUTO && isAiHubName)
+        val isAiHubName =
+            name.startsWith("ai-hub-models/", ignoreCase = true) ||
+                name.startsWith("qualcomm/", ignoreCase = true)
+        val willUseAiHub =
+            hub == HubSource.AIHUB ||
+                (hub == HubSource.AUTO && isAiHubName)
         if (willUseAiHub && selectModelData.chipset.isNullOrBlank()) {
             llDownloading.visibility = View.GONE
             Toast.makeText(this@MainActivity, "AI Hub models require a chipset. Update model_list.json.", Toast.LENGTH_SHORT).show()
             return
         }
-        val input = ModelPullInput(
-            model_name = selectModelData.modelName,
-            precision = selectModelData.quant,
-            hub = hub,
-            chipset = selectModelData.chipset,
-            display_name = selectModelData.aiHubDisplayName,
-        )
+        val input =
+            ModelPullInput(
+                model_name = selectModelData.modelName,
+                precision = selectModelData.quant,
+                hub = hub,
+                chipset = selectModelData.chipset,
+                display_name = selectModelData.aiHubDisplayName,
+            )
 
-        val wakeLock = (getSystemService(Context.POWER_SERVICE) as PowerManager)
-            .newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "geniex:model_download")
+        val wakeLock =
+            (getSystemService(Context.POWER_SERVICE) as PowerManager)
+                .newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "geniex:model_download")
         wakeLock.acquire()
-        downloadJob = modelScope.launch {
-            try {
-                // Short-circuit if already cached — the manager filters .inflight/
-                // models out of list(), so this only matches a complete pull.
-                if (isModelDownloaded(selectModelData)) {
-                    runOnUiThread {
-                        llDownloading.visibility = View.GONE
-                        Toast.makeText(this@MainActivity, "model already downloaded", Toast.LENGTH_SHORT).show()
+        downloadJob =
+            modelScope.launch {
+                try {
+                    // Short-circuit if already cached — the manager filters .inflight/
+                    // models out of list(), so this only matches a complete pull.
+                    if (isModelDownloaded(selectModelData)) {
+                        runOnUiThread {
+                            llDownloading.visibility = View.GONE
+                            Toast.makeText(this@MainActivity, "model already downloaded", Toast.LENGTH_SHORT).show()
+                        }
+                        return@launch
                     }
-                    return@launch
-                }
 
-                ModelManagerWrapper.pullFlow(input).collect { event ->
-                    when (event) {
-                        is ModelManagerWrapper.PullEvent.Progress -> {
-                            val total = event.files.sumOf { if (it.total_bytes > 0) it.total_bytes else 0L }
-                            val done = event.files.sumOf { it.downloaded_bytes }
-                            val percent = if (total > 0) ((done * 100) / total).toInt() else 0
-                            runOnUiThread { tvDownloadProgress.text = "$percent%" }
-                        }
-                        is ModelManagerWrapper.PullEvent.Completed -> {
-                            runOnUiThread {
-                                llDownloading.visibility = View.GONE
-                                Toast.makeText(this@MainActivity, "${selectModelData.displayName} downloaded", Toast.LENGTH_SHORT).show()
+                    ModelManagerWrapper.pullFlow(input).collect { event ->
+                        when (event) {
+                            is ModelManagerWrapper.PullEvent.Progress -> {
+                                val total = event.files.sumOf { if (it.total_bytes > 0) it.total_bytes else 0L }
+                                val done = event.files.sumOf { it.downloaded_bytes }
+                                val percent = if (total > 0) ((done * 100) / total).toInt() else 0
+                                runOnUiThread { tvDownloadProgress.text = "$percent%" }
                             }
-                        }
-                        is ModelManagerWrapper.PullEvent.Error -> {
-                            Log.e(TAG, "pull failed rc=${event.code}: ${event.message}")
-                            runOnUiThread {
-                                llDownloading.visibility = View.GONE
-                                Toast.makeText(
-                                    this@MainActivity,
-                                    "Download failed. Please check your network connection and try again.",
-                                    Toast.LENGTH_LONG
-                                ).show()
+
+                            is ModelManagerWrapper.PullEvent.Completed -> {
+                                runOnUiThread {
+                                    llDownloading.visibility = View.GONE
+                                    Toast
+                                        .makeText(
+                                            this@MainActivity,
+                                            "${selectModelData.displayName} downloaded",
+                                            Toast.LENGTH_SHORT,
+                                        ).show()
+                                }
+                            }
+
+                            is ModelManagerWrapper.PullEvent.Error -> {
+                                Log.e(TAG, "pull failed rc=${event.code}: ${event.message}")
+                                runOnUiThread {
+                                    llDownloading.visibility = View.GONE
+                                    Toast
+                                        .makeText(
+                                            this@MainActivity,
+                                            "Download failed. Please check your network connection and try again.",
+                                            Toast.LENGTH_LONG,
+                                        ).show()
+                                }
                             }
                         }
                     }
+                } finally {
+                    if (wakeLock.isHeld) wakeLock.release()
                 }
-            } finally {
-                if (wakeLock.isHeld) wakeLock.release()
             }
-        }
     }
 
     private fun setListeners() {
-
         btnAddImage.setOnClickListener {
             openGallery()
         }
@@ -485,7 +521,7 @@ class MainActivity : FragmentActivity() {
         btnClearHistory.setOnClickListener {
             clearHistory()
         }
-        /**
+        /*
          * Step 3. download model. Cancelling the coroutine triggers the
          * flow's awaitClose which flips the Rust progress callback to
          * return false — partial files stay on disk for a resumed pull.
@@ -507,14 +543,19 @@ class MainActivity : FragmentActivity() {
                 if (downloadingModelData?.id == selectModelId) {
                     binding.llDownloading.visibility = View.VISIBLE
                 } else {
-                    Toast.makeText(this@MainActivity, "${downloadingModelData?.displayName} is currently downloading.", Toast.LENGTH_SHORT).show()
+                    Toast
+                        .makeText(
+                            this@MainActivity,
+                            "${downloadingModelData?.displayName} is currently downloading.",
+                            Toast.LENGTH_SHORT,
+                        ).show()
                 }
                 return@setOnClickListener
             }
             val selectModelData = modelList.first { it.id == selectModelId }
             downloadModel(selectModelData)
         }
-        /**
+        /*
          * Step 4. load model
          */
         btnLoadModel.setOnClickListener {
@@ -538,12 +579,13 @@ class MainActivity : FragmentActivity() {
             }
         }
 
-        /**
+        /*
          * Step 5. send message
          */
         btnSend.setOnClickListener {
             if (!hasLoadedModel()) {
-                Toast.makeText(this@MainActivity, "please load model first", Toast.LENGTH_SHORT)
+                Toast
+                    .makeText(this@MainActivity, "please load model first", Toast.LENGTH_SHORT)
                     .show()
                 return@setOnClickListener
             }
@@ -589,82 +631,94 @@ class MainActivity : FragmentActivity() {
 
             modelScope.launch {
                 try {
-                val selectModelData = modelList.first { it.id == selectModelId }
-                val isNpu = ModelManagerWrapper.getPaths(selectModelData.modelName)?.runtime_id == "qairt"
-                Log.d(TAG, "isNpu: $isNpu")
+                    val selectModelData = modelList.first { it.id == selectModelId }
+                    val isNpu = ModelManagerWrapper.getPaths(selectModelData.modelName)?.runtime_id == "qairt"
+                    Log.d(TAG, "isNpu: $isNpu")
 
-                val sb = StringBuilder()
-                if (isLoadVlmModel) {
-                    val contents = savedImageFiles.map {
-                        VlmContent("image", it.absolutePath)
-                    }.toMutableList()
-                    contents.add(VlmContent("text", inputString))
-                    clearImages()
-                    val sendMsg = VlmChatMessage(role = "user", contents = contents)
-                    vlmChatList.add(sendMsg)
+                    val sb = StringBuilder()
+                    if (isLoadVlmModel) {
+                        val contents =
+                            savedImageFiles
+                                .map {
+                                    VlmContent("image", it.absolutePath)
+                                }.toMutableList()
+                        contents.add(VlmContent("text", inputString))
+                        clearImages()
+                        val sendMsg = VlmChatMessage(role = "user", contents = contents)
+                        vlmChatList.add(sendMsg)
 
-                    Log.d(TAG, "before apply chat template:$vlmChatList")
-                    vlmWrapper.applyChatTemplate(vlmChatList.toTypedArray(), tools, enableThinking)
-                        .onSuccess { result ->
-                            Log.d(TAG, "vlm chat template:${result.formattedText}")
-                            val baseConfig =
-                                GenerationConfigSample().toGenerationConfig()
-                            // Only inject the current turn's media: SDK tokenizes
-                            // incrementally, so re-passing history bitmaps breaks
-                            // mtmd_tokenize (markers/bitmaps mismatch).
-                            val configWithMedia = vlmWrapper.injectMediaPathsToConfig(
-                                arrayOf(sendMsg),
-                                baseConfig
-                            )
+                        Log.d(TAG, "before apply chat template:$vlmChatList")
+                        vlmWrapper
+                            .applyChatTemplate(vlmChatList.toTypedArray(), tools, enableThinking)
+                            .onSuccess { result ->
+                                Log.d(TAG, "vlm chat template:${result.formattedText}")
+                                val baseConfig =
+                                    GenerationConfigSample().toGenerationConfig()
+                                // Only inject the current turn's media: SDK tokenizes
+                                // incrementally, so re-passing history bitmaps breaks
+                                // mtmd_tokenize (markers/bitmaps mismatch).
+                                val configWithMedia =
+                                    vlmWrapper.injectMediaPathsToConfig(
+                                        arrayOf(sendMsg),
+                                        baseConfig,
+                                    )
 
-                            Log.d(TAG, "Config has ${configWithMedia.imageCount} images")
+                                Log.d(TAG, "Config has ${configWithMedia.imageCount} images")
 
-                            vlmWrapper.generateStreamFlow(
-                                result.formattedText,
-                                configWithMedia
-                            ).collect { handleResult(sb, it) }
-                        }.onFailure {
-                            runOnUiThread {
-                                Toast.makeText(
-                                    this@MainActivity, it.message, Toast.LENGTH_SHORT
-                                ).show()
+                                vlmWrapper
+                                    .generateStreamFlow(
+                                        result.formattedText,
+                                        configWithMedia,
+                                    ).collect { handleResult(sb, it) }
+                            }.onFailure {
+                                runOnUiThread {
+                                    Toast
+                                        .makeText(
+                                            this@MainActivity,
+                                            it.message,
+                                            Toast.LENGTH_SHORT,
+                                        ).show()
+                                }
                             }
-                        }
-                } else {
-                    chatList.add(ChatMessage(role = "user", inputString))
-                    // Apply chat template and generate
-                    llmWrapper.applyChatTemplate(
-                        chatList.toTypedArray(),
-                        tools,
-                        enableThinking
-                    ).onSuccess { templateOutput ->
-                        Log.d(TAG, "chat template:${templateOutput.formattedText}")
-                        llmWrapper.generateStreamFlow(
-                            templateOutput.formattedText,
-                            GenerationConfigSample().toGenerationConfig()
-                        ).collect { streamResult ->
-                            handleResult(sb, streamResult)
-                        }
-                    }.onFailure { error ->
-                        runOnUiThread {
-                            Toast.makeText(
-                                this@MainActivity, error.message, Toast.LENGTH_SHORT
-                            ).show()
-                        }
+                    } else {
+                        chatList.add(ChatMessage(role = "user", inputString))
+                        // Apply chat template and generate
+                        llmWrapper
+                            .applyChatTemplate(
+                                chatList.toTypedArray(),
+                                tools,
+                                enableThinking,
+                            ).onSuccess { templateOutput ->
+                                Log.d(TAG, "chat template:${templateOutput.formattedText}")
+                                llmWrapper
+                                    .generateStreamFlow(
+                                        templateOutput.formattedText,
+                                        GenerationConfigSample().toGenerationConfig(),
+                                    ).collect { streamResult ->
+                                        handleResult(sb, streamResult)
+                                    }
+                            }.onFailure { error ->
+                                runOnUiThread {
+                                    Toast
+                                        .makeText(
+                                            this@MainActivity,
+                                            error.message,
+                                            Toast.LENGTH_SHORT,
+                                        ).show()
+                                }
+                            }
                     }
-                }
 
-                clearImages()
+                    clearImages()
                 } finally {
                     removeLoadingIndicator()
                     isGenerating = false
                     refreshSendButtonState()
                 }
             }
-
         }
 
-        /**
+        /*
          * Step 6. others
          */
         btnUnloadModel.setOnClickListener {
@@ -685,13 +739,16 @@ class MainActivity : FragmentActivity() {
                     messages.clear()
                     clearImages()
                     reloadRecycleView()
-                    Toast.makeText(
-                        this@MainActivity, if (result == 0) {
-                            "unload success"
-                        } else {
-                            "unload failed and error code: $result"
-                        }, Toast.LENGTH_SHORT
-                    ).show()
+                    Toast
+                        .makeText(
+                            this@MainActivity,
+                            if (result == 0) {
+                                "unload success"
+                            } else {
+                                "unload failed and error code: $result"
+                            },
+                            Toast.LENGTH_SHORT,
+                        ).show()
                     refreshSendButtonState()
                 }
             }
@@ -713,11 +770,12 @@ class MainActivity : FragmentActivity() {
         }
         btnStop.setOnClickListener {
             if (!hasLoadedModel()) {
-                Toast.makeText(
-                    this@MainActivity,
-                    "model not loaded",
-                    Toast.LENGTH_SHORT
-                ).show()
+                Toast
+                    .makeText(
+                        this@MainActivity,
+                        "model not loaded",
+                        Toast.LENGTH_SHORT,
+                    ).show()
                 return@setOnClickListener
             }
             // Stop streaming
@@ -741,7 +799,8 @@ class MainActivity : FragmentActivity() {
         var nGpuLayers = 0
         if (supportPluginIds.size > 1) {
             val dialogBinding = DialogSelectPluginIdBinding.inflate(layoutInflater)
-            val isGgufLlmModel = !selectModelData.isNpuModel() &&
+            val isGgufLlmModel =
+                !selectModelData.isNpuModel() &&
                     (selectModelData.type == "chat" || selectModelData.type == "llm")
             supportPluginIds.forEach {
                 when (it) {
@@ -749,9 +808,11 @@ class MainActivity : FragmentActivity() {
                         dialogBinding.rbCpu.visibility = View.VISIBLE
                         dialogBinding.rbCpu.isChecked = true
                     }
+
                     "gpu" -> {
                         dialogBinding.rbGpu.visibility = View.VISIBLE
                     }
+
                     "npu" -> {
                         dialogBinding.rbNpu.visibility = View.VISIBLE
                         dialogBinding.rbNpu.isChecked = true
@@ -766,45 +827,57 @@ class MainActivity : FragmentActivity() {
                     if (checkedId == R.id.rb_gpu) View.VISIBLE else View.GONE
             }
 
-            val dialogOnClickListener = object : CustomDialogInterface.OnClickListener() {
-                override fun onClick(dialog: DialogInterface?, which: Int) {
-                    nGpuLayers = 0
-                    var ggufLlmDeviceId: String? = null
-                    val checkedId = dialogBinding.rgSelectPluginId.checkedRadioButtonId
-                    if (checkedId == R.id.rb_gpu) {
-                        if (dialogBinding.llGpuLayers.visibility == View.VISIBLE) {
-                            nGpuLayers = dialogBinding.etGpuLayers.text.toString().toInt()
-                            if (nGpuLayers == 0) {
-                                Toast.makeText(
-                                    this@MainActivity,
-                                    "nGpuLayers min value is 1",
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                                return
+            val dialogOnClickListener =
+                object : CustomDialogInterface.OnClickListener() {
+                    override fun onClick(
+                        dialog: DialogInterface?,
+                        which: Int,
+                    ) {
+                        nGpuLayers = 0
+                        var ggufLlmDeviceId: String? = null
+                        val checkedId = dialogBinding.rgSelectPluginId.checkedRadioButtonId
+                        if (checkedId == R.id.rb_gpu) {
+                            if (dialogBinding.llGpuLayers.visibility == View.VISIBLE) {
+                                nGpuLayers =
+                                    dialogBinding.etGpuLayers.text
+                                        .toString()
+                                        .toInt()
+                                if (nGpuLayers == 0) {
+                                    Toast
+                                        .makeText(
+                                            this@MainActivity,
+                                            "nGpuLayers min value is 1",
+                                            Toast.LENGTH_SHORT,
+                                        ).show()
+                                    return
+                                }
                             }
+                            ggufLlmDeviceId = ComputeUnitValue.GPU.value
+                        } else if (checkedId == R.id.rb_npu) {
+                            nGpuLayers = 999
+                            ggufLlmDeviceId = ComputeUnitValue.NPU.value
                         }
-                        ggufLlmDeviceId = ComputeUnitValue.GPU.value
-                    } else if (checkedId == R.id.rb_npu) {
-                        nGpuLayers = 999
-                        ggufLlmDeviceId = ComputeUnitValue.NPU.value
-                    }
-                    when (which) {
-                        DialogInterface.BUTTON_POSITIVE -> {
-                            dialog?.dismiss()
-                            loadModel(selectModelData, modelDataPluginId, nGpuLayers, ggufLlmDeviceId)
-                        }
-                        DialogInterface.BUTTON_NEGATIVE -> {
-                            llLoading.visibility = View.INVISIBLE
-                            vTip.visibility = View.GONE
+                        when (which) {
+                            DialogInterface.BUTTON_POSITIVE -> {
+                                dialog?.dismiss()
+                                loadModel(selectModelData, modelDataPluginId, nGpuLayers, ggufLlmDeviceId)
+                            }
+
+                            DialogInterface.BUTTON_NEGATIVE -> {
+                                llLoading.visibility = View.INVISIBLE
+                                vTip.visibility = View.GONE
+                            }
                         }
                     }
                 }
-            }
-            val alertDialog = AlertDialog.Builder(this).setView(dialogBinding.root)
-                .setNegativeButton("Cancel", dialogOnClickListener)
-                .setPositiveButton("OK", dialogOnClickListener)
-                .setCancelable(false)
-                .create()
+            val alertDialog =
+                AlertDialog
+                    .Builder(this)
+                    .setView(dialogBinding.root)
+                    .setNegativeButton("Cancel", dialogOnClickListener)
+                    .setPositiveButton("OK", dialogOnClickListener)
+                    .setCancelable(false)
+                    .create()
             alertDialog.show()
             dialogOnClickListener.resetPositiveButton(alertDialog)
         } else {
@@ -815,7 +888,10 @@ class MainActivity : FragmentActivity() {
         }
     }
 
-    fun handleResult(sb: StringBuilder, streamResult: LlmStreamResult) {
+    fun handleResult(
+        sb: StringBuilder,
+        streamResult: LlmStreamResult,
+    ) {
         when (streamResult) {
             is LlmStreamResult.Token -> {
                 removeLoadingIndicator()
@@ -842,8 +918,8 @@ class MainActivity : FragmentActivity() {
                     vlmChatList.add(
                         VlmChatMessage(
                             "assistant",
-                            listOf(VlmContent("text", sb.toString()))
-                        )
+                            listOf(VlmContent("text", sb.toString())),
+                        ),
                     )
                 } else {
                     chatList.add(ChatMessage("assistant", sb.toString()))
@@ -868,8 +944,8 @@ class MainActivity : FragmentActivity() {
                     messages.add(
                         Message(
                             profileData,
-                            MessageType.PROFILE
-                        )
+                            MessageType.PROFILE,
+                        ),
                     )
                     reloadRecycleView()
                 }
@@ -897,7 +973,7 @@ class MainActivity : FragmentActivity() {
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<out String>,
-        grantResults: IntArray
+        grantResults: IntArray,
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
 
@@ -916,7 +992,11 @@ class MainActivity : FragmentActivity() {
         }
     }
 
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+    override fun onActivityResult(
+        requestCode: Int,
+        resultCode: Int,
+        data: Intent?,
+    ) {
         super.onActivityResult(requestCode, resultCode, data)
 
         var bitmap: Bitmap? = null
@@ -948,37 +1028,43 @@ class MainActivity : FragmentActivity() {
         }
     }
 
-    private fun saveBitmapToFile(bitmap: Bitmap, file: File): Boolean {
-        return try {
+    private fun saveBitmapToFile(
+        bitmap: Bitmap,
+        file: File,
+    ): Boolean =
+        try {
             val tempDir = File(this.filesDir, "tmp").apply { if (!exists()) mkdirs() }
 
-            val tempFile = File(
-                tempDir,
-                "tmp_${System.currentTimeMillis()}.jpg"
-            )
+            val tempFile =
+                File(
+                    tempDir,
+                    "tmp_${System.currentTimeMillis()}.jpg",
+                )
             FileOutputStream(tempFile).use { out ->
                 bitmap.compress(Bitmap.CompressFormat.JPEG, 100, out)
             }
 
-            val outFile = File(
-                tempDir,
-                "out_${System.currentTimeMillis()}.jpg"
-            )
+            val outFile =
+                File(
+                    tempDir,
+                    "out_${System.currentTimeMillis()}.jpg",
+                )
             ImgUtil.squareCrop(
                 ImgUtil.downscaleAndSave(
                     imageFile = tempFile,
                     outFile = outFile,
                     maxSize = 448,
                     format = Bitmap.CompressFormat.JPEG,
-                    quality = 90
-                ), file, 448
+                    quality = 90,
+                ),
+                file,
+                448,
             )
             true
         } catch (e: Exception) {
             Log.e(TAG, "saveBitmapToFile failed", e)
             false
         }
-    }
 
     private fun clearHistory() {
         if (isLoadLlmModel) {
@@ -999,6 +1085,7 @@ class MainActivity : FragmentActivity() {
     }
 
     private var popupWindow: PopupWindow? = null
+
     private fun showPopupMenu(anchorView: View) {
         if (popupWindow?.isShowing == true) {
             popupWindow?.dismiss()
@@ -1007,12 +1094,13 @@ class MainActivity : FragmentActivity() {
 
         val popupView = LayoutInflater.from(this).inflate(R.layout.menu_layout, null)
 
-        popupWindow = PopupWindow(
-            popupView,
-            anchorView.width * 2,
-            android.view.ViewGroup.LayoutParams.WRAP_CONTENT,
-            true
-        )
+        popupWindow =
+            PopupWindow(
+                popupView,
+                anchorView.width * 2,
+                android.view.ViewGroup.LayoutParams.WRAP_CONTENT,
+                true,
+            )
 
         popupWindow?.isOutsideTouchable = true
         popupWindow?.elevation = 10f
@@ -1031,7 +1119,7 @@ class MainActivity : FragmentActivity() {
 
         popupView.measure(
             View.MeasureSpec.UNSPECIFIED,
-            View.MeasureSpec.UNSPECIFIED
+            View.MeasureSpec.UNSPECIFIED,
         )
         val popupHeight = popupView.measuredHeight
         popupWindow?.showAsDropDown(anchorView, 0, -anchorView.height - popupHeight)
@@ -1047,7 +1135,7 @@ class MainActivity : FragmentActivity() {
             ActivityCompat.requestPermissions(
                 this,
                 arrayOf(Manifest.permission.CAMERA),
-                2001
+                2001,
             )
         } else {
             openCamera()
@@ -1056,15 +1144,17 @@ class MainActivity : FragmentActivity() {
 
     private fun openCamera() {
         val intent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
-        photoFile = File(
-            getExternalFilesDir(Environment.DIRECTORY_PICTURES),
-            "photo_${System.currentTimeMillis()}.jpg"
-        )
-        photoUri = FileProvider.getUriForFile(
-            this,
-            "${applicationContext.packageName}.fileprovider",
-            photoFile!!
-        )
+        photoFile =
+            File(
+                getExternalFilesDir(Environment.DIRECTORY_PICTURES),
+                "photo_${System.currentTimeMillis()}.jpg",
+            )
+        photoUri =
+            FileProvider.getUriForFile(
+                this,
+                "${applicationContext.packageName}.fileprovider",
+                photoFile!!,
+            )
 
         intent.putExtra(MediaStore.EXTRA_OUTPUT, photoUri)
         intent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
@@ -1088,8 +1178,10 @@ class MainActivity : FragmentActivity() {
             scrollImages.visibility = View.VISIBLE
 
             for (file in savedImageFiles) {
-                val itemView = LayoutInflater.from(this)
-                    .inflate(R.layout.item_image_scroll, topScrollContainer, false)
+                val itemView =
+                    LayoutInflater
+                        .from(this)
+                        .inflate(R.layout.item_image_scroll, topScrollContainer, false)
                 val ivImage = itemView.findViewById<ImageView>(R.id.iv_image)
                 val btnRemove = itemView.findViewById<ImageButton>(R.id.btn_remove)
 

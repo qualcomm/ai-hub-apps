@@ -4,9 +4,7 @@
 // ---------------------------------------------------------------------
 package com.quicinc.chatapp;
 
-/**
- * ChatMessage: Holds information about each message within Chat
- */
+/** ChatMessage: Holds information about each message within Chat */
 public class ChatMessage {
 
     public String mMessage;

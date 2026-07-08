@@ -4,13 +4,12 @@
 // ---------------------------------------------------------------------
 #pragma once
 
+#include <onnxruntime_cxx_api.h>
+
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
-
-#include <optional>
-
-#include <onnxruntime_cxx_api.h>
 
 const size_t output_data_size = 1000;
 constexpr const char* label_file = "labels.txt";

@@ -5,6 +5,7 @@
 #pragma once
 
 #include <jni.h>
+
 #include <string>
 
 #include "GenieCommon.h"

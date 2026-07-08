@@ -53,6 +53,12 @@ if ($WithCli) {
     . "$RepoRoot\tools\ci\install_cli.ps1" -Source source -Venv $Venv
 }
 
+# The precommit extra runs the Java/Kotlin pre-commit hooks, which need a JVM
+# toolchain (JDK + google-java-format + ktlint)
+if ($Extras -eq "precommit") {
+    . "$RepoRoot\tools\lint\install_lint_tools.ps1"
+}
+
 if ($WithQdcSdk) {
     Write-Host "Downloading and installing QDC SDK wheel..."
     $QdcTmpDir = Join-Path $env:TEMP "qdc_wheel_$([System.IO.Path]::GetRandomFileName())"

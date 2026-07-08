@@ -12,17 +12,15 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.Typeface;
+import android.util.AttributeSet;
+import android.view.View;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import android.util.AttributeSet;
-import android.view.View;
+
 import java.util.concurrent.locks.ReentrantLock;
 
-/**
- * FragmentRender draws the final prediction image and overlays debugging text.
- */
-
+/** FragmentRender draws the final prediction image and overlays debugging text. */
 public class FragmentRender extends View {
     private final ReentrantLock mLock = new ReentrantLock();
     private Bitmap mBitmap = null;
@@ -33,7 +31,6 @@ public class FragmentRender extends View {
     private long postprocessTime = 0;
     private final Paint mTextColor = new Paint();
 
-
     public FragmentRender(Context context, @Nullable AttributeSet attrs) {
         super(context, attrs);
 
@@ -43,8 +40,8 @@ public class FragmentRender extends View {
         mTextColor.setTextSize(50);
     }
 
-    public void render(Bitmap image, float fps, long inferTime, long preprocessTime, long postprocessTime)
-    {
+    public void render(
+            Bitmap image, float fps, long inferTime, long preprocessTime, long postprocessTime) {
         this.mBitmap = image;
         this.fps = fps;
         this.inferTime = inferTime;
@@ -82,10 +79,30 @@ public class FragmentRender extends View {
             canvas.translate(offsetHeight, -insetWidth - offsetWidth);
 
             canvas.drawText("FPS: " + String.format("%.0f", fps), 15, 50, mTextColor);
-            canvas.drawText("Preprocess: " + String.format("%.0f", (float)preprocessTime / 1_000_000) + "ms", 15, 55 + 60 * 2, mTextColor);
-            canvas.drawText("Infer: " + String.format("%.0f", (float)inferTime / 1_000_000) + "ms", 15, 55 + 60 * 3, mTextColor);
-            canvas.drawText("Postprocess: " + String.format("%.0f", (float)postprocessTime / 1_000_000) + "ms", 15, 55 + 60 * 4, mTextColor);
-            canvas.drawText("Note: Will only produce sensible results on street scenes", 15, insetWidth - 15  , mTextColor);
+            canvas.drawText(
+                    "Preprocess: "
+                            + String.format("%.0f", (float) preprocessTime / 1_000_000)
+                            + "ms",
+                    15,
+                    55 + 60 * 2,
+                    mTextColor);
+            canvas.drawText(
+                    "Infer: " + String.format("%.0f", (float) inferTime / 1_000_000) + "ms",
+                    15,
+                    55 + 60 * 3,
+                    mTextColor);
+            canvas.drawText(
+                    "Postprocess: "
+                            + String.format("%.0f", (float) postprocessTime / 1_000_000)
+                            + "ms",
+                    15,
+                    55 + 60 * 4,
+                    mTextColor);
+            canvas.drawText(
+                    "Note: Will only produce sensible results on street scenes",
+                    15,
+                    insetWidth - 15,
+                    mTextColor);
         }
         mLock.unlock();
     }

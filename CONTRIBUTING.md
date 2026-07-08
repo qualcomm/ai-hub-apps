@@ -60,6 +60,17 @@ pre-commit run --all-files
 pre-commit run --config .pre-commit-line-ending-check.yaml --all-files
 ```
 
+The Java/Kotlin hooks (`google-java-format`, `ktlint`) need a JVM toolchain.
+Bootstrapping with the `precommit` extra provisions it automatically into
+`.lint-tools/` (git-ignored):
+
+```bash
+bash tools/setup_env.sh --extras precommit     # Linux
+. tools/setup_env.ps1 -Extras precommit        # Windows
+```
+
+Tool versions are pinned in `tools/versions.env`.
+
 ---
 
 ## Repo Architecture

@@ -3,11 +3,13 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // ---------------------------------------------------------------------
 #include "ChatApp.hpp"
-#include "PromptHandler.hpp"
+
 #include <fstream>
 #include <iostream>
 
-using namespace App;
+#include "PromptHandler.hpp"
+
+using App::ChatApp;
 
 namespace
 {

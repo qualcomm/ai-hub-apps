@@ -54,10 +54,11 @@ data class ModelData(
  * Compute units offered in the picker dialog for this model. QAIRT is
  * NPU-only; llama.cpp exposes all three.
  */
-fun ModelData.getSupportPluginIds(): ArrayList<String> = when (runtime) {
-    "qairt" -> arrayListOf("npu")
-    else -> arrayListOf("npu", "gpu", "cpu")
-}
+fun ModelData.getSupportPluginIds(): ArrayList<String> =
+    when (runtime) {
+        "qairt" -> arrayListOf("npu")
+        else -> arrayListOf("npu", "gpu", "cpu")
+    }
 
 /** True when the model runs on the QAIRT NPU runtime. */
 fun ModelData.isNpuModel(): Boolean = runtime == "qairt"

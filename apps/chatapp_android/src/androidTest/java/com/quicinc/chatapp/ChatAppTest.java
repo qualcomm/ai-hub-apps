@@ -33,8 +33,8 @@ public class ChatAppTest {
     private static final String TEST_PROMPT = "What is gravity? Keep the answer under 50 words.";
 
     // Performance thresholds
-    private static final long MAX_TTFT_MS = 5_000;  // TTFT must be under 5 seconds
-    private static final double MIN_TPS = 5.0;       // Must produce at least 5 tokens/sec
+    private static final long MAX_TTFT_MS = 5_000; // TTFT must be under 5 seconds
+    private static final double MIN_TPS = 5.0; // Must produce at least 5 tokens/sec
 
     private UiDevice device;
 
@@ -55,19 +55,22 @@ public class ChatAppTest {
         device.wait(Until.findObject(By.res(PACKAGE, "llm")), LAUNCH_TIMEOUT_MS).click();
 
         device.wait(Until.findObject(By.res(PACKAGE, "user_input")), LAUNCH_TIMEOUT_MS)
-              .setText(TEST_PROMPT);
+                .setText(TEST_PROMPT);
         device.findObject(By.res(PACKAGE, "send_button")).click();
 
         // Wait for stats bar to appear — signals inference is complete
         // Format: "TTFT: 1234 ms  |  TPS: 23.4 tok/s"
-        UiObject2 statsBar = device.wait(
-                Until.findObject(By.res(PACKAGE, "stats_bar").textContains("TTFT:")),
-                RESPONSE_WAIT_MS);
+        UiObject2 statsBar =
+                device.wait(
+                        Until.findObject(By.res(PACKAGE, "stats_bar").textContains("TTFT:")),
+                        RESPONSE_WAIT_MS);
         assertNotNull("Stats bar did not appear — inference may have timed out", statsBar);
 
         // Verify response is non-empty (welcome message is index 0, LLM response is last)
         java.util.List<UiObject2> botMessages = device.findObjects(By.res(PACKAGE, "bot_message"));
-        assertTrue("Expected at least 2 bot messages (welcome + response), found: " + botMessages.size(),
+        assertTrue(
+                "Expected at least 2 bot messages (welcome + response), found: "
+                        + botMessages.size(),
                 botMessages.size() >= 2);
         String responseText = botMessages.get(botMessages.size() - 1).getText();
         assertNotNull("LLM response text is null", responseText);
@@ -76,22 +79,21 @@ public class ChatAppTest {
         // Verify performance metrics
         String stats = statsBar.getText();
         try {
-            java.util.regex.Matcher ttftMatcher = java.util.regex.Pattern
-                    .compile("TTFT:\\s*(\\d+)\\s*ms")
-                    .matcher(stats);
+            java.util.regex.Matcher ttftMatcher =
+                    java.util.regex.Pattern.compile("TTFT:\\s*(\\d+)\\s*ms").matcher(stats);
             assertTrue("Could not parse TTFT from: " + stats, ttftMatcher.find());
             long ttftMs = Long.parseLong(ttftMatcher.group(1));
 
-            java.util.regex.Matcher tpsMatcher = java.util.regex.Pattern
-                    .compile("TPS:\\s*([\\d.]+)\\s*tok/s")
-                    .matcher(stats);
+            java.util.regex.Matcher tpsMatcher =
+                    java.util.regex.Pattern.compile("TPS:\\s*([\\d.]+)\\s*tok/s").matcher(stats);
             assertTrue("Could not parse TPS from: " + stats, tpsMatcher.find());
             double tps = Double.parseDouble(tpsMatcher.group(1));
 
-            assertTrue("TTFT too high: " + ttftMs + "ms (max " + MAX_TTFT_MS + "ms)",
+            assertTrue(
+                    "TTFT too high: " + ttftMs + "ms (max " + MAX_TTFT_MS + "ms)",
                     ttftMs <= MAX_TTFT_MS);
-            assertTrue("TPS too low: " + tps + " tok/s (min " + MIN_TPS + " tok/s)",
-                    tps >= MIN_TPS);
+            assertTrue(
+                    "TPS too low: " + tps + " tok/s (min " + MIN_TPS + " tok/s)", tps >= MIN_TPS);
         } catch (NumberFormatException e) {
             fail("Failed to parse performance metrics from stats bar: " + stats);
         }

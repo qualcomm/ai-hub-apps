@@ -2,9 +2,10 @@
 // Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 // ---------------------------------------------------------------------
+#include <jni.h>
+
 #include <filesystem>
 #include <iostream>
-#include <jni.h>
 #include <string>
 
 #include "GenieWrapper.hpp"

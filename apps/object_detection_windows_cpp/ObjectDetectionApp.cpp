@@ -3,21 +3,21 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // ---------------------------------------------------------------------
 #include "ObjectDetectionApp.hpp"
-#include "Utilities.hpp"
+
+#include <onnxruntime_cxx_api.h>
+#include <onnxruntime_session_options_config_keys.h>
 
 #include <filesystem>
 #include <iostream>
 #include <sstream>
-
-#include <onnxruntime_cxx_api.h>
-#include <onnxruntime_session_options_config_keys.h>
-#include <sstream>
 #include <unordered_map>
 
+#include "Utilities.hpp"
 #include <opencv2/core.hpp>
 #include <opencv2/highgui.hpp>
 
-using namespace App;
+using App::BackendOption;
+using App::ObjectDetectionApp;
 constexpr float c_probability_threshold = 0.7f;
 constexpr float c_nms_threshold = 0.2f;
 
