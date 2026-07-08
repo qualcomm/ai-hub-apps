@@ -22,6 +22,8 @@ from qai_hub_apps_test.qdc.qdc_jobs import (
     QDCJobs,
 )
 
+TEXT_LOG_EXTENSIONS = (".log", ".stdout", ".txt", ".json")
+
 
 def create_zip(zip_path: str, source_dir: str | os.PathLike) -> None:
     """Create a zip archive from source_dir at zip_path."""
@@ -347,24 +349,38 @@ def submit_app_bundle_to_qdc_device(
     print(f"Submitted QDC job with ID: {job_id}")
     job_status = app_job.status(job_id)
     print(f"QDC job {job_id} completed with status: {job_status}")
-    if job_status == "Completed":
+
+    job = app_job.get_job(job_id)
+    print(f"QDC job {job_id} test finished with status: {job.result.value}")
+    succeeded = job.result == "Successful"
+
+    if not succeeded and job_status == "Completed":
         app_job.log_upload_status(job_id)
         job_log_files = app_job.get_job_log_files(job_id)
         time.sleep(POLL_INTERVAL)
         if job_log_files:
             with tempfile.TemporaryDirectory() as tmpdirname:
                 for job_log in job_log_files:
-                    target_path = os.path.join(
-                        tmpdirname, "logs", f"{job_log.filename}.zip"
-                    )
-                    os.makedirs(os.path.dirname(target_path), exist_ok=True)
-                    app_job.download_job_log_files(job_log.filename, target_path)
-                    print(f"Downloaded log: {job_log.filename}")
+                    filename = job_log.filename
+                    if not filename.lower().endswith(TEXT_LOG_EXTENSIONS):
+                        continue  # skip .mp4 and other non-text artifacts
 
-    # check if the job test failed or not
-    job = app_job.get_job(job_id)
-    print(f"QDC job {job_id} test finished with status: {job.result.value}")
-    return job.result == "Successful"
+                    base_name = os.path.basename(filename)
+                    zip_path = os.path.join(tmpdirname, f"{base_name}.zip")
+                    try:
+                        app_job.download_job_log_files(filename, zip_path)
+                        with zipfile.ZipFile(zip_path) as zf:
+                            contents = "\n".join(
+                                zf.read(name).decode("utf-8", errors="replace")
+                                for name in zf.namelist()
+                            )
+                        print(f"::group::QDC log: {base_name}")
+                        print(contents)
+                        print("::endgroup::")
+                    except Exception as e:  # don't let a bad log mask the failure
+                        print(f"::warning::Could not read QDC log {base_name}: {e}")
+
+    return succeeded
 
 
 if __name__ == "__main__":
