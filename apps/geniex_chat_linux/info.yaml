@@ -1,0 +1,33 @@
+name: GenieX Chat Linux
+id: geniex_chat_linux
+license_url: https://github.com/qualcomm/nexa-sdk?tab=BSD-3-Clause-1-ov-file
+license_type: bsd-3-clause
+headline: Run LLMs and VLMs locally on Linux via CLI
+description: A sample CLI app demonstrating how to run on-device LLMs and VLMs with the GenieX Gen AI runtime on Linux (Ubuntu 24.04+ and Qualcomm Linux Yocto) in a few lines of code.
+runtime: [geniex_qairt, geniex_llamacpp]
+status: published_website_only
+domain: Generative AI
+app_type: 'ubuntu'
+use_case: Text Generation
+related_models: [
+  'gemma_4_e2b_it',
+  'gemma_4_e4b_it',
+  'phi_4_mini_instruct',
+  'qwen2_5_vl_7b_instruct',
+  'qwen3_0_6b',
+  'qwen3_1_7b',
+  'qwen3_4b',
+  'qwen3_4b_instruct_2507',
+  'qwen3_5_0_8b',
+  'qwen3_5_2b',
+  'qwen3_vl_2b_instruct',
+  'qwen3_vl_4b_instruct',
+]
+precisions: []
+static_img_filename: 'app_screen.png'
+app_repo_url: 'https://github.com/qualcomm/geniex'
+os:
+  name: Ubuntu
+  version: 24.04+
+supported_devices: ["Dragonwing IQ-9075 EVK"]
+languages: ['Go']

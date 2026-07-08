@@ -69,7 +69,6 @@ apps:
   - qwen3_5_2b
   - qwen3_vl_2b_instruct
   - qwen3_vl_4b_instruct
-  - gpt_oss_20b
   - qwen3_4b
   - qwen3_4b_instruct_2507
   - qwen2_5_vl_7b_instruct
