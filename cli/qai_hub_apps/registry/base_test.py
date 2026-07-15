@@ -78,7 +78,9 @@ def _make_fake_download(
     model_files = ["model1.onnx", "model2.onnx"] if model_files is None else model_files
     extra_files = ["LICENSE"] if extra_files is None else extra_files
 
-    def fake_download(url: str, path: Path, extract: bool = False) -> Path:
+    def fake_download(
+        url: str, path: Path, extract: bool = False, quiet: bool = False
+    ) -> Path:
         import json
 
         path.mkdir(parents=True, exist_ok=True)
@@ -449,7 +451,9 @@ def test_fetch_model_failure_leaves_no_dest(monkeypatch, tmp_path):
         MagicMock(return_value="https://example.com/model.zip"),
     )
 
-    def fail_model_download(url: str, path: Path, extract: bool = False) -> Path:
+    def fail_model_download(
+        url: str, path: Path, extract: bool = False, quiet: bool = False
+    ) -> Path:
         if "model" in url:
             raise RuntimeError("model download failed")
         path.mkdir(parents=True, exist_ok=True)

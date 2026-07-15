@@ -8,7 +8,11 @@ import logging
 
 import pytest
 
-from qai_hub_apps.logging_utils import LOG_LEVEL_ENV_VAR, configure_logging
+from qai_hub_apps.logging_utils import (
+    LOG_LEVEL_ENV_VAR,
+    configure_logging,
+    is_quiet,
+)
 
 
 @pytest.fixture
@@ -49,6 +53,20 @@ def test_unknown_level_warns(fresh_logger, monkeypatch, caplog):
         configure_logging("bogus")
     assert "Unknown log level" in caplog.text
     assert "bogus" in caplog.text
+
+
+@pytest.mark.parametrize(
+    ("level", "expected"),
+    [
+        ("error", True),  # ERROR is quiet
+        ("info", False),  # INFO is not quiet
+        ("debug", False),  # DEBUG is not quiet
+    ],
+)
+def test_is_quiet(fresh_logger, monkeypatch, level, expected):
+    monkeypatch.delenv(LOG_LEVEL_ENV_VAR, raising=False)
+    configure_logging(level)
+    assert is_quiet() is expected
 
 
 def test_installs_single_root_handler(fresh_logger):

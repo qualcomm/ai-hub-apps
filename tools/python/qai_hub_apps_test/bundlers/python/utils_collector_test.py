@@ -8,100 +8,100 @@ from pathlib import Path
 
 import pytest
 
-from qai_hub_apps_test.bundlers.python.sdk_collector import (
-    collect_all_sdk_files,
-    collect_sdk_imports_from_file,
-    init_files_for_sdk_file,
-    module_to_sdk_file,
+from qai_hub_apps_test.bundlers.python.utils_collector import (
+    collect_all_utils_files,
+    collect_utils_imports_from_file,
+    init_files_for_utils_file,
+    module_to_utils_file,
 )
 
 pytestmark = pytest.mark.bundler_unit
 
-_SDK = "qai_hub_apps_utils"
+_UTILS = "qai_hub_apps_utils"
 
 
-def test_no_sdk_imports(tmp_path: Path) -> None:
+def test_no_utils_imports(tmp_path: Path) -> None:
     f = tmp_path / "app.py"
     f.write_text("import os\nimport sys\n")
-    assert collect_sdk_imports_from_file(f) == set()
+    assert collect_utils_imports_from_file(f) == set()
 
 
-def test_direct_sdk_import(tmp_path: Path) -> None:
+def test_direct_utils_import(tmp_path: Path) -> None:
     f = tmp_path / "app.py"
-    f.write_text(f"import {_SDK}\n")
-    assert collect_sdk_imports_from_file(f) == {_SDK}
+    f.write_text(f"import {_UTILS}\n")
+    assert collect_utils_imports_from_file(f) == {_UTILS}
 
 
 def test_from_submodule_import(tmp_path: Path) -> None:
     f = tmp_path / "app.py"
-    f.write_text(f"from {_SDK}.draw import something\n")
-    assert collect_sdk_imports_from_file(f) == {f"{_SDK}.draw"}
+    f.write_text(f"from {_UTILS}.draw import something\n")
+    assert collect_utils_imports_from_file(f) == {f"{_UTILS}.draw"}
 
 
 def test_submodule_direct_import(tmp_path: Path) -> None:
     f = tmp_path / "app.py"
-    f.write_text(f"import {_SDK}.image_processing\n")
-    assert collect_sdk_imports_from_file(f) == {f"{_SDK}.image_processing"}
+    f.write_text(f"import {_UTILS}.image_processing\n")
+    assert collect_utils_imports_from_file(f) == {f"{_UTILS}.image_processing"}
 
 
 def test_syntax_error_warns_and_returns_empty(tmp_path: Path) -> None:
     f = tmp_path / "broken.py"
     f.write_text("def foo(\n")
     with pytest.warns(UserWarning, match="Could not parse"):
-        result = collect_sdk_imports_from_file(f)
+        result = collect_utils_imports_from_file(f)
     assert result == set()
 
 
-def test_multiple_sdk_imports(tmp_path: Path) -> None:
+def test_multiple_utils_imports(tmp_path: Path) -> None:
     f = tmp_path / "app.py"
     f.write_text(
-        f"from {_SDK}.draw import draw_boxes\n"
-        f"import {_SDK}.image_processing\n"
+        f"from {_UTILS}.draw import draw_boxes\n"
+        f"import {_UTILS}.image_processing\n"
         "import os\n"
     )
-    assert collect_sdk_imports_from_file(f) == {
-        f"{_SDK}.draw",
-        f"{_SDK}.image_processing",
+    assert collect_utils_imports_from_file(f) == {
+        f"{_UTILS}.draw",
+        f"{_UTILS}.image_processing",
     }
 
 
 def test_resolves_module_file(tmp_path: Path) -> None:
-    sdk_dir = tmp_path / _SDK
-    sdk_dir.mkdir()
-    draw = sdk_dir / "draw.py"
+    utils_dir = tmp_path / _UTILS
+    utils_dir.mkdir()
+    draw = utils_dir / "draw.py"
     draw.write_text("")
-    result = module_to_sdk_file(f"{_SDK}.draw", tmp_path)
+    result = module_to_utils_file(f"{_UTILS}.draw", tmp_path)
     assert result == draw
 
 
 def test_resolves_package_init(tmp_path: Path) -> None:
-    sdk_dir = tmp_path / _SDK
-    sdk_dir.mkdir()
-    init = sdk_dir / "__init__.py"
+    utils_dir = tmp_path / _UTILS
+    utils_dir.mkdir()
+    init = utils_dir / "__init__.py"
     init.write_text("")
-    result = module_to_sdk_file(_SDK, tmp_path)
+    result = module_to_utils_file(_UTILS, tmp_path)
     assert result == init
 
 
 def test_module_file_takes_priority_over_init(tmp_path: Path) -> None:
-    sdk_dir = tmp_path / _SDK
-    sdk_dir.mkdir()
-    (sdk_dir / "__init__.py").write_text("")
-    sub = sdk_dir / "sub"
+    utils_dir = tmp_path / _UTILS
+    utils_dir.mkdir()
+    (utils_dir / "__init__.py").write_text("")
+    sub = utils_dir / "sub"
     sub.mkdir()
     (sub / "__init__.py").write_text("")
-    mod_file = sdk_dir / "sub.py"
+    mod_file = utils_dir / "sub.py"
     mod_file.write_text("")
-    result = module_to_sdk_file(f"{_SDK}.sub", tmp_path)
+    result = module_to_utils_file(f"{_UTILS}.sub", tmp_path)
     assert result == mod_file
 
 
 def test_neither_exists_returns_none(tmp_path: Path) -> None:
-    assert module_to_sdk_file(f"{_SDK}.missing", tmp_path) is None
+    assert module_to_utils_file(f"{_UTILS}.missing", tmp_path) is None
 
 
 def test_collects_inits_along_path(tmp_path: Path) -> None:
-    pkg = tmp_path / _SDK
+    pkg = tmp_path / _UTILS
     pkg.mkdir()
     pkg_init = pkg / "__init__.py"
     pkg_init.write_text("")
@@ -112,13 +112,13 @@ def test_collects_inits_along_path(tmp_path: Path) -> None:
     mod = sub / "module.py"
     mod.write_text("")
 
-    inits = init_files_for_sdk_file(mod, tmp_path)
+    inits = init_files_for_utils_file(mod, tmp_path)
     assert pkg_init in inits
     assert sub_init in inits
 
 
 def test_missing_init_not_included(tmp_path: Path) -> None:
-    pkg = tmp_path / _SDK
+    pkg = tmp_path / _UTILS
     pkg.mkdir()
     sub = pkg / "sub"
     sub.mkdir()
@@ -127,7 +127,7 @@ def test_missing_init_not_included(tmp_path: Path) -> None:
     mod = sub / "module.py"
     mod.write_text("")
 
-    inits = init_files_for_sdk_file(mod, tmp_path)
+    inits = init_files_for_utils_file(mod, tmp_path)
     assert sub_init in inits
     assert (pkg / "__init__.py") not in inits
 
@@ -135,49 +135,49 @@ def test_missing_init_not_included(tmp_path: Path) -> None:
 def test_file_in_root_returns_empty(tmp_path: Path) -> None:
     mod = tmp_path / "module.py"
     mod.write_text("")
-    assert init_files_for_sdk_file(mod, tmp_path) == []
+    assert init_files_for_utils_file(mod, tmp_path) == []
 
 
-def test_no_sdk_imports_empty_result(tmp_path: Path) -> None:
+def test_no_utils_imports_empty_result(tmp_path: Path) -> None:
     app = tmp_path / "app"
     app.mkdir()
     (app / "main.py").write_text("import os\n")
-    sdk = tmp_path / "sdk"
-    sdk.mkdir()
-    assert collect_all_sdk_files(app, sdk) == set()
+    utils = tmp_path / "utils"
+    utils.mkdir()
+    assert collect_all_utils_files(app, utils) == set()
 
 
 def test_direct_import_resolved(tmp_path: Path) -> None:
     app = tmp_path / "app"
     app.mkdir()
-    (app / "main.py").write_text(f"from {_SDK}.draw import x\n")
+    (app / "main.py").write_text(f"from {_UTILS}.draw import x\n")
 
-    sdk = tmp_path / "sdk"
-    sdk.mkdir()
-    sdk_pkg = sdk / _SDK
-    sdk_pkg.mkdir()
-    draw_py = sdk_pkg / "draw.py"
+    utils = tmp_path / "utils"
+    utils.mkdir()
+    utils_pkg = utils / _UTILS
+    utils_pkg.mkdir()
+    draw_py = utils_pkg / "draw.py"
     draw_py.write_text("# no further imports\n")
 
-    result = collect_all_sdk_files(app, sdk)
+    result = collect_all_utils_files(app, utils)
     assert draw_py in result
 
 
 def test_transitive_imports_followed(tmp_path: Path) -> None:
     app = tmp_path / "app"
     app.mkdir()
-    (app / "main.py").write_text(f"from {_SDK}.draw import x\n")
+    (app / "main.py").write_text(f"from {_UTILS}.draw import x\n")
 
-    sdk = tmp_path / "sdk"
-    sdk.mkdir()
-    sdk_pkg = sdk / _SDK
-    sdk_pkg.mkdir()
-    draw_py = sdk_pkg / "draw.py"
-    draw_py.write_text(f"from {_SDK}.image_processing import y\n")
-    img_py = sdk_pkg / "image_processing.py"
+    utils = tmp_path / "utils"
+    utils.mkdir()
+    utils_pkg = utils / _UTILS
+    utils_pkg.mkdir()
+    draw_py = utils_pkg / "draw.py"
+    draw_py.write_text(f"from {_UTILS}.image_processing import y\n")
+    img_py = utils_pkg / "image_processing.py"
     img_py.write_text("# leaf\n")
 
-    result = collect_all_sdk_files(app, sdk)
+    result = collect_all_utils_files(app, utils)
     assert draw_py in result
     assert img_py in result
 
@@ -185,12 +185,12 @@ def test_transitive_imports_followed(tmp_path: Path) -> None:
 def test_unresolvable_module_warns_and_continues(tmp_path: Path) -> None:
     app = tmp_path / "app"
     app.mkdir()
-    (app / "main.py").write_text(f"import {_SDK}.missing_module\n")
+    (app / "main.py").write_text(f"import {_UTILS}.missing_module\n")
 
-    sdk = tmp_path / "sdk"
-    sdk.mkdir()
-    (sdk / _SDK).mkdir()
+    utils = tmp_path / "utils"
+    utils.mkdir()
+    (utils / _UTILS).mkdir()
 
     with pytest.warns(UserWarning, match="could not be resolved"):
-        result = collect_all_sdk_files(app, sdk)
+        result = collect_all_utils_files(app, utils)
     assert result == set()

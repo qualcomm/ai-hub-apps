@@ -44,6 +44,16 @@ def set_log_level(level: str | None = None) -> None:
         )
 
 
+def is_quiet() -> bool:
+    """Return True when the CLI is running in quiet mode (``-q``/``--quiet``).
+
+    Quiet mode raises the ``qai_hub_apps`` logger level to ERROR, so anything
+    at ERROR or above (i.e. INFO/DEBUG suppressed) is treated as quiet. Used to
+    silence third-party output such as download progress bars.
+    """
+    return logging.getLogger(_PACKAGE_LOGGER_NAME).getEffectiveLevel() >= logging.ERROR
+
+
 def configure_logging(level: str | None = None) -> None:
     """Set the ``qai_hub_apps`` log level and send diagnostics to stderr.
 

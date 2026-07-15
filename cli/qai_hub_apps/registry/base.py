@@ -42,6 +42,7 @@ from qai_hub_apps.errors import (
     ModelAssetNotFoundError,
     QAIHubAppsError,
 )
+from qai_hub_apps.logging_utils import is_quiet
 from qai_hub_apps.utils.github import make_issue_url
 from qai_hub_apps.validate import is_app_supported
 
@@ -95,7 +96,7 @@ class App:
         logger.debug("Staging app '%s' into %s", self.id, staged)
         if self.url is not None:
             logger.info("Fetching from: %s", self.url.source)
-            result = download(self.url.source, staged, extract=True)
+            result = download(self.url.source, staged, extract=True, quiet=is_quiet())
             logger.debug("Downloaded and extracted app source to %s", result)
             return result
         logger.debug("No source URL in registry for '%s'", self.id)
@@ -172,7 +173,7 @@ class App:
                 model_asset.model_id, model_asset.chipset
             ) from e
         logger.info("Fetching model from: %s", model_download_url)
-        download(model_download_url, dest, extract=True)
+        download(model_download_url, dest, extract=True, quiet=is_quiet())
         logger.debug("Downloaded and extracted model asset into %s", dest)
 
     def _read_model_metadata(self, model_dir: Path, model_asset: ModelAsset) -> dict:

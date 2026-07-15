@@ -1,6 +1,6 @@
 # App Bundler
 
-The bundler packages an app's source code, shared SDK modules, shared shell scripts, and version configuration into a standalone directory or zip that an end-user can run without any knowledge of the internal repository structure.
+The bundler packages an app's source code, shared library code, shared shell scripts, and version configuration into a standalone directory or zip that an end-user can run without any knowledge of the internal repository structure.
 
 ## Overview
 
@@ -8,8 +8,9 @@ Bundling is driven by `bundle_app()` in `__init__.py`. It:
 
 1. Reads the app's `info.yaml` to verify it is a Python app.
 2. Inside a temp directory, runs three steps in order:
-   - **`bundle_source`** — copies app source, shared SDK modules, and merged
-     `requirements.txt` (Python bundler's job).
+   - **`bundle_source`** — copies app source and shared library code
+     (per-language: e.g. Python apps get the imported `qai_hub_apps_utils`
+     modules plus a merged `requirements.txt`).
    - **`bundle_scripts`** — processes `install_*.sh` / `install_*.ps1`, rewrites
      source lines, transitively copies referenced shared scripts to `scripts/`,
      and copies `versions.env` (shell bundler's job).
@@ -18,7 +19,7 @@ Bundling is driven by `bundle_app()` in `__init__.py`. It:
 ```
 bundle_app(app_id, output_dir)
   │
-  ├─ bundle_source()    → source + requirements.txt + SDK modules
+  ├─ bundle_source()    → source + shared library code (per-language)
   ├─ bundle_scripts()   → scripts/ dir + versions.env + rewritten source lines
   └─ finalize           → copy to <app_id>/ or zip to <app_id>.zip
 ```
@@ -42,7 +43,7 @@ bundle_app(app_id, output_dir)
     pip_utils.ps1          # copied (if referenced)
   requirements.txt         # merged pip requirements
   <app source files>
-  qai_hub_apps_utils/      # shared SDK modules (if imported by app)
+  qai_hub_apps_utils/      # shared utils modules (if imported by app)
 ```
 
 ---
@@ -152,9 +153,9 @@ Pure variable references like `source "$_VERSIONS_FILE"` are silently skipped (t
 bundlers/
   __init__.py       bundle_app() — orchestrates temp dir, bundle_source, bundle_scripts, finalize
   python/
-    bundle.py       bundle_source() — copies source + SDK modules + requirements
-    sdk_collector.py  AST-based qai_hub_apps_utils import scanner
-    sdk_resolver.py   Locates the qai_hub_apps_utils package root
+    bundle.py       bundle_source() — copies source + qai_hub_apps_utils modules + requirements
+    utils_collector.py  AST-based qai_hub_apps_utils import scanner
+    utils_resolver.py   Locates the qai_hub_apps_utils package root
     requirements.py   requirements.txt parsing and merging
   shell/
     bundle.py       collect_and_rewrite_scripts(), find_transitive_scripts(), bundle_scripts()

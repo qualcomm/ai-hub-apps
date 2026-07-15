@@ -181,13 +181,13 @@ def dummy_android_app_path(tmp_path: Path) -> Path:
 
 
 @pytest.fixture
-def dummy_python_sdk_path(tmp_path: Path) -> Path:
-    """Dummy qai_hub_apps_utils SDK with a transitive dependency chain.
+def dummy_python_utils_path(tmp_path: Path) -> Path:
+    """Dummy qai_hub_apps_utils package with a transitive dependency chain.
 
-    Returns the sdk_parent directory (the one that *contains*
+    Returns the utils_parent directory (the one that *contains*
     ``qai_hub_apps_utils/``)::
 
-        tmp_path/sdk/
+        tmp_path/utils/
           qai_hub_apps_utils/
             __init__.py
             helper.py         # from qai_hub_apps_utils.math_utils import add
@@ -196,8 +196,8 @@ def dummy_python_sdk_path(tmp_path: Path) -> Path:
               requirements-helper.txt       # numpy>=1.24
               requirements-math_utils.txt   # (empty / comment only)
     """
-    sdk_parent = tmp_path / "sdk"
-    pkg = sdk_parent / "qai_hub_apps_utils"
+    utils_parent = tmp_path / "utils"
+    pkg = utils_parent / "qai_hub_apps_utils"
     pkg.mkdir(parents=True)
     (pkg / "__init__.py").write_text("")
     (pkg / "helper.py").write_text(
@@ -210,4 +210,4 @@ def dummy_python_sdk_path(tmp_path: Path) -> Path:
     req_dir.mkdir()
     (req_dir / "requirements-helper.txt").write_text("numpy>=1.24\n")
     (req_dir / "requirements-math_utils.txt").write_text("# no extra deps\n")
-    return sdk_parent
+    return utils_parent

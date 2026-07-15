@@ -11,6 +11,7 @@ This guide covers dev environment setup, repo architecture, app conventions, tes
 - [App Structure by Platform](#app-structure-by-platform)
 - [info.yaml Schema](#infoyaml-schema)
 - [Shared Scripts](#shared-scripts-apps_sharedscripts)
+- [Shared Python Utilities](#shared-python-utilities-qai_hub_apps_utils)
 - [Testing Infrastructure](#testing-infrastructure)
 - [Code Style and Linting](#code-style-and-linting)
 - [Adding a New App](#adding-a-new-app)
@@ -103,7 +104,7 @@ qai-hub-apps fetch <app_id> --model <model_id>
 The bundler packages an app into a self-contained directory or zip for distribution. See [`tools/python/qai_hub_apps_test/bundlers/README.md`](tools/python/qai_hub_apps_test/bundlers/README.md) for full details.
 
 - **Android bundler** — deep copies the app directory resolving all symlinks, copies and rewrites shell script `source` lines to bundle-local paths (same as Python bundler), inlines version variables from `versions.env` into `build.gradle`, and empties `common.gradle`
-- **Python bundler** — scans app source with AST to find `qai_hub_apps_utils` imports, copies only needed SDK modules, merges `requirements.txt`, and rewrites shell script `source` lines to bundle-local paths
+- **Python bundler** — scans app source with AST to find `qai_hub_apps_utils` imports, copies only the needed shared modules (see [Shared Python Utilities](#shared-python-utilities-qai_hub_apps_utils)), merges `requirements.txt`, and rewrites shell script `source` lines to bundle-local paths
 - **Shell bundler** — transitively copies referenced shared scripts into `scripts/` and copies `versions.env`
 
 ### Key Internal Packages
@@ -294,6 +295,42 @@ Android `build.gradle` reads these at build time via `common.gradle`. Shell scri
 ### `NON_INTERACTIVE` environment variable
 
 Set `NON_INTERACTIVE=true` (done automatically in Docker/CI) to auto-accept SDK licenses without prompting. Leave unset for interactive developer use.
+
+---
+
+## Shared Python Utilities (`qai_hub_apps_utils`)
+
+Python apps share common helpers (drawing, bounding-box math, image pre/post-processing, FPS counting, a minimal web UI, …) through the `qai_hub_apps_utils` package (distribution name `qai-hub-apps-utils`), which lives in `apps/_shared/python/`. Instead of copy-pasting this code into every app, import it from the package — the bundler ([The Bundlers](#the-bundlers)) copies only the modules an app actually imports (plus their transitive imports) into the standalone bundle, so end users never need the internal repo.
+
+Browse `apps/_shared/python/qai_hub_apps_utils/` for the available modules and their (numpy-style) docstrings. `apps/posenet_ubuntu_py/` is a good end-to-end reference — it imports the `draw`, `webui`, `fps`, `image_processing`, and `quantization` modules.
+
+### Using it in an app
+
+1. **Import the module(s)** you need in your app source, e.g.:
+
+   ```python
+   from qai_hub_apps_utils.fps import FpsCounter
+   from qai_hub_apps_utils.image_processing import resize_pad
+   ```
+
+2. **Don't list `qai-hub-apps-utils` in the app's `requirements.txt`.** The bundler copies the imported modules directly into the bundle, so only their third-party dependencies need to be installed at runtime (see next point). For local development, install the package (and any per-module extras) in editable mode:
+
+   ```bash
+   # base package
+   pip install -e apps/_shared/python/
+
+   # with a module's optional deps (extras are auto-discovered per module)
+   pip install -e 'apps/_shared/python/[draw]'
+   pip install -e 'apps/_shared/python/[full]'   # union of all module extras
+   ```
+
+3. **The bundler wires dependencies automatically.** Each module declares its third-party deps in `apps/_shared/python/qai_hub_apps_utils/requirements/requirements-<module>.txt`. When the bundler copies a module, it merges that file into the bundle's `requirements.txt` alongside the app's own.
+
+### Adding a new shared utility
+
+1. Add a module under `apps/_shared/python/qai_hub_apps_utils/` (e.g. `my_helper.py`) with numpy-style docstrings.
+2. If it has third-party dependencies, create `qai_hub_apps_utils/requirements/requirements-my_helper.txt` listing them. This file is what the bundler merges and what becomes the `[my_helper]` pip extra — no `setup.py` change is needed (extras are discovered dynamically).
+3. Import it from your app as `from qai_hub_apps_utils.my_helper import ...`. The AST-based collector picks it up automatically at bundle time; transitive imports of other `qai_hub_apps_utils` modules are followed too.
 
 ---
 

@@ -90,7 +90,7 @@ def test_app_reqs_only(tmp_path: Path) -> None:
     assert "pillow" in result
 
 
-def test_sdk_reqs_only(tmp_path: Path) -> None:
+def test_utils_reqs_only(tmp_path: Path) -> None:
     req_file = tmp_path / "requirements.txt"
     result = merge_requirements(req_file, ["torch>=2.0"])
     assert "torch>=2.0" in result
@@ -112,7 +112,7 @@ def test_conflicting_versions_warns_and_includes_both(tmp_path: Path) -> None:
     assert "numpy>=2.0" in result
 
 
-def test_empty_file_and_no_sdk(tmp_path: Path) -> None:
+def test_empty_file_and_no_utils(tmp_path: Path) -> None:
     req_file = tmp_path / "requirements.txt"
     req_file.write_text("")
     assert merge_requirements(req_file, []) == []
@@ -125,7 +125,7 @@ def test_comments_and_blank_lines_ignored(tmp_path: Path) -> None:
     assert result == ["numpy"]
 
 
-def test_missing_requirements_file_returns_sdk_reqs(tmp_path: Path) -> None:
+def test_missing_requirements_file_returns_utils_reqs(tmp_path: Path) -> None:
     req_file = tmp_path / "requirements.txt"
     result = merge_requirements(req_file, ["torch"])
     assert result == ["torch"]

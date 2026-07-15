@@ -2,4 +2,4 @@
 # Copyright (c) 2025 Qualcomm Technologies, Inc. and/or its subsidiaries.
 # SPDX-License-Identifier: BSD-3-Clause
 # ---------------------------------------------------------------------
-__version__ = "0.0.2"
+__version__ = "0.1.0"

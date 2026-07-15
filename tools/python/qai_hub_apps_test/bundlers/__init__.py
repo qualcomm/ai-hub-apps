@@ -25,7 +25,7 @@ from qai_hub_apps_test.utils.paths import DOCKER_ROOT, find_app_dir
 def bundle_app(
     app: str | Path,
     output_dir: Path,
-    sdk_parent: Path | None = None,
+    utils_parent: Path | None = None,
     shared_scripts_root: Path | None = None,
     make_zip: bool = False,
 ) -> None:
@@ -34,7 +34,7 @@ def bundle_app(
     - **Android** apps: deep-copy resolving all symlinks, copy shared scripts,
       then inline ``ext`` version variables into ``build.gradle`` and empty
       ``common.gradle``.
-    - **Python** apps: copy source + shared SDK modules + merged
+    - **Python** apps: copy source + shared qai_hub_apps_utils modules + merged
       ``requirements.txt``, then copy and rewrite shared shell scripts.
 
     All variants stage into a temporary directory, then either copy to
@@ -47,7 +47,7 @@ def bundle_app(
         the app's root directory.
     output_dir:
         Directory where the bundle will be written.
-    sdk_parent:
+    utils_parent:
         Path to the directory containing ``qai_hub_apps_utils``. Auto-resolved
         from the repository structure if None. (Python apps only.)
     shared_scripts_root:
@@ -72,7 +72,7 @@ def bundle_app(
         if app_info.app_type == AppType.ANDROID:
             _bundle_android_source(app_dir, tmp_dir, shared_scripts_root)
         elif AppLanguage.PYTHON in app_info.languages:
-            _bundle_python_source(app_dir, tmp_dir, sdk_parent, shared_scripts_root)
+            _bundle_python_source(app_dir, tmp_dir, utils_parent, shared_scripts_root)
         elif (
             app_info.app_type == AppType.WINDOWS
             and AppLanguage.CPP in app_info.languages

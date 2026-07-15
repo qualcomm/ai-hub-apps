@@ -20,7 +20,7 @@ def read_module_requirements(py_file: Path) -> list[str]:
     req_file = py_file.parent / "requirements" / f"requirements-{py_file.stem}.txt"
     if not req_file.exists():
         warnings.warn(
-            f"No requirements file found for SDK module '{py_file.name}' "
+            f"No requirements file found for qai_hub_apps_utils module '{py_file.name}' "
             f"(expected {req_file}). No dependencies will be added for this module.",
             stacklevel=2,
         )
@@ -39,7 +39,7 @@ def _pkg_name(req: str) -> str:
     return re.sub(r"[-_.]+", "-", req.strip().lower())
 
 
-def merge_requirements(app_req_file: Path, sdk_requires: list[str]) -> list[str]:
+def merge_requirements(app_req_file: Path, utils_requires: list[str]) -> list[str]:
     app_reqs: list[str] = []
     if app_req_file.exists():
         for line in app_req_file.read_text(encoding="utf-8").splitlines():
@@ -48,7 +48,7 @@ def merge_requirements(app_req_file: Path, sdk_requires: list[str]) -> list[str]
                 app_reqs.append(line)
 
     combined: dict[str, list[str]] = {}
-    for req in app_reqs + sdk_requires:
+    for req in app_reqs + utils_requires:
         name = _pkg_name(req)
         combined.setdefault(name, [])
         if req not in combined[name]:
