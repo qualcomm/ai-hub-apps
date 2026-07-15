@@ -154,7 +154,7 @@ jobs:
       # Send result to Slack channel #ai-hub-apps
       - name: Send Slack Notification
         id: slack_notification
-        uses: slackapi/slack-github-action@v3.0.3
+        uses: slackapi/slack-github-action@v3.0.5
         with:
           method: chat.postMessage
           token: ${{ secrets.SLACK_NOTIFIER_TOKEN }}
@@ -174,7 +174,7 @@ jobs:
     runs-on: [tetra-ubuntu-2204, self-hosted]
     steps:
       - name: Send Slack Notification
-        uses: slackapi/slack-github-action@v3.0.3
+        uses: slackapi/slack-github-action@v3.0.5
         with:
           method: chat.postMessage
           token: ${{ secrets.SLACK_NOTIFIER_TOKEN }}
