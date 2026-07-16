@@ -856,6 +856,8 @@ class MainActivity : FragmentActivity() {
                         } else if (checkedId == R.id.rb_npu) {
                             nGpuLayers = 999
                             ggufLlmDeviceId = ComputeUnitValue.NPU.value
+                        } else if (checkedId == R.id.rb_cpu) {
+                            ggufLlmDeviceId = ComputeUnitValue.CPU.value
                         }
                         when (which) {
                             DialogInterface.BUTTON_POSITIVE -> {
