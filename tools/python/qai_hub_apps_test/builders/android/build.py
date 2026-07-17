@@ -9,7 +9,10 @@ from __future__ import annotations
 import subprocess
 from pathlib import Path
 
+from tenacity import retry, stop_after_attempt, wait_fixed
 
+
+@retry(reraise=True, wait=wait_fixed(30), stop=stop_after_attempt(2))
 def _build_docker(app_dir: Path) -> None:
     """Build the debug + test APKs inside a Docker container, then copy outputs back.
 
@@ -26,10 +29,14 @@ def _build_docker(app_dir: Path) -> None:
     image_tag = f"aiha-build-{app_dir.name}"
     container_name = f"aiha-build-container-{app_dir.name}"
 
+    # A corrupt/exhausted build cache is a common cause of a transient build
+    # failure, so on a retry rebuild this image with --no-cache.
+    no_cache = ["--no-cache"] if _build_docker.statistics["attempt_number"] > 1 else []
     subprocess.run(
         [
             "docker",
             "build",
+            *no_cache,
             "--build-arg",
             "BUILD_TYPE=build",
             "--build-arg",

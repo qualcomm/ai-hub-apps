@@ -9,6 +9,8 @@ from __future__ import annotations
 import subprocess
 from pathlib import Path
 
+from tenacity import retry, stop_after_attempt, wait_fixed
+
 
 def _resolve_sln(app_dir: Path) -> str:
     """Return the single ``.sln`` file name in ``app_dir``."""
@@ -21,6 +23,7 @@ def _resolve_sln(app_dir: Path) -> str:
     return sln_files[0].name
 
 
+@retry(reraise=True, wait=wait_fixed(30), stop=stop_after_attempt(2))
 def _build_cpp_docker(app_dir: Path, sln_name: str) -> None:
     r"""Build inside a Windows Docker container, then copy ``ARM64\`` back to the host.
 
@@ -37,8 +40,22 @@ def _build_cpp_docker(app_dir: Path, sln_name: str) -> None:
     image_tag = f"aiha-build-{app_dir.name}"
     container_name = f"aiha-build-container-{app_dir.name}"
 
+    # A corrupt/exhausted build cache is a common cause of a transient build
+    # failure, so on a retry rebuild this image with --no-cache.
+    no_cache = (
+        ["--no-cache"] if _build_cpp_docker.statistics["attempt_number"] > 1 else []
+    )
     subprocess.run(
-        ["docker", "build", "--build-arg", "BUILD_TYPE=build", "-t", image_tag, "."],
+        [
+            "docker",
+            "build",
+            *no_cache,
+            "--build-arg",
+            "BUILD_TYPE=build",
+            "-t",
+            image_tag,
+            ".",
+        ],
         cwd=app_dir,
         check=True,
     )

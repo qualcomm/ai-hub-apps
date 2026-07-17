@@ -8,3 +8,4 @@ boto3 # for fetching test assets
 botocore # for fetching test assets
 types-boto3[s3,sts] # type stubs for boto3/botocore
 tqdm>=4.66 # for fetching test assets
+tenacity==9.1.4 # for retrying
