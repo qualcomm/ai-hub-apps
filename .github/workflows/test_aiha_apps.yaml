@@ -37,6 +37,8 @@ on:
         required: false
       HUB_USER_TOKEN_PROD:
         required: false
+      QAIHA_CI_AWS_ROLE_ARN:
+        required: false
     outputs:
       result_payload:
         description: "JSON with summary counts and per-app results"
@@ -152,6 +154,7 @@ jobs:
     secrets:
       QDC_API_TOKEN: ${{ secrets.QDC_API_TOKEN }}
       DOCKER_QC_REGISTRY_TOKEN: ${{ secrets.DOCKER_QC_REGISTRY_TOKEN }}
+      QAIHA_CI_AWS_ROLE_ARN: ${{ secrets.QAIHA_CI_AWS_ROLE_ARN }}
 
 
   test_android_apps:
@@ -174,6 +177,7 @@ jobs:
     secrets:
       QDC_API_TOKEN: ${{ secrets.QDC_API_TOKEN }}
       DOCKER_QC_REGISTRY_TOKEN: ${{ secrets.DOCKER_QC_REGISTRY_TOKEN }}
+      QAIHA_CI_AWS_ROLE_ARN: ${{ secrets.QAIHA_CI_AWS_ROLE_ARN }}
 
 
   test_windows_apps:
@@ -197,6 +201,7 @@ jobs:
       QDC_API_TOKEN: ${{ secrets.QDC_API_TOKEN }}
       DOCKER_QC_REGISTRY_TOKEN: ${{ secrets.DOCKER_QC_REGISTRY_TOKEN }}
       HUB_USER_TOKEN_PROD: ${{ secrets.HUB_USER_TOKEN_PROD }}
+      QAIHA_CI_AWS_ROLE_ARN: ${{ secrets.QAIHA_CI_AWS_ROLE_ARN }}
 
 
   report:

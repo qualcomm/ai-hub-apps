@@ -40,6 +40,8 @@ on:
         required: false
       HUB_USER_TOKEN_PROD:
         required: false
+      QAIHA_CI_AWS_ROLE_ARN:
+        required: false
 
   workflow_dispatch:
     inputs:
@@ -91,6 +93,9 @@ jobs:
   test:
     name: "Test ${{ inputs.app }}"
     runs-on: ${{ inputs.app_type == 'windows' && fromJSON('["self-hosted", "Windows", "X64", "windows-docker"]') || fromJSON('["tetra-ubuntu-2204", "self-hosted"]') }}
+    permissions:
+      id-token: write
+      contents: read
 
     steps:
       - uses: actions/checkout@v7
@@ -102,6 +107,14 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Setup AWS Credentials
+        uses: ./.github/actions/configure-multiple-aws-roles
+        with:
+          role-to-assume: ${{ secrets.QAIHA_CI_AWS_ROLE_ARN }}
+          role-duration-seconds: 7200
+          profile: qaihm
+          aws-region: us-west-2
 
       # install_source=source installs the CLI editable from the checked-out repo
       # (--with-cli). Otherwise the CLI is installed from a published version below.

@@ -17,16 +17,63 @@ Usage:
 
 from __future__ import annotations
 
+import os
 import random
 import subprocess
 from pathlib import Path
 
 import pytest
+from tenacity import retry, retry_if_exception, stop_after_attempt
 
 from qai_hub_apps_test.builders import build_app
 from qai_hub_apps_test.configs.info_yaml import QAIHAAppInfo
 
 pytestmark = pytest.mark.device_test
+
+# Printed (stdout, exit 1) by qai-hub-models when a model has no public pre-compiled assets
+_LICENSING_RESTRICTED_MSG = "are available due to licensing restrictions"
+
+
+def _fetch_failed_on_licensing(err: BaseException) -> bool:
+    return isinstance(err, subprocess.CalledProcessError) and (
+        _LICENSING_RESTRICTED_MSG in (err.stdout or "")
+    )
+
+
+@retry(
+    reraise=True,
+    stop=stop_after_attempt(2),
+    retry=retry_if_exception(_fetch_failed_on_licensing),
+)
+def _run_fetch(fetch_cmd: list[str]) -> None:
+    """Run ``qai-hub-apps fetch``, retrying licensing-restricted models internally.
+
+    On a licensing-restricted failure the retry sets
+    ``QAIHM_CLI_USE_INTERNAL_RELEASES=1`` so the CLI pulls the internal release;
+    any other failure is not retried.
+    """
+    env = os.environ.copy()
+    if _run_fetch.statistics["attempt_number"] > 1:
+        env["QAIHM_CLI_USE_INTERNAL_RELEASES"] = "1"
+
+    output = []
+    with subprocess.Popen(
+        fetch_cmd,
+        env=env,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        bufsize=1,
+    ) as proc:
+        assert proc.stdout is not None
+        for line in proc.stdout:
+            print(line, end="")
+            output.append(line)
+
+    if proc.returncode != 0:
+        raise subprocess.CalledProcessError(
+            proc.returncode, fetch_cmd, output="".join(output)
+        )
 
 
 def _select_models(app_info: QAIHAAppInfo, mode: str) -> list[str]:
@@ -132,7 +179,7 @@ def test_1_fetch_app(
             "--chipset",
             app_info.supported_devices[0].chipset,
         ]
-    subprocess.run(fetch_cmd, check=True)
+    _run_fetch(fetch_cmd)
     fetched_dirs[(app_info.id, model_id)] = out_parent / app_info.id
 
 
