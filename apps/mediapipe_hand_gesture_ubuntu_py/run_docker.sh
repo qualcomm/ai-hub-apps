@@ -26,5 +26,7 @@ DOCKER_OPTS="--rm --privileged \
 if [ "$1" = "--interactive" ] || [ "$1" = "-i" ]; then
     sudo docker run $DOCKER_OPTS -it $IMAGE bash
 else
-    sudo docker run $DOCKER_OPTS $IMAGE python main.py --qairt-path $QAIRT_PATH "$@"
+    sudo docker run $DOCKER_OPTS $IMAGE bash -c \
+        'source .venv/bin/activate && exec python main.py --qairt-path "$0" "$@"' \
+        "$QAIRT_PATH" "$@"
 fi

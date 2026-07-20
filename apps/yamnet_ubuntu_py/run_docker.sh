@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # ---------------------------------------------------------------------
 # shellcheck disable=SC2086
-IMAGE="aiha-posenet"
+IMAGE="aiha-yamnet"
 source "$(dirname "${BASH_SOURCE[0]}")/scripts/qairt_utils.sh"
 
 LIBCDSPRPC_SRC=""
@@ -20,9 +20,7 @@ fi
 DOCKER_OPTS="--rm --privileged \
     -v /usr/lib/:/opt/host/lib/:ro \
     -v $LIBCDSPRPC_SRC:/usr/lib/libcdsprpc.so:ro \
-    -v /tmp/socket/cam_server:/tmp/socket/cam_server \
-    -v $QAIRT_ROOT:$QAIRT_ROOT \
-    -p 8080:8080"
+    -v $QAIRT_ROOT:$QAIRT_ROOT"
 if [ "$1" = "--interactive" ] || [ "$1" = "-i" ]; then
     sudo docker run $DOCKER_OPTS -it $IMAGE bash
 else

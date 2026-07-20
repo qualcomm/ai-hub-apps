@@ -1,0 +1,24 @@
+name: YamNet Audio Classification
+id: yamnet_ubuntu_py
+license_url: https://github.com/qualcomm/ai-hub-apps/blob/main/LICENSE
+license_type: bsd-3-clause
+runtime: tflite
+status: unpublished
+domain: 'Audio'
+headline: 'On-device audio event classification with TFLite'
+description: 'A sample app for Ubuntu integrating the YamNet audio classification model via TFLite Runtime. It reads an audio file, computes log-mel features on-device, and prints the top predicted AudioSet sound classes.'
+precisions: [w8a8]
+app_type: 'ubuntu'
+static_img_filename: 'YamNet.png'
+app_repo_relative_path: 'yamnet_ubuntu_py'
+model_file_paths:
+  - 'models/yamnet.tflite'
+os:
+  name: Ubuntu
+  version: 24.04+
+languages: ['Python']
+base_docker: ubuntu.dockerfile
+use_case: 'Audio Classification'
+supported_devices: ["Dragonwing IQ-9075 EVK"]
+related_models: ['yamnet']
+skip_test: "current model asset doesn't contain labels.txt, deffering tests until v0.59.0 (https://github.com/qcom-ai-hub/ai-hub-models-internal/pull/4048)"
