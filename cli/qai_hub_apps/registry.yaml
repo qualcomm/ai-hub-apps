@@ -20,6 +20,8 @@ apps:
   languages:
   - Java
   - C++
+  supported_devices:
+  - Snapdragon 8 Elite QRD
   model_file_dir: src/main/assets/models/llm
   deprecation_notice: LLM Chat Android is deprecated in favour of the GenieX Chat Android app (geniex_chat_android), which runs LLMs and VLMs on-device via the Qualcomm® GenieX SDK.
 - name: LLM Chat Windows
@@ -43,6 +45,8 @@ apps:
   - w4a16
   languages:
   - C++
+  supported_devices:
+  - Snapdragon X Elite CRD
   model_file_dir: genie_bundle
   deprecation_notice: LLM Chat Windows is deprecated in favour of the GenieX Chat Windows (geniex_chat_windows), which runs LLMs and VLMs on-device via the Qualcomm® GenieX SDK.
 - name: GenieX Chat Android
@@ -76,6 +80,9 @@ apps:
   languages:
   - Kotlin
   - Java
+  supported_devices:
+  - Snapdragon 8 Elite QRD
+  - Snapdragon 8 Elite Gen 5 QRD
   disable_cli_model_fetch: true
 - name: Image Classification Android
   id: image_classification_android
@@ -112,6 +119,8 @@ apps:
   - float
   languages:
   - Java
+  supported_devices:
+  - Snapdragon 8 Elite QRD
   model_file_paths:
   - src/main/assets/classifier.tflite
 - name: Image Classification Windows
@@ -149,6 +158,8 @@ apps:
   - float
   languages:
   - C++
+  supported_devices:
+  - Snapdragon X Elite CRD
   model_file_paths:
   - assets/models/classification.onnx
 - name: MediaPipe Hand Gesture Recognition
@@ -168,6 +179,8 @@ apps:
   - w8a8
   languages:
   - Python
+  supported_devices:
+  - Dragonwing IQ-9075 EVK
   model_file_paths:
   - models/palm_detector.tflite
   - models/hand_landmark_detector.tflite
@@ -189,6 +202,8 @@ apps:
   - w8a8
   languages:
   - Python
+  supported_devices:
+  - Dragonwing IQ-9075 EVK
   model_file_paths:
   - models/posenet_mobilenet.tflite
 - name: Semantic Segmentation Android
@@ -212,6 +227,8 @@ apps:
   - float
   languages:
   - Java
+  supported_devices:
+  - Snapdragon 8 Elite QRD
   model_file_paths:
   - src/main/assets/segmenter.tflite
 - name: Stable Diffusion Windows
@@ -231,6 +248,8 @@ apps:
   - w8a16
   languages:
   - Python
+  supported_devices:
+  - Snapdragon X Elite CRD
   model_file_paths:
   - model/text_encoder.onnx
   - model/unet.onnx
@@ -253,6 +272,8 @@ apps:
   - float
   languages:
   - Java
+  supported_devices:
+  - Snapdragon 8 Elite QRD
   model_file_paths:
   - src/main/assets/superres.tflite
 - name: Super Resolution Windows
@@ -272,6 +293,8 @@ apps:
   - float
   languages:
   - C++
+  supported_devices:
+  - Snapdragon X Elite CRD
   model_file_paths:
   - assets/models/super_resolution.onnx
 - name: Whisper Windows
@@ -291,6 +314,8 @@ apps:
   - float
   languages:
   - Python
+  supported_devices:
+  - Snapdragon X Elite CRD
   model_file_paths:
   - models/encoder.onnx
   - models/decoder.onnx

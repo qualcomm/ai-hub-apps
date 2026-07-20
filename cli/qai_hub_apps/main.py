@@ -14,6 +14,7 @@ from qai_hub_apps.configs.model_asset import ModelAsset
 from qai_hub_apps.errors import QAIHubAppsError, RegistryNotFoundError
 from qai_hub_apps.logging_utils import configure_logging
 from qai_hub_apps.registry import Registry
+from qai_hub_apps.utils.updates import check_for_update
 
 logger = logging.getLogger(__name__)
 
@@ -23,6 +24,7 @@ def _resolve_model_asset(
     model_id: str | None,
     model_path: Path | None,
     chipset: str | None,
+    device: str | None,
 ) -> ModelAsset | None:
     """Build a ModelAsset from the --model / --model-id / --model-path args.
 
@@ -30,9 +32,11 @@ def _resolve_model_asset(
     existing path is treated as a local export, otherwise as a model ID. (A
     --model value that is both a supported model and a path is rejected later,
     in App.fetch, with a hint to use the explicit flags.)
+
+    --chipset and --device are mutually exclusive (enforced by argparse).
     """
     if model_id is not None:
-        return ModelAsset(model_id=model_id, chipset=chipset)
+        return ModelAsset(model_id=model_id, chipset=chipset, device=device)
     if model_path is not None:
         # Resolve to an absolute path so it can never collide with a model id.
         return ModelAsset(path=model_path.resolve())
@@ -40,10 +44,11 @@ def _resolve_model_asset(
         return None
     path = Path(model)
     if path.exists():
-        if chipset is not None:
-            logger.warning("--chipset is ignored when --model is a local path.")
+        if chipset is not None or device is not None:
+            flag = "--device" if device is not None else "--chipset"
+            logger.warning("%s is ignored when --model is a local path.", flag)
         return ModelAsset(path=path)
-    return ModelAsset(model_id=model, chipset=chipset)
+    return ModelAsset(model_id=model, chipset=chipset, device=device)
 
 
 def main() -> None:
@@ -151,23 +156,32 @@ def main() -> None:
         metavar="PATH",
         help="Path to a locally-exported model (directory or .zip)",
     )
-    fetch_parser.add_argument(
+    target_group = fetch_parser.add_mutually_exclusive_group()
+    target_group.add_argument(
         "--chipset",
         dest="chipset",
         default=None,
         metavar="CHIPSET",
         help="Chipset to target when downloading model (must be supported by the app)",
     )
+    target_group.add_argument(
+        "--device",
+        dest="device",
+        default=None,
+        metavar="DEVICE",
+        help="Device to target when downloading model (must be supported by the app)",
+    )
 
     args = parser.parse_args()
 
     configure_logging(args.log_level)
 
-    if args.command == "fetch" and args.chipset:
+    if args.command == "fetch" and (args.chipset or args.device):
+        flag = "--chipset" if args.chipset else "--device"
         if args.model_path is not None:
-            fetch_parser.error("--chipset cannot be used with --model-path")
+            fetch_parser.error(f"{flag} cannot be used with --model-path")
         if args.model is None and args.model_id is None:
-            fetch_parser.error("--chipset requires --model or --model-id")
+            fetch_parser.error(f"{flag} requires --model or --model-id")
 
     registry_path = getattr(args, "registry", None)
 
@@ -187,12 +201,14 @@ def main() -> None:
             run_info(args.app_id, registry)
         elif args.command == "fetch":
             model_asset = _resolve_model_asset(
-                args.model, args.model_id, args.model_path, args.chipset
+                args.model, args.model_id, args.model_path, args.chipset, args.device
             )
             run_fetch(args.app_id, args.output_dir, registry, model_asset)
     except QAIHubAppsError as e:
         logger.error(str(e))  # noqa: TRY400
         sys.exit(1)
+    finally:
+        check_for_update()
 
 
 if __name__ == "__main__":  # pragma: no cover

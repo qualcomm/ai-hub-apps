@@ -58,6 +58,7 @@ class AppInfo(BaseConfig):
     related_models: list[str]
     precisions: list[str]
     languages: list[AppLanguage] = []
+    supported_devices: list[str] = []
     model_file_paths: list[str] = []
     model_file_dir: str | None = None
     disable_cli_model_fetch: bool = False

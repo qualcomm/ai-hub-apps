@@ -14,9 +14,17 @@ class ModelAsset:
 
     Either ``model_id`` (downloaded from AI Hub) or ``path`` (a locally-exported
     model directory or ``.zip``) is set. For a local export, ``model_id`` is
-    derived from the export's ``metadata.json`` and ``chipset`` does not apply.
+    derived from the export's ``metadata.json`` and ``chipset``/``device`` do
+    not apply.
+
+    ``chipset`` and ``device`` are mutually exclusive ways to target an asset.
     """
 
     model_id: str | None = None
     chipset: str | None = None
+    device: str | None = None
     path: Path | None = None
+
+    def __post_init__(self) -> None:
+        if self.chipset is not None and self.device is not None:
+            raise ValueError("Provide at most one of 'chipset' or 'device'.")

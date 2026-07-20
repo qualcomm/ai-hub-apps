@@ -81,6 +81,7 @@ class QAIHACLIAppInfo(BaseConfig):
     related_models: list[str]
     precisions: list[Precision]
     languages: list[AppLanguage]
+    supported_devices: list[Device] = Field(default_factory=list)
     model_file_paths: list[
         Path
     ] = []  # Destination paths for each downloaded model file
@@ -141,7 +142,6 @@ class QAIHAAppInfo(QAIHACLIAppInfo):
     os: AppOS
 
     skip_test: str | None = None
-    supported_devices: list[Device] = Field(default_factory=list)
     app_repo_relative_path: str | None = (
         None  # relative path within qualcomm/ai-hub-apps
     )

@@ -245,6 +245,46 @@ def test_chipset_without_model_exits(monkeypatch, tmp_path, sample_registry_yaml
     assert exc.value.code == 2
 
 
+def test_fetch_device_and_chipset_mutually_exclusive(
+    monkeypatch, tmp_path, sample_registry_yaml
+):
+    with pytest.raises(SystemExit) as exc:
+        _run_main(
+            [
+                "fetch",
+                "test_app",
+                "--model-id",
+                "whisper_base",
+                "--chipset",
+                "some-chipset",
+                "--device",
+                "Some Device",
+                "--registry",
+                str(sample_registry_yaml),
+            ],
+            monkeypatch,
+        )
+    assert exc.value.code == 2
+
+
+def test_fetch_device_without_model_exits(monkeypatch, tmp_path, sample_registry_yaml):
+    with pytest.raises(SystemExit) as exc:
+        _run_main(
+            [
+                "fetch",
+                "test_app",
+                "--device",
+                "Some Device",
+                "--output-dir",
+                str(tmp_path),
+                "--registry",
+                str(sample_registry_yaml),
+            ],
+            monkeypatch,
+        )
+    assert exc.value.code == 2
+
+
 def test_missing_registry_exits_1(monkeypatch, tmp_path):
     nonexistent = tmp_path / "nonexistent.yaml"
     with pytest.raises(SystemExit) as exc:

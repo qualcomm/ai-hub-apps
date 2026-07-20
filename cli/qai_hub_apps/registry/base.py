@@ -4,6 +4,7 @@
 # ---------------------------------------------------------------------
 from __future__ import annotations
 
+import functools
 import json
 import logging
 import shutil
@@ -43,6 +44,7 @@ from qai_hub_apps.errors import (
     QAIHubAppsError,
 )
 from qai_hub_apps.logging_utils import is_quiet
+from qai_hub_apps.utils.devices import device_to_chipset
 from qai_hub_apps.utils.github import make_issue_url
 from qai_hub_apps.validate import is_app_supported
 
@@ -72,8 +74,10 @@ class App:
             return None
         return self.deprecation_notice or DEFAULT_DEPRECATION_MESSAGE
 
-    def _ensure_model_supported(self, model_id: str) -> None:
-        """Raise if *model_id* is not one of the app's supported models."""
+    def _ensure_model_supported(self, model_asset: ModelAsset) -> None:
+        """Raise if the model asset is unsupported by the app."""
+        model_id = model_asset.model_id
+        assert model_id is not None
         logger.debug(
             "Checking model '%s' against supported models %s for app '%s'",
             model_id,
@@ -84,6 +88,89 @@ class App:
             available = ", ".join(self.related_models) or "none"
             raise AppIncompatibleError(
                 f"Model '{model_id}' is not supported for this app. Supported models: {available}"
+            )
+        if model_asset.chipset is not None:
+            self._ensure_chipset_supported(model_asset.chipset)
+        if model_asset.device is not None:
+            self._ensure_device_supported(model_asset.device)
+
+    def _ensure_device_supported(self, device: str) -> None:
+        """Raise if *device* is not one of the app's supported devices.
+
+        No-op when the app declares no ``supported_devices``.
+        """
+        if not self.supported_devices:
+            return
+        logger.debug(
+            "Checking device '%s' against supported devices %s for app '%s'",
+            device,
+            self.supported_devices,
+            self.id,
+        )
+        if device not in self.supported_devices:
+            available = ", ".join(self.supported_devices)
+            raise AppIncompatibleError(
+                f"Device '{device}' is not supported for this app. "
+                f"Supported devices: {available}"
+            )
+
+    def _resolve_device_chipset(self, device: str) -> str:
+        """Resolve a ``supported_devices`` entry to its chipset.
+
+        An entry that is not a known AI Hub device is a bug in the app's
+        registry data, surfaced with a link to file an issue.
+        """
+        try:
+            chipset = device_to_chipset(device)
+            logger.debug(
+                "Resolved supported device '%s' to chipset '%s' for app '%s'",
+                device,
+                chipset,
+                self.id,
+            )
+            return chipset
+        except KeyError as e:
+            issue_url = make_issue_url(
+                title=f"Unknown supported_device for app '{self.id}'",
+                body=(
+                    f"App: {self.id}\n"
+                    f"Version: {__version__}\n"
+                    f"supported_devices entry: {device}\n"
+                    f"AI Hub Models version: {QAIHM_VERSION}\n"
+                    f"Error: {e}"
+                ),
+            )
+            raise AppIncompatibleError(
+                f"Supported device '{device}' for app '{self.id}' is not a "
+                f"known AI Hub device. This is likely a bug - please file an "
+                f"issue and we'll look into it:\n  {issue_url}"
+            ) from e
+
+    @functools.cached_property
+    def supported_chipsets(self) -> frozenset[str]:
+        """The chipsets of the app's ``supported_devices``, resolved and cached."""
+        return frozenset(
+            self._resolve_device_chipset(device) for device in self.supported_devices
+        )
+
+    def _ensure_chipset_supported(self, chipset: str) -> None:
+        """Raise if *chipset* is not one of the app's supported chipsets.
+
+        No-op when the app declares no ``supported_devices``.
+        """
+        if not self.supported_chipsets:
+            return
+        logger.debug(
+            "Checking chipset '%s' against supported chipsets %s for app '%s'",
+            chipset,
+            self.supported_chipsets,
+            self.id,
+        )
+        if chipset not in self.supported_chipsets:
+            available = ", ".join(sorted(self.supported_chipsets))
+            raise AppIncompatibleError(
+                f"Chipset '{chipset}' is not supported for this app. "
+                f"Supported chipsets: {available}"
             )
 
     def _stage_app(self, tmp: Path) -> Path:
@@ -144,12 +231,14 @@ class App:
                 Version(self.qaihm_version) if self.qaihm_version else QAIHM_VERSION
             )
             logger.debug(
-                "Resolving asset URL: model=%s runtime=%s precision=%s version=%s chipset=%s",
+                "Resolving asset URL: model=%s runtime=%s precision=%s version=%s "
+                "chipset=%s device=%s",
                 model_asset.model_id,
                 self.runtime[0],
                 self.precisions[0],
                 resolved_qaihm_version,
                 model_asset.chipset,
+                model_asset.device,
             )
             model_download_url = get_asset_url(
                 model=model_asset.model_id,
@@ -157,6 +246,8 @@ class App:
                 precision=self.precisions[0],
                 version=resolved_qaihm_version,
                 chipset=model_asset.chipset,
+                device=model_asset.device,
+                quiet=True,
             )
         except AssetNotFoundError as e:
             reason = str(e)
@@ -165,12 +256,18 @@ class App:
                     " After exporting, point to the assets when fetching the app:\n"
                     f"  qai-hub-apps fetch {self.id} --model <exported_model_path>"
                 )
+            else:
+                reason += (
+                    f" Check what the app supports:\n  qai-hub-apps info {self.id}"
+                )
             raise ModelAssetNotFoundError(
-                model_asset.model_id, model_asset.chipset, reason=reason
+                model_asset.model_id,
+                model_asset.chipset or model_asset.device,
+                reason=reason,
             ) from e
         except KeyError as e:
             raise ModelAssetNotFoundError(
-                model_asset.model_id, model_asset.chipset
+                model_asset.model_id, model_asset.chipset or model_asset.device
             ) from e
         logger.info("Fetching model from: %s", model_download_url)
         download(model_download_url, dest, extract=True, quiet=is_quiet())
@@ -362,7 +459,7 @@ class App:
                     assert (
                         model_asset.model_id is not None
                     )  # must be set when path is None
-                    self._ensure_model_supported(model_asset.model_id)
+                    self._ensure_model_supported(model_asset)
 
             staged = self._stage_app(tmp)
 
@@ -375,7 +472,7 @@ class App:
                 meta_model_id = metadata["model_id"]
                 if is_model_local:
                     # check the local model is supported by the app
-                    self._ensure_model_supported(meta_model_id)
+                    self._ensure_model_supported(ModelAsset(model_id=meta_model_id))
                 elif meta_model_id != model_asset.model_id:
                     # the downloaded asset's model should match the requested one
                     issue_url = make_issue_url(
@@ -454,6 +551,8 @@ class App:
             fields.append(("Precision", self.precisions[0]))
         if self.related_models:
             fields.append(("Models", ", ".join(str(m) for m in self.related_models)))
+        if self.supported_devices:
+            fields.append(("Supported Devices", ", ".join(self.supported_devices)))
         fields.append(("AI Hub Models", self.qaihm_version or str(QAIHM_VERSION)))
         return fields
 
