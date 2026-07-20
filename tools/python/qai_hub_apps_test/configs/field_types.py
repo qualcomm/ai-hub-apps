@@ -63,7 +63,10 @@ class Device(ProtoToken):
     def _normalize(value: Any) -> str:
         # resolve_chipset raises KeyError for an unknown device; ProtoToken
         # surfaces that as a validation error.
-        resolve_chipset(get_platform(), device=str(value))
+        platform = get_platform()
+        resolve_chipset(
+            chipsets=platform.chipsets, devices=platform.devices, device=str(value)
+        )
         return str(value)
 
     @property
@@ -74,4 +77,7 @@ class Device(ProtoToken):
     @property
     def chipset(self) -> str:
         """Canonical chipset ID for this device (e.g. ``"qualcomm-snapdragon-x-elite"``)."""
-        return resolve_chipset(get_platform(), device=str(self)).name
+        platform = get_platform()
+        return resolve_chipset(
+            chipsets=platform.chipsets, devices=platform.devices, device=str(self)
+        ).name

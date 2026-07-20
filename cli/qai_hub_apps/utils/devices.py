@@ -9,7 +9,7 @@ from __future__ import annotations
 from qai_hub_models_cli.proto_helpers.platform import get_platform, resolve_chipset
 
 
-def device_to_chipset(device: str) -> str:
+def device_to_chipset(device: str) -> str:  # pragma: no cover
     """Return the canonical chipset id for an AI Hub *device* name.
 
     Parameters
@@ -27,4 +27,7 @@ def device_to_chipset(device: str) -> str:
     KeyError
         If *device* is not a known AI Hub device.
     """
-    return resolve_chipset(get_platform(), device=device).name  # pragma: no cover
+    platform = get_platform()
+    return resolve_chipset(
+        chipsets=platform.chipsets, devices=platform.devices, device=device
+    ).name
