@@ -142,6 +142,8 @@ class QAIHAAppInfo(QAIHACLIAppInfo):
     os: AppOS
 
     skip_test: str | None = None
+    skip_related_models_verify: str | None = None
+    supported_devices: list[Device] = Field(default_factory=list)
     app_repo_relative_path: str | None = (
         None  # relative path within qualcomm/ai-hub-apps
     )

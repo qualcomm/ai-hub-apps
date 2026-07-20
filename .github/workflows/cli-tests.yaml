@@ -94,3 +94,13 @@ jobs:
           --strict-markers \
           --color=yes \
           -m bundler_unit
+
+    - name: Run Related Models Verification
+      run: |
+        source ${{ env.VENV_PATH }}/bin/activate
+        cd tools/python && pytest \
+          -vv -ra -s \
+          --tb=short \
+          --strict-markers \
+          --color=yes \
+          -m verify_related_models

@@ -213,7 +213,7 @@ Every app must have an `info.yaml`. Copy from a similar app and adjust.
 | `runtime` | closed enum | `tflite` \| `onnx` \| `genie` \| `precompiled_qnn_onnx` \| … — must be an existing `TargetRuntime` value (a new one needs an upstream `qai_hub_models` change) |
 | `status` | closed enum | Lifecycle stage — see [App Status](#app-status). Set `unpublished` until ready |
 | `languages` | list | e.g. `['Java']`, `['Python']`, `['Java', 'C++']` |
-| `related_models` | list | All compatible model IDs (used for CLI fetch + testing) |
+| `related_models` | list | All compatible model IDs (used for CLI fetch + testing). The first entry is the seed model tested on-device. CI fails if any entry has no AI Hub Models asset matching the app's `runtime`/`precisions`/`supported_devices` |
 | `precisions` | list | e.g. `[float]`, `[w4a16]` |
 | `supported_devices` | list | Device names — **must match a key in `HUB_DEVICE_TO_QDC_DEVICE_MAP`** in `tools/python/qai_hub_apps_test/qdc/qdc_jobs.py` |
 | `license_type` | `bsd-3-clause` | License (almost always BSD-3) |
@@ -229,6 +229,7 @@ Every app must have an `info.yaml`. Copy from a similar app and adjust.
 | `disable_cli_model_fetch` | `false` | Set `true` for apps that **download their model at runtime** instead of bundling a model asset. Mutually exclusive with `model_file_paths` / `model_file_dir`. Without it, `fetch` fails trying to download a non-existent asset. |
 | `deprecation_notice` | — | Message shown by the CLI for `deprecated` apps. If unset, a default deprecation message is used |
 | `skip_test` | — | String reason to skip CI testing |
+| `skip_related_models_verify` | — | String reason to skip `related_models` verification for this app |
 | `app_repo_url` | — | Explicit GitHub URL (overrides `app_repo_relative_path` — use for external repos) |
 | `qaihm_version` | — | Explicit Qualcomm AI Hub Models CLI version to use when dowloading model assets. By default, the installed version of the models-cli is used, if provided, this version will be used instead |
 

@@ -12,6 +12,11 @@ def pytest_configure(config: pytest.Config) -> None:
         "markers",
         "device_test: on-device app tests using the CLI and QDC (run with -m device_test)",
     )
+    config.addinivalue_line(
+        "markers",
+        "verify_related_models: validate each app's related_models against AI Hub "
+        "Models metadata (run with -m verify_related_models)",
+    )
 
 
 def pytest_addoption(parser: pytest.Parser) -> None:
