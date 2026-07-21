@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # ---------------------------------------------------------------------
 
-import cv2
 import numpy as np
 
 
@@ -455,6 +454,11 @@ def compute_box_affine_crop_resize_matrix(
     list[np.ndarray]
         List of affine matrices, each of shape (2, 3), one per batch element.
     """
+    # Imported lazily: opencv-python-headless ships no Windows ARM64 wheel, so
+    # importing cv2 at module load would break every other function in this
+    # module (e.g. nms, box_xywh_to_xyxy) on ARM64 apps that don't need it.
+    import cv2
+
     # Unpack target width/height;
     out_w, out_h = output_image_size
 

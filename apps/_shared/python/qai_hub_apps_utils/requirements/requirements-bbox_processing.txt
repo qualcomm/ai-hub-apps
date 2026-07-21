@@ -1,2 +1,2 @@
 numpy>=2.2.6
-opencv-python-headless>=4.13.0
+opencv-python-headless>=4.13.0; sys_platform != "win32" or platform_machine != "ARM64"
