@@ -65,19 +65,20 @@ qai-hub-apps info <app_id>
 | Run Whisper on-device using ONNX. |
 +-----------------------------------+
 
-+------------------------------------+
-|              Metadata              |
-+---------------+--------------------+
-| ID            | whisper_windows_py |
-| Type          | windows            |
-| Languages     | Python             |
-| Runtime       | onnx               |
-| Domain        | Audio              |
-| Use Case      | Speech Recognition |
-| Precision     | float              |
-| Models        | whisper_base       |
-| AI Hub Models | 0.30.0             |
-+---------------+--------------------+
++--------------------------------------------+
+|                  Metadata                  |
++-------------------+------------------------+
+| ID                | whisper_windows_py     |
+| Type              | windows                |
+| Languages         | Python                 |
+| Runtime           | onnx                   |
+| Domain            | Audio                  |
+| Use Case          | Speech Recognition     |
+| Precision         | float                  |
+| Models            | whisper_base           |
+| Supported Devices | Snapdragon X Elite CRD |
+| AI Hub Models     | 0.53.1                 |
++-------------------+------------------------+
 ```
 
 ### fetch
@@ -102,6 +103,7 @@ qai-hub-apps fetch <app_id> --model <path/to/model>
 | `--model-id MODEL_ID` | Model ID to download (must be supported by the app) |
 | `--model-path PATH` | Path to a locally-exported model (directory or `.zip`) |
 | `--chipset CHIPSET` | Target chipset for the model download. Only applies to a downloaded model (`--model <id>` or `--model-id`); not valid with a local model path |
+| `--device DEVICE` | Target device for the model download. Only applies to a downloaded model (`--model <id>` or `--model-id`); not valid with a local model path |
 
 `--model`, `--model-id`, and `--model-path` are mutually exclusive.
 
@@ -111,6 +113,8 @@ On success, the path to the fetched app directory is printed.
 
 ```bash
 qai-hub-apps fetch stable_diffusion_windows_py --model stable_diffusion_v2_1 --chipset qualcomm-snapdragon-x-elite
+# or
+qai-hub-apps fetch stable_diffusion_windows_py --model stable_diffusion_v2_1 --device "Snapdragon X Elite CRD"
 ```
 
 ## Logging
