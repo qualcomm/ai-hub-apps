@@ -22,7 +22,7 @@ $_PythonUtilsDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 function Install-Python {
     $ver = $PYTHON_VERSION
     $majorMinor = ($ver -split "\.")[ 0..1] -join "."
-    Install-WingetPackage -Id "Python.Python.$majorMinor"
+    Install-WingetPackage -Id "Python.Python.$majorMinor" -ExtraArgs @("--source", "winget")
 
     Write-Host "::step::Bootstrapping uv"
     py -$majorMinor -m pip install --quiet uv
