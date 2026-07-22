@@ -18,6 +18,10 @@ _ANDROID_UTILS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$_ANDROID_UTILS_DIR/load_versions.sh"
 # shellcheck disable=SC1091
 source "$_ANDROID_UTILS_DIR/apt_utils.sh"
+# shellcheck disable=SC1091
+source "$_ANDROID_UTILS_DIR/interactive.sh"
+# shellcheck disable=SC1091
+source "$_ANDROID_UTILS_DIR/retry.sh"
 
 ANDROID_HOME="${ANDROID_HOME:-$HOME/android-sdk}"
 SDKMAN_DIR="${SDKMAN_DIR:-$HOME/.sdkman}"
@@ -26,20 +30,22 @@ export GRADLE_HOME="$SDKMAN_DIR/candidates/gradle/current"
 export PATH="$JAVA_HOME/bin:$GRADLE_HOME/bin:$PATH"
 export ANDROID_HOME
 
-install_android_sdk() {
+_install_android_sdk() {
     local force=0
     if [ "${1:-}" = "--force" ]; then force=1; fi
 
-    $SUDO apt-get update -q
+    with_retry "apt-get update" -- $SUDO apt-get update -q
     install_apt_pkgs unzip zip wget
 
     # SDKMAN
     if [ ! -d "$SDKMAN_DIR" ] || [ "$force" -eq 1 ]; then
         echo "::step::Installing SDKMAN"
-        local sdkman_script
-        sdkman_script="$(wget -qO- "https://get.sdkman.io?ci=true")" \
-            || { echo "error: failed to download SDKMAN installer" >&2; return 1; }
-        bash <<< "$sdkman_script"
+        local sdkman_installer
+        sdkman_installer="$(mktemp)"
+        with_retry "Download SDKMAN installer" -- wget -qO "$sdkman_installer" "https://get.sdkman.io?ci=true" \
+            || { echo "error: failed to download SDKMAN installer" >&2; rm -f "$sdkman_installer"; return 1; }
+        bash "$sdkman_installer"
+        rm -f "$sdkman_installer"
         echo "::done::SDKMAN"
     else
         echo "::skip::SDKMAN"
@@ -55,7 +61,7 @@ install_android_sdk() {
     # Java
     if [ ! -d "$SDKMAN_DIR/candidates/java/$JAVA_SDK_VERSION" ] || [ "$force" -eq 1 ]; then
         echo "::step::Installing Java $JAVA_SDK_VERSION"
-        set +eu; sdk install java "$JAVA_SDK_VERSION"; set -eu
+        set +eu; with_retry "sdk install java $JAVA_SDK_VERSION" -- sdk install java "$JAVA_SDK_VERSION"; set -eu
         echo "::done::Java $JAVA_SDK_VERSION"
     else
         echo "::skip::Java $JAVA_SDK_VERSION"
@@ -65,7 +71,7 @@ install_android_sdk() {
     # Gradle
     if [ ! -d "$SDKMAN_DIR/candidates/gradle/$GRADLE_VERSION" ] || [ "$force" -eq 1 ]; then
         echo "::step::Installing Gradle $GRADLE_VERSION"
-        set +eu; sdk install gradle "$GRADLE_VERSION"; set -eu
+        set +eu; with_retry "sdk install gradle $GRADLE_VERSION" -- sdk install gradle "$GRADLE_VERSION"; set -eu
         echo "::done::Gradle $GRADLE_VERSION"
     else
         echo "::skip::Gradle $GRADLE_VERSION"
@@ -100,7 +106,8 @@ install_android_sdk() {
             # No cross-package exists for zlib, so extract directly from the Debian amd64 deb.
             local zlib_tmp
             zlib_tmp="$(mktemp -d)"
-            wget -q "http://ftp.us.debian.org/debian/pool/main/z/zlib/zlib1g_1.3.dfsg+really1.3.2-3_amd64.deb" \
+            with_retry "Download amd64 zlib1g deb" -- \
+                wget -q "http://ftp.us.debian.org/debian/pool/main/z/zlib/zlib1g_1.3.dfsg+really1.3.2-3_amd64.deb" \
                 -O "${zlib_tmp}/zlib1g_amd64.deb"
             dpkg-deb -x "${zlib_tmp}/zlib1g_amd64.deb" "${zlib_tmp}/zlib1g_amd64"
             $SUDO cp "${zlib_tmp}/zlib1g_amd64"/usr/lib/x86_64-linux-gnu/libz.so.* /usr/x86_64-linux-gnu/lib/
@@ -108,7 +115,8 @@ install_android_sdk() {
             echo "::done::x86_64 emulation support"
         fi
         mkdir -p "$ANDROID_HOME/cmdline-tools"
-        wget -q "https://dl.google.com/android/repository/commandlinetools-linux-${ANDROID_CMDLINE_TOOLS}.zip" \
+        with_retry "Download Android command-line tools" -- \
+            wget -q "https://dl.google.com/android/repository/commandlinetools-linux-${ANDROID_CMDLINE_TOOLS}.zip" \
             -O "$tmp_zip"
         unzip -q "$tmp_zip" -d "$ANDROID_HOME/cmdline-tools"
         mv "$ANDROID_HOME/cmdline-tools/cmdline-tools" "$ANDROID_HOME/cmdline-tools/latest"
@@ -126,10 +134,16 @@ install_android_sdk() {
     fi
     # SDK packages
     echo "::step::Installing Android SDK packages"
-    "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" \
+    with_retry "Install Android SDK packages" -- \
+        "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" \
         "platform-tools" \
         "build-tools;${ANDROID_COMPILE_API}.0.0" \
         "platforms;android-${ANDROID_TARGET_API}" \
         "ndk;${ANDROID_NDK_VERSION}"
     echo "::done::Android SDK packages"
+}
+
+install_android_sdk() {
+    require_consent "Install the Android build toolchain (SDKMAN, Java, Gradle, Android SDK/NDK; uses sudo)" \
+        -- _install_android_sdk "$@"
 }

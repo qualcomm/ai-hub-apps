@@ -18,17 +18,16 @@ _QAIRT_UTILS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$_QAIRT_UTILS_DIR/load_versions.sh"
 # shellcheck disable=SC1091
 source "$_QAIRT_UTILS_DIR/apt_utils.sh"
+# shellcheck disable=SC1091
+source "$_QAIRT_UTILS_DIR/interactive.sh"
+# shellcheck disable=SC1091
+source "$_QAIRT_UTILS_DIR/retry.sh"
 
 QAIRT_ROOT="/opt/qcom/aistack/qairt"
 QAIRT_PATH="${QAIRT_ROOT}/${QAIRT_SDK_FULL_VERSION}"
 export QAIRT_ROOT QAIRT_PATH
 
-install_qairt() {
-    if [ "${QAIRT_INSTALL_SKIP:-}" = "true" ]; then
-        echo "::skip::QAIRT SDK install deferred (QAIRT_INSTALL_SKIP=true)"
-        return 0
-    fi
-
+_install_qairt() {
     local force=0
     if [ "${1:-}" = "--force" ]; then force=1; fi
 
@@ -37,7 +36,7 @@ install_qairt() {
         return 0
     fi
 
-    $SUDO apt-get update -q
+    with_retry "apt-get update" -- $SUDO apt-get update -q
     install_apt_pkg unzip
 
     local url="https://softwarecenter.qualcomm.com/api/download/software/sdks/Qualcomm_AI_Runtime_Community/All/${QAIRT_SDK_FULL_VERSION}/v${QAIRT_SDK_FULL_VERSION}.zip"
@@ -46,7 +45,7 @@ install_qairt() {
 
     echo "::step::Downloading QAIRT SDK ${QAIRT_SDK_FULL_VERSION}"
     echo "   URL: $url"
-    wget -q -O "$tmp_zip" "$url"
+    with_retry "Download QAIRT SDK ${QAIRT_SDK_FULL_VERSION}" -- wget -q -O "$tmp_zip" "$url"
     echo "::done::download"
 
     echo "::step::Extracting QAIRT SDK"
@@ -60,4 +59,13 @@ install_qairt() {
     $SUDO mv "$tmp_dir/qairt/${QAIRT_SDK_FULL_VERSION}" "$QAIRT_PATH"
     rm -rf "$tmp_dir"
     echo "::done::QAIRT SDK installed at $QAIRT_PATH"
+}
+
+install_qairt() {
+    if [ "${QAIRT_INSTALL_SKIP:-}" = "true" ]; then
+        echo "::skip::QAIRT SDK install deferred (QAIRT_INSTALL_SKIP=true)"
+        return 0
+    fi
+    require_consent "Download & install QAIRT SDK ${QAIRT_SDK_FULL_VERSION} to ${QAIRT_PATH} (uses sudo)" \
+        -- _install_qairt "$@"
 }

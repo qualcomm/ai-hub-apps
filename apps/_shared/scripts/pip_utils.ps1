@@ -16,8 +16,9 @@
 # ---------------------------------------------------------------------
 $_PipUtilsDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 . "$_PipUtilsDir\load_versions.ps1"
+. "$_PipUtilsDir\interactive.ps1"
 
-function Install-PipDeps {
+function _Install-PipDeps {
     param(
         [string]$VenvDir = "",
         [string]$Python = "",
@@ -35,13 +36,26 @@ function Install-PipDeps {
     if (-not (Test-Path $VenvPython)) {
         Write-Host "::step::Creating virtual environment at $VenvDir"
         Invoke-Expression "$Python -m venv `"$VenvDir`""
-        Write-Host "::step::Installing uv"
-        & $VenvPython -m pip install --quiet uv
         Write-Host "::done::virtual environment"
     }
+
+    Write-Host "::step::Installing uv"
+    & $VenvPython -m pip install --quiet uv
 
     $uvExe = Join-Path (Split-Path $VenvPython) "uv.exe"
     Write-Host "::step::Installing Python dependencies"
     & $uvExe pip install --python $VenvPython @Packages @ExtraArgs
     Write-Host "::done::pip install"
+}
+
+function Install-PipDeps {
+    param(
+        [string]$VenvDir = "",
+        [string]$Python = "",
+        [string[]]$Packages = @(),
+        [string[]]$ExtraArgs = @()
+    )
+    Invoke-WithConsent -Description "Create/populate a virtual environment and install Python dependencies" -Action {
+        _Install-PipDeps -VenvDir $VenvDir -Python $Python -Packages $Packages -ExtraArgs $ExtraArgs
+    }
 }

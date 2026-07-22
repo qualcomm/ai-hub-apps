@@ -18,21 +18,32 @@ _APT_UTILS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$_APT_UTILS_DIR/load_versions.sh"
 # shellcheck disable=SC1091
 source "$_APT_UTILS_DIR/sudo.sh"
+# shellcheck disable=SC1091
+source "$_APT_UTILS_DIR/interactive.sh"
+# shellcheck disable=SC1091
+source "$_APT_UTILS_DIR/retry.sh"
 
-install_apt_pkg() {
+_install_apt_pkg() {
     local pkg="$1"; shift
     if dpkg-query -W -f='${Status}' "$pkg" 2>/dev/null | grep -q 'install ok installed'; then
         echo "::skip::${pkg}"
     else
         echo "::step::Installing ${pkg}"
-        # shellcheck disable=SC2086
-        $SUDO apt-get install -y "$pkg" "$@"
+        with_retry "apt-get install ${pkg}" -- $SUDO apt-get install -y "$pkg" "$@"
         echo "::done::${pkg}"
     fi
 }
 
-install_apt_pkgs() {
+install_apt_pkg() {
+    require_consent "Install apt package '$1' (uses sudo)" -- _install_apt_pkg "$@"
+}
+
+_install_apt_pkgs() {
     for pkg in "$@"; do
-        install_apt_pkg "$pkg"
+        _install_apt_pkg "$pkg"
     done
+}
+
+install_apt_pkgs() {
+    require_consent "Install apt packages: $* (uses sudo)" -- _install_apt_pkgs "$@"
 }

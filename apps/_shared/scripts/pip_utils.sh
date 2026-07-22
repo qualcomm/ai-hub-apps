@@ -18,8 +18,10 @@
 _PIP_UTILS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck disable=SC1091
 source "$_PIP_UTILS_DIR/load_versions.sh"
+# shellcheck disable=SC1091
+source "$_PIP_UTILS_DIR/interactive.sh"
 
-install_pip_deps() {
+_install_pip_deps() {
     local venv_dir="${PWD}/.venv"
     local python_exe=""
     local -a install_args=()
@@ -45,12 +47,17 @@ install_pip_deps() {
     if [ ! -x "$venv_dir/bin/python" ]; then
         echo "::step::Creating virtual environment at $venv_dir"
         "$python_bin" -m venv "$venv_dir"
-        echo "::step::Installing uv"
-        "$venv_dir/bin/python" -m pip install --quiet uv
         echo "::done::virtual environment"
     fi
+    echo "::step::Installing uv"
+    "$venv_dir/bin/python" -m pip install --quiet uv
 
     echo "::step::Installing Python dependencies"
     "$venv_dir/bin/uv" pip install --python "$venv_dir/bin/python" "${install_args[@]}" "${extra_args[@]}" --system-certs
     echo "::done::pip install"
+}
+
+install_pip_deps() {
+    require_consent "Create/populate a virtual environment and install Python dependencies" \
+        -- _install_pip_deps "$@"
 }

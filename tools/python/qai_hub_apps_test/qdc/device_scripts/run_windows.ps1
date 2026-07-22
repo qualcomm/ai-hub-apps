@@ -52,6 +52,7 @@ if ($UseDocker) {
     # Write the actual install + test logic to a temp file that runs as hcktest.
     @"
 `$ErrorActionPreference = 'Stop'
+`$env:NON_INTERACTIVE = 'true'
 Start-Transcript -Path "$UserLog" -Append
 Set-Location "$AppDir"
 if (Test-Path "install_runtime.ps1") {

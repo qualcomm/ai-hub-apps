@@ -43,7 +43,7 @@ if [ "$USE_DOCKER" = "true" ]; then
 else
     if [ -f "install_runtime.sh" ]; then
         echo "Running install_runtime.sh ..."
-        bash install_runtime.sh
+        NON_INTERACTIVE=true bash install_runtime.sh
     fi
     echo "Running app command ..."
     <<RUN_COMMAND>>

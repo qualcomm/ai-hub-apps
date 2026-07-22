@@ -14,6 +14,8 @@
 # ---------------------------------------------------------------------
 $_WingetUtilsDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 . "$_WingetUtilsDir\load_versions.ps1"
+. "$_WingetUtilsDir\interactive.ps1"
+. "$_WingetUtilsDir\retry.ps1"
 
 # add winget to PATH if installed but not yet on PATH
 if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
@@ -21,7 +23,7 @@ if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
     exit 1
 }
 
-function Install-WingetPackage {
+function _Install-WingetPackage {
     param(
         [string]$Id,
         [string[]]$ExtraArgs = @()
@@ -31,8 +33,20 @@ function Install-WingetPackage {
         Write-Host "::skip::$Id"
     } else {
         Write-Host "::step::Installing $Id"
-        winget install --id $Id --exact --silent --accept-package-agreements --accept-source-agreements @ExtraArgs
+        Invoke-WithRetry -Description "winget install $Id" -Action {
+            winget install --id $Id --exact --silent --accept-package-agreements --accept-source-agreements @ExtraArgs
+        }
         Write-Host "::done::$Id"
+    }
+}
+
+function Install-WingetPackage {
+    param(
+        [string]$Id,
+        [string[]]$ExtraArgs = @()
+    )
+    Invoke-WithConsent -Description "Install winget package '$Id'" -Action {
+        _Install-WingetPackage -Id $Id -ExtraArgs $ExtraArgs
     }
 }
 
@@ -40,7 +54,9 @@ function Install-WingetPackages {
     param(
         [string[]]$Ids
     )
-    foreach ($id in $Ids) {
-        Install-WingetPackage -Id $id
+    Invoke-WithConsent -Description "Install winget packages: $($Ids -join ' ')" -Action {
+        foreach ($id in $Ids) {
+            _Install-WingetPackage -Id $id
+        }
     }
 }

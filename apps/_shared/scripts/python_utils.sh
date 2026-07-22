@@ -22,14 +22,18 @@ _PYTHON_UTILS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$_PYTHON_UTILS_DIR/load_versions.sh"
 # shellcheck disable=SC1091
 source "$_PYTHON_UTILS_DIR/apt_utils.sh"
+# shellcheck disable=SC1091
+source "$_PYTHON_UTILS_DIR/interactive.sh"
+# shellcheck disable=SC1091
+source "$_PYTHON_UTILS_DIR/retry.sh"
 
-install_python() {
+_install_python() {
     local ver="${PYTHON_VERSION}"
 
     echo "::step::Adding deadsnakes PPA for python${ver}"
     install_apt_pkg software-properties-common
-    $SUDO add-apt-repository -y ppa:deadsnakes/ppa
-    $SUDO apt-get update -q
+    with_retry "add-apt-repository deadsnakes" -- $SUDO add-apt-repository -y ppa:deadsnakes/ppa
+    with_retry "apt-get update" -- $SUDO apt-get update -q
     echo "::done::deadsnakes PPA"
 
     install_apt_pkg "python${ver}"
@@ -40,4 +44,9 @@ install_python() {
     echo "::step::Bootstrapping uv for python${ver}"
     "python${ver}" -m pip install --quiet uv
     echo "::done::uv"
+}
+
+install_python() {
+    require_consent "Install Python ${PYTHON_VERSION} and dependencies via apt (uses sudo)" \
+        -- _install_python "$@"
 }

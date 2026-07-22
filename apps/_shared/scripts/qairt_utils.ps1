@@ -14,19 +14,16 @@
 # ---------------------------------------------------------------------
 $_QairtUtilsDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 . "$_QairtUtilsDir\load_versions.ps1"
+. "$_QairtUtilsDir\interactive.ps1"
+. "$_QairtUtilsDir\retry.ps1"
 
 $QAIRT_ROOT = "C:\Qualcomm\AIStack\QAIRT"
 $QAIRT_PATH = "$QAIRT_ROOT\$QAIRT_SDK_FULL_VERSION"
 $env:QAIRT_ROOT = $QAIRT_ROOT
 $env:QAIRT_PATH = $QAIRT_PATH
 
-function Install-Qairt {
+function _Install-Qairt {
     param([switch]$Force)
-
-    if ($env:QAIRT_INSTALL_SKIP -eq "true") {
-        Write-Host "::skip::QAIRT SDK install deferred (QAIRT_INSTALL_SKIP=true)"
-        return
-    }
 
     if ((Test-Path $QAIRT_PATH) -and (Get-ChildItem $QAIRT_PATH -Force | Select-Object -First 1) -and -not $Force) {
         Write-Host "::skip::QAIRT SDK already installed at $QAIRT_PATH"
@@ -38,9 +35,8 @@ function Install-Qairt {
 
     Write-Host "::step::Downloading QAIRT SDK $QAIRT_SDK_FULL_VERSION"
     Write-Host "   URL: $url"
-    curl.exe -fL -o $tmpZip $url
-    if ($LASTEXITCODE -ne 0) {
-        throw "QAIRT SDK download failed (curl exit $LASTEXITCODE): $url"
+    Invoke-WithRetry -Description "Download QAIRT SDK $QAIRT_SDK_FULL_VERSION" -Action {
+        curl.exe -fL -o $tmpZip $url
     }
     Write-Host "::done::download"
 
@@ -59,4 +55,17 @@ function Install-Qairt {
     Move-Item $extracted $QAIRT_PATH
     Remove-Item -Recurse -Force $tmpDir
     Write-Host "::done::QAIRT SDK installed at $QAIRT_PATH"
+}
+
+function Install-Qairt {
+    param([switch]$Force)
+
+    if ($env:QAIRT_INSTALL_SKIP -eq "true") {
+        Write-Host "::skip::QAIRT SDK install deferred (QAIRT_INSTALL_SKIP=true)"
+        return
+    }
+
+    Invoke-WithConsent -Description "Download & install QAIRT SDK $QAIRT_SDK_FULL_VERSION to $QAIRT_PATH" -Action {
+        _Install-Qairt -Force:$Force
+    }
 }

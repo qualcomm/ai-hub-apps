@@ -18,8 +18,9 @@
 $_PythonUtilsDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 . "$_PythonUtilsDir\load_versions.ps1"
 . "$_PythonUtilsDir\winget_utils.ps1"
+. "$_PythonUtilsDir\interactive.ps1"
 
-function Install-Python {
+function _Install-Python {
     $ver = $PYTHON_VERSION
     $majorMinor = ($ver -split "\.")[ 0..1] -join "."
     Install-WingetPackage -Id "Python.Python.$majorMinor" -ExtraArgs @("--source", "winget")
@@ -27,4 +28,10 @@ function Install-Python {
     Write-Host "::step::Bootstrapping uv"
     py -$majorMinor -m pip install --quiet uv
     Write-Host "::done::uv"
+}
+
+function Install-Python {
+    Invoke-WithConsent -Description "Install Python $PYTHON_VERSION via winget" -Action {
+        _Install-Python
+    }
 }

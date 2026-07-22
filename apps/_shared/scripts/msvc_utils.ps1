@@ -14,8 +14,9 @@
 # ---------------------------------------------------------------------
 $_MsvcUtilsDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 . "$_MsvcUtilsDir\winget_utils.ps1"
+. "$_MsvcUtilsDir\interactive.ps1"
 
-function Install-MSVC {
+function _Install-MSVC {
     Install-WingetPackage -Id "Microsoft.VisualStudio.2022.BuildTools" -ExtraArgs @(
         "--source", "winget",
         "--override",
@@ -33,4 +34,10 @@ function Install-MSVC {
     }
     $env:MSBUILD_EXE = $msbuild
     Write-Host "::done::MSBuild at $env:MSBUILD_EXE"
+}
+
+function Install-MSVC {
+    Invoke-WithConsent -Description "Install Visual Studio 2022 Build Tools (C++ ARM64 toolchain) via winget" -Action {
+        _Install-MSVC
+    }
 }
