@@ -15,17 +15,15 @@ Supports both onnxruntime-qnn release lines:
 
 Either way, the QNN backend libraries are bundled with the installed package, so
 no external QAIRT SDK install is required. This mirrors how ``qai_hub_models``
-creates its sessions for the whisper / stable_diffusion apps -- no DLL search
-path or ``ADSP_LIBRARY_PATH`` is set, and the backend is never pointed at a
-separately installed QAIRT (which would risk a version mismatch against the
-bundled runtime).
+creates its sessions -- no DLL search path or ``ADSP_LIBRARY_PATH`` is set,
+and the backend is never pointed at a separately installed QAIRT (which would risk
+a version mismatch against the bundled runtime).
 
-Precompiled ``*.onnx`` exports (``runtime: precompiled_qnn_onnx`` apps, this one
-included) embed a QAIRT/QNN version at export time via their EPContext wrapper.
-The installed onnxruntime-qnn's bundled QNN backend must be at least that
-version to load them -- an older bundled backend fails with
+Precompiled ``*.onnx`` exports (``runtime: precompiled_qnn_onnx``) apps embed a QAIRT/QNN
+version at export time via their EPContext wrapper. The installed onnxruntime-qnn's bundled
+ QNN backend must be at least that version to load them -- an older bundled backend fails with
 ``LoadCachedQnnContextFromBuffer`` error 5000/1000. Keep this package pinned to
-a recent release if new exports start failing to load.
+a recent release if new exports start failing to load or pin qaihm_version for the app.
 """
 
 from __future__ import annotations

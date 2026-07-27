@@ -144,8 +144,7 @@ jobs:
               repo: 'tetracode',
               title: `QAI Hub Apps Nightly Failed - ${today}`,
               body: issueBody,
-              labels: ['p0', 'ai-hub-apps'],
-              assignees: ['manupill_QCOM']
+              labels: ['p0', 'ai-hub-apps']
             });
             console.log(`Created consolidated issue: ${result.data.html_url}`);
             // Set output for Slack notification
