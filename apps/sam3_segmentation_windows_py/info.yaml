@@ -3,7 +3,7 @@ id: sam3_segmentation_windows_py
 license_url: https://github.com/qualcomm/ai-hub-apps/blob/main/LICENSE
 license_type: bsd-3-clause
 runtime: precompiled_qnn_onnx
-status: unpublished
+status: published
 domain: 'Computer Vision'
 headline: 'Text-prompted on-device segmentation with SAM3'
 description: "Demonstrates on-device text-prompted instance segmentation with SAM3 (Segment Anything Model 3) via ONNX Runtime and the QNN Execution Provider on the Snapdragon NPU. Enter a text prompt (e.g. 'cup') and the app draws a colored mask overlay over the detected object."

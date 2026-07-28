@@ -206,6 +206,30 @@ apps:
   - Dragonwing IQ-9075 EVK
   model_file_paths:
   - models/posenet_mobilenet.tflite
+- name: SAM3 Segmentation Windows
+  id: sam3_segmentation_windows_py
+  status: published
+  headline: Text-prompted on-device segmentation with SAM3
+  description: Demonstrates on-device text-prompted instance segmentation with SAM3 (Segment Anything Model 3) via ONNX Runtime and the QNN Execution Provider on the Snapdragon NPU. Enter a text prompt (e.g. 'cup') and the app draws a colored mask overlay over the detected object.
+  domain: Computer Vision
+  use_case: Semantic Segmentation
+  app_repo_url: https://github.com/qualcomm/ai-hub-apps/tree/main/apps/sam3_segmentation_windows_py
+  app_type: windows
+  runtime:
+  - precompiled_qnn_onnx
+  related_models:
+  - sam3
+  precisions:
+  - float
+  languages:
+  - Python
+  supported_devices:
+  - Snapdragon X Elite CRD
+  - Snapdragon X2 Elite CRD
+  model_file_paths:
+  - models/vision_backbone.onnx
+  - models/head.onnx
+  qaihm_version: 0.58.0
 - name: Semantic Segmentation Android
   id: semantic_segmentation_android
   status: published
@@ -320,3 +344,24 @@ apps:
   - models/encoder.onnx
   - models/decoder.onnx
   qaihm_version: 0.53.1
+- name: YamNet Audio Classification
+  id: yamnet_ubuntu_py
+  status: published
+  headline: On-device audio event classification with TFLite
+  description: A sample app for Ubuntu integrating the YamNet audio classification model via TFLite Runtime. It reads an audio file, computes log-mel features on-device, and prints the top predicted AudioSet sound classes.
+  domain: Audio
+  use_case: Audio Classification
+  app_repo_url: https://github.com/qualcomm/ai-hub-apps/tree/main/apps/yamnet_ubuntu_py
+  app_type: ubuntu
+  runtime:
+  - tflite
+  related_models:
+  - yamnet
+  precisions:
+  - w8a8
+  languages:
+  - Python
+  supported_devices:
+  - Dragonwing IQ-9075 EVK
+  model_file_paths:
+  - models/yamnet.tflite
