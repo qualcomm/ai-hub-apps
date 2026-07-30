@@ -12,17 +12,33 @@ if (-not (Test-Path $Exe)) {
 }
 
 $Model = "$ScriptDir\assets\models\detection.onnx"
+$Labels = "$ScriptDir\assets\models\labels.txt"
 $Image = "$ScriptDir\assets\images\kitchen.jpg"
 if (-not (Test-Path $Model)) {
     Write-Error "Model not found at $Model. Fetch the model first."
     exit 1
 }
+if (-not (Test-Path $Labels)) {
+    Write-Error "Labels not found at $Labels. Fetch the model first."
+    exit 1
+}
 
 $OutImage = "$env:TEMP\detection_output.jpg"
 Write-Host "Running ObjectDetection on $Image"
-& $Exe --model $Model --image $Image --output_image $OutImage
+$output = & $Exe --model $Model --labels $Labels --image $Image --output_image $OutImage | Out-String
+Write-Host $output
 if ($LASTEXITCODE -ne 0) {
     Write-Error "ObjectDetection exited with code $LASTEXITCODE."
+    exit 1
+}
+
+# The app prints "Number of objects: <n>" after NMS. Require at least one detection.
+if ($output -notmatch "Number of objects:\s*(\d+)") {
+    Write-Error "Could not find object count in output."
+    exit 1
+}
+if ([int]$Matches[1] -lt 1) {
+    Write-Error "No objects detected in $Image."
     exit 1
 }
 

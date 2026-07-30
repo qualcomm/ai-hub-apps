@@ -8,6 +8,7 @@
 #include <onnxruntime_session_options_config_keys.h>
 
 #include <filesystem>
+#include <fstream>
 #include <iostream>
 #include <sstream>
 #include <unordered_map>
@@ -24,35 +25,6 @@ constexpr float c_nms_threshold = 0.2f;
 namespace
 {
 
-const std::unordered_map<uint32_t, std::string> c_class_labels = {
-    {0, "person"},        {1, "bicycle"},    {2, "car"},        {3, "motorcycle"}, {4, "airplane"},  {5, "bus"},
-    {6, "train"},         {7, "truck"},      {8, "boat"},       {9, "traffic"},    {10, "fire"},     {11, "stop"},
-    {12, "parking"},      {13, "bench"},     {14, "bird"},      {15, "cat"},       {16, "dog"},      {17, "horse"},
-    {18, "sheep"},        {19, "cow"},       {20, "elephant"},  {21, "bear"},      {22, "zebra"},    {23, "giraffe"},
-    {24, "backpack"},     {25, "umbrella"},  {26, "handbag"},   {27, "tie"},       {28, "suitcase"}, {29, "frisbee"},
-    {30, "skis"},         {31, "snowboard"}, {32, "sports"},    {33, "kite"},      {34, "baseball"}, {35, "baseball"},
-    {36, "skateboard"},   {37, "surfboard"}, {38, "tennis"},    {39, "bottle"},    {40, "wine"},     {41, "cup"},
-    {42, "fork"},         {43, "knife"},     {44, "spoon"},     {45, "bowl"},      {46, "banana"},   {47, "apple"},
-    {48, "sandwich"},     {49, "orange"},    {50, "broccoli"},  {51, "carrot"},    {52, "hot"},      {53, "pizza"},
-    {54, "donut"},        {55, "cake"},      {56, "chair"},     {57, "couch"},     {58, "potted"},   {59, "bed"},
-    {60, "dining"},       {61, "toilet"},    {62, "tv"},        {63, "laptop"},    {64, "mouse"},    {65, "remote"},
-    {66, "keyboard"},     {67, "cell"},      {68, "microwave"}, {69, "oven"},      {70, "toaster"},  {71, "sink"},
-    {72, "refrigerator"}, {73, "book"},      {74, "clock"},     {75, "vase"},      {76, "scissors"}, {77, "teddy"},
-    {78, "hair"},         {79, "toothbrush"}};
-
-std::string GetClassLabel(uint32_t class_index)
-{
-    auto label = c_class_labels.find(class_index);
-    if (label != c_class_labels.end())
-    {
-        return label->second;
-    }
-
-    std::ostringstream err_msg;
-    err_msg << class_index << " not found in Class Index.";
-    throw std::runtime_error(err_msg.str());
-}
-
 std::string GetBackendDllFromOption(BackendOption backend_opt)
 {
     // Convert backend_opt into respective dll to use
@@ -68,11 +40,56 @@ std::string GetBackendDllFromOption(BackendOption backend_opt)
 }
 } // namespace
 
-ObjectDetectionApp::ObjectDetectionApp(std::string model_path, uint32_t model_input_ht, uint32_t model_input_wt)
-    : m_model_path(std::move(model_path))
-    , m_model_input_ht(model_input_ht)
+ObjectDetectionApp::ObjectDetectionApp(std::string model_path,
+                                       std::string labels_path,
+                                       uint32_t model_input_ht,
+                                       uint32_t model_input_wt)
+    : m_model_input_ht(model_input_ht)
     , m_model_input_wt(model_input_wt)
+    , m_model_path(std::move(model_path))
+    , m_labels_path(std::move(labels_path))
 {
+}
+
+void ObjectDetectionApp::LoadLabels()
+{
+    if (!std::filesystem::exists(m_labels_path))
+    {
+        std::ostringstream err_msg;
+        err_msg << "Labels file not found at " << m_labels_path << "\n";
+        err_msg << "The labels file (labels.txt) ships alongside the model in the AI Hub asset "
+                   "bundle. Place it next to the model or pass its path with --labels.";
+        throw std::runtime_error(err_msg.str());
+    }
+
+    std::ifstream labels_file(m_labels_path);
+    std::string line;
+    while (std::getline(labels_file, line))
+    {
+        // Strip a trailing carriage return so CRLF files parse correctly.
+        if (!line.empty() && line.back() == '\r')
+        {
+            line.pop_back();
+        }
+        m_labels.push_back(line);
+    }
+
+    if (m_labels.empty())
+    {
+        throw std::runtime_error("Labels file is empty: " + m_labels_path);
+    }
+}
+
+std::string ObjectDetectionApp::GetClassLabel(uint32_t class_index) const
+{
+    if (class_index < m_labels.size())
+    {
+        return m_labels[class_index];
+    }
+
+    std::ostringstream err_msg;
+    err_msg << "Class index " << class_index << " is out of range for " << m_labels.size() << " labels.";
+    throw std::runtime_error(err_msg.str());
 }
 
 void ObjectDetectionApp::PrepareModelForInference(const App::BackendOption backend,
@@ -108,6 +125,9 @@ void ObjectDetectionApp::PrepareModelForInference(const App::BackendOption backe
     }
     std::wstring model_path_wstr = std::wstring(m_model_path.begin(), m_model_path.end());
     m_session = std::make_unique<Ort::Session>(m_env, model_path_wstr.c_str(), session_options);
+
+    // Load class labels that ship alongside the model.
+    LoadLabels();
 }
 
 void ObjectDetectionApp::ClearInputsAndOutputs()

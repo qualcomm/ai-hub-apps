@@ -45,6 +45,12 @@ public class ObjectDetection implements AutoCloseable {
     private final int[] outputBoxesShape;
     private final int[] outputScoresShape;
     private final int[] outputClassIdxShape;
+    private final DataType inputType;
+    private final DataType outputBoxesType;
+    private final DataType outputScoresType;
+    private final Tensor.QuantizationParams inputQuantParams;
+    private final Tensor.QuantizationParams outputBoxesQuantParams;
+    private final Tensor.QuantizationParams outputScoresQuantParams;
     private final boolean outputClassIs32bit;
     private final int numBoxes;
     private long preprocessingTime;
@@ -102,30 +108,34 @@ public class ObjectDetection implements AutoCloseable {
 
         Tensor inputTensor = tfLiteInterpreter.getInputTensor(0);
         inputShape = inputTensor.shape();
-        DataType inputType = inputTensor.dataType();
+        inputType = inputTensor.dataType();
         assert inputShape.length
                 == 4; // 4D Input Tensor: [Batch, Input Height, Input Width, Color Channels]
         assert inputShape[0] == batchSize;
         assert inputShape[3] == 3; // Input tensor should have 3 channels
-        assert inputType == DataType.FLOAT32; // Requires an unquantized YOLO variant
+        assert inputType == DataType.FLOAT32
+                || inputType == DataType.UINT8; // FP32 and UINT8 (quantized) input supported
 
         assert tfLiteInterpreter.getOutputTensorCount() == 3;
 
         Tensor outputBoxesTensor = tfLiteInterpreter.getOutputTensor(0);
         outputBoxesShape = outputBoxesTensor.shape();
-        DataType outputBoxesType = outputBoxesTensor.dataType();
+        outputBoxesType = outputBoxesTensor.dataType();
         assert outputBoxesShape.length == 3; // 3D Output Tensor: [Batch, Boxes, 4]
         assert outputBoxesShape[0] == batchSize;
         assert outputBoxesShape[2] == 4;
         numBoxes = outputBoxesShape[1];
-        assert outputBoxesType == DataType.FLOAT32; // Requires an unquantized YOLO variant
+        assert outputBoxesType == DataType.FLOAT32
+                || outputBoxesType == DataType.UINT8; // FP32 and UINT8 (quantized) output supported
 
         Tensor outputScoresTensor = tfLiteInterpreter.getOutputTensor(1);
         outputScoresShape = outputScoresTensor.shape();
-        DataType outputScoresType = outputScoresTensor.dataType();
+        outputScoresType = outputScoresTensor.dataType();
         assert outputScoresShape.length == 2; // 2D Output Tensor: [Batch, Scores]
         assert outputScoresShape[0] == batchSize;
-        assert outputScoresType == DataType.FLOAT32;
+        assert outputScoresType == DataType.FLOAT32
+                || outputScoresType
+                        == DataType.UINT8; // FP32 and UINT8 (quantized) output supported
 
         Tensor outputClassIdxTensor = tfLiteInterpreter.getOutputTensor(2);
         outputClassIdxShape = outputClassIdxTensor.shape();
@@ -139,11 +149,19 @@ public class ObjectDetection implements AutoCloseable {
         assert numBoxes == outputScoresShape[1];
         assert numBoxes == outputClassIdxShape[1];
 
+        // Quantization params (scale + zero point); identity for float tensors.
+        inputQuantParams = inputTensor.quantizationParams();
+        outputBoxesQuantParams = outputBoxesTensor.quantizationParams();
+        outputScoresQuantParams = outputScoresTensor.quantizationParams();
+
         int inputHeight = inputShape[1];
         int inputWidth = inputShape[2];
 
-        // Allocate re-usable memory
-        inputByteBuffer = ByteBuffer.allocateDirect(inputHeight * inputWidth * 3 * 4);
+        // Allocate re-usable memory. Quantized models take 1 byte per element (uint8),
+        // float models take 4 bytes.
+        int inputBytesPerElement = inputType == DataType.FLOAT32 ? 4 : 1;
+        inputByteBuffer =
+                ByteBuffer.allocateDirect(inputHeight * inputWidth * 3 * inputBytesPerElement);
         inputByteBuffer.order(ByteOrder.nativeOrder());
 
         inputFloatArray = new float[inputHeight * inputWidth * 3];
@@ -194,6 +212,35 @@ public class ObjectDetection implements AutoCloseable {
      */
     public long getLastPostprocessingTime() {
         return postprocessingTime;
+    }
+
+    /**
+     * Read an output tensor as a float array, dequantizing when the tensor is uint8.
+     *
+     * @param outputIndex Index of the output tensor to read.
+     * @param type Data type of the output tensor.
+     * @param quantParams Quantization params of the output tensor (used when uint8).
+     * @return The output values as float. For uint8 tensors, dequantized as scale * (q -
+     *     zeroPoint).
+     */
+    private float[] readFloatOutput(
+            int outputIndex, DataType type, Tensor.QuantizationParams quantParams) {
+        ByteBuffer outputBuffer = tfLiteInterpreter.getOutputTensor(outputIndex).asReadOnlyBuffer();
+        if (type == DataType.FLOAT32) {
+            FloatBuffer floatBuf = outputBuffer.asFloatBuffer();
+            float[] out = new float[floatBuf.remaining()];
+            floatBuf.get(out);
+            return out;
+        }
+        // Quantized uint8: dequantize as scale * (q - zeroPoint).
+        float scale = quantParams.getScale();
+        int zeroPoint = quantParams.getZeroPoint();
+        float[] out = new float[outputBuffer.remaining()];
+        for (int i = 0; i < out.length; ++i) {
+            int q = outputBuffer.get(i) & 0xFF; // unsigned
+            out[i] = scale * (q - zeroPoint);
+        }
+        return out;
     }
 
     /**
@@ -262,8 +309,22 @@ public class ObjectDetection implements AutoCloseable {
         // To minimize IO overhead, we create a direct-allocated buffer in native order.
 
         scaledImage.get(0, 0, inputFloatArray);
-        FloatBuffer inputFloatBuffer = inputByteBuffer.asFloatBuffer();
-        inputFloatBuffer.put(inputFloatArray);
+        inputByteBuffer.rewind();
+        if (inputType == DataType.FLOAT32) {
+            FloatBuffer inputFloatBuffer = inputByteBuffer.asFloatBuffer();
+            inputFloatBuffer.put(inputFloatArray);
+        } else {
+            // Quantize normalized [0, 1] values to uint8: q = round(v / scale) + zeroPoint.
+            float scale = inputQuantParams.getScale();
+            int zeroPoint = inputQuantParams.getZeroPoint();
+            for (float v : inputFloatArray) {
+                int q = Math.round(v / scale) + zeroPoint;
+                q = Math.max(0, Math.min(255, q));
+                inputByteBuffer.put((byte) q);
+            }
+            // put() advanced the position; rewind so the interpreter reads from the start.
+            inputByteBuffer.rewind();
+        }
 
         long inferenceStartTime = System.nanoTime();
         preprocessingTime = inferenceStartTime - preStartTime;
@@ -279,16 +340,9 @@ public class ObjectDetection implements AutoCloseable {
         long postStartTime = System.nanoTime();
         inferenceTime = postStartTime - inferenceStartTime;
 
-        // Extract outputs
-        ByteBuffer outputBoxesBuffer = tfLiteInterpreter.getOutputTensor(0).asReadOnlyBuffer();
-        FloatBuffer floatBoxesBuf = outputBoxesBuffer.asFloatBuffer();
-        float[] bboxes = new float[floatBoxesBuf.remaining()];
-        floatBoxesBuf.get(bboxes);
-
-        ByteBuffer outputScoresBuffer = tfLiteInterpreter.getOutputTensor(1).asReadOnlyBuffer();
-        FloatBuffer floatScoresBuf = outputScoresBuffer.asFloatBuffer();
-        float[] scores = new float[floatScoresBuf.remaining()];
-        floatScoresBuf.get(scores);
+        // Extract outputs, dequantizing to float when the model output is uint8.
+        float[] bboxes = readFloatOutput(0, outputBoxesType, outputBoxesQuantParams);
+        float[] scores = readFloatOutput(1, outputScoresType, outputScoresQuantParams);
 
         ByteBuffer outputClassIdxBuffer = tfLiteInterpreter.getOutputTensor(2).asReadOnlyBuffer();
         byte[] classIdxByte = new byte[outputClassIdxBuffer.remaining()];

@@ -2,7 +2,6 @@
 // Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 // ---------------------------------------------------------------------
-#include <filesystem>
 #include <iostream>
 #include <sstream>
 #include <unordered_map>
@@ -24,6 +23,7 @@ constexpr const char* c_option_qnn_options = "--qnn_options";
 constexpr const char* c_option_precision = "--precision";
 constexpr const char* c_option_image_path = "--image";
 constexpr const char* c_option_model_path = "--model";
+constexpr const char* c_option_labels_path = "--labels";
 constexpr const char* c_option_input_image_height = "--model_input_ht";
 constexpr const char* c_option_input_image_width = "--model_input_wt";
 
@@ -94,6 +94,9 @@ void PrintHelp()
     std::cout << c_option_image_path
               << " <local_path>: [Required] Path to local input "
                  "image to run object detection on.\n";
+    std::cout << c_option_labels_path
+              << " <local_path>: [Required] Path to the class labels file "
+                 "(one label per line, ordered by class index).\n";
     std::cout << "\nOptional options:\n\n";
     std::cout << "--backend <backend>: Default = npu. Set backend for inference. "
                  "Available options: cpu, npu.\n";
@@ -128,6 +131,7 @@ int main(int argc, char* argv[])
     App::Precision precision = App::Precision::Fp16;
     std::string backend;
     std::string model_path;
+    std::string labels_path;
     std::string image_path;
     uint32_t input_image_height = c_default_image_height;
     uint32_t input_image_width = c_default_image_width;
@@ -158,6 +162,10 @@ int main(int argc, char* argv[])
         else if (strcmp(argv[i], c_option_model_path) == 0)
         {
             model_path = argv[++i];
+        }
+        else if (strcmp(argv[i], c_option_labels_path) == 0)
+        {
+            labels_path = argv[++i];
         }
         else if (strcmp(argv[i], c_option_image_path) == 0)
         {
@@ -192,17 +200,18 @@ int main(int argc, char* argv[])
         }
     }
 
-    // model_path and image_path must be provided
-    if (model_path.empty() || image_path.empty())
+    // model_path, labels_path and image_path must be provided
+    if (model_path.empty() || labels_path.empty() || image_path.empty())
     {
-        std::cout << c_option_model_path << " and " << c_option_image_path << " must be provided.\n";
+        std::cout << c_option_model_path << ", " << c_option_labels_path << " and " << c_option_image_path
+                  << " must be provided.\n";
         PrintHelp();
         return 1;
     }
 
     try
     {
-        App::ObjectDetectionApp app(model_path, input_image_height, input_image_width);
+        App::ObjectDetectionApp app(model_path, labels_path, input_image_height, input_image_width);
 
         // Prepare model
         app.PrepareModelForInference(backend_opt, precision, qnn_options);

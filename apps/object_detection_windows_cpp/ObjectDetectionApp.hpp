@@ -40,6 +40,10 @@ class ObjectDetectionApp
     // model metadata
     uint32_t m_model_input_ht, m_model_input_wt;
     std::string m_model_path;
+    std::string m_labels_path;
+
+    // Class labels loaded from labels_path, ordered by class index.
+    std::vector<std::string> m_labels;
 
     Ort::Env m_env;
     std::unique_ptr<Ort::Session> m_session;
@@ -47,8 +51,27 @@ class ObjectDetectionApp
 
     void ClearInputsAndOutputs();
 
+    /**
+     * LoadLabels: Load class labels from m_labels_path (one label per line,
+     * ordered by class index).
+     *
+     * @throws if the labels file can't be opened or is empty.
+     */
+    void LoadLabels();
+
+    /**
+     * GetClassLabel: Return the label for a class index.
+     *
+     * @param class_index model-predicted class index.
+     * @throws if class_index is out of range for the loaded labels.
+     */
+    std::string GetClassLabel(uint32_t class_index) const;
+
   public:
-    ObjectDetectionApp(std::string model_path, uint32_t model_input_ht, uint32_t model_input_wt);
+    ObjectDetectionApp(std::string model_path,
+                       std::string labels_path,
+                       uint32_t model_input_ht,
+                       uint32_t model_input_wt);
     ObjectDetectionApp() = delete;
     ObjectDetectionApp(const ObjectDetectionApp&) = delete;
     ObjectDetectionApp(ObjectDetectionApp&&) = delete;

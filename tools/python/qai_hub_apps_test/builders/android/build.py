@@ -9,7 +9,13 @@ from __future__ import annotations
 import subprocess
 from pathlib import Path
 
+from tap import Tap
 from tenacity import retry, stop_after_attempt, wait_fixed
+
+
+class AndroidBuilderParser(Tap):
+    app_dir: Path
+    use_docker: bool = True
 
 
 @retry(reraise=True, wait=wait_fixed(30), stop=stop_after_attempt(2))
@@ -102,3 +108,8 @@ def build_app(app_dir: Path, use_docker: bool = True) -> None:
         _build_docker(app_dir)
     else:
         _build_native(app_dir)
+
+
+if __name__ == "__main__":
+    args = AndroidBuilderParser().parse_args()
+    build_app(args.app_dir, args.use_docker)

@@ -2,22 +2,31 @@ name: Object Detection Windows
 id: object_detection_windows_cpp
 license_url: https://github.com/qualcomm/ai-hub-apps/blob/main/LICENSE
 license_type: bsd-3-clause
-models: ['yolox']
 model_file_paths:
   - 'assets/models/detection.onnx'
 runtime: onnx
-status: published_website_only
+status: unpublished
 domain: 'Computer Vision'
 headline: 'Accelerated object detection with YOLO-X'
 description: 'A sample CLI app for Windows that runs YOLO-X via ONNX Runtime leveraging the QNN execution provider to perform efficient object detection.'
 precisions: [float]
 app_type: 'windows'
-skip_test: model cannot be downloaded directly without exporting; needs qai-hub-models CLI support https://github.com/qcom-ai-hub/tetracode/issues/19766
+base_docker: windows.dockerfile
 static_img_filename: 'app_screen.png'
-app_repo_url: "https://github.com/qualcomm/ai-hub-apps/tree/main/apps/object_detection_windows_cpp"
+app_repo_relative_path: 'object_detection_windows_cpp'
 os:
   name: Windows
   version: 11+
 languages: ['C++']
 use_case: Object Detection
-related_models: [yolox]
+related_models: [
+      'yolox',
+      'yolov10_det',
+      'yolov11_det',
+      'yolov3',
+      'yolov5',
+      'yolov6',
+      'yolov7',
+      'yolov8_det',
+]
+supported_devices: ["Snapdragon X Elite CRD",  "Snapdragon X2 Elite CRD"]

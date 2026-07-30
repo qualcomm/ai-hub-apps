@@ -9,7 +9,13 @@ from __future__ import annotations
 import subprocess
 from pathlib import Path
 
+from tap import Tap
 from tenacity import retry, stop_after_attempt, wait_fixed
+
+
+class WindowsBuilderParser(Tap):
+    app_dir: Path
+    use_docker: bool = False
 
 
 def _resolve_sln(app_dir: Path) -> str:
@@ -122,3 +128,8 @@ def build_cpp_app(app_dir: Path, use_docker: bool = True) -> None:
         _build_cpp_docker(app_dir, sln_name)
     else:
         _build_cpp_native(app_dir, sln_name)
+
+
+if __name__ == "__main__":
+    args = WindowsBuilderParser().parse_args()
+    build_cpp_app(args.app_dir, args.use_docker)

@@ -6,16 +6,88 @@ This sample app performs object detection on live camera input.
 
 The app aims to showcase an example of combining streaming camera, TFLite, and OpenCV.
 
-## Prerequisites
-1. Clone this repository **with [Git-LFS](https://git-lfs.com) enabled.**
-2. Download [Android Studio](https://developer.android.com/studio). **Version 2023.1.1 or newer** is required.
-3. [Enable USB debugging](https://developer.android.com/studio/debug/dev-options) on your Android device.
+## Requirements
 
-## Build the APK
-1. Download or export a [compatible model](#compatible-ai-hub-models) from [AI Hub Models](https://aihub.qualcomm.com/mobile/models).
-2. Copy the `.tflite` file to `src/main/assets/detector.tflite`
-3. Copy the labels file (see list below) to `src/main/assets/labels.txt`
-4. Open this folder in Android Studio, run gradle sync, and build the `OBjectDetection` target.
+- Android device with [USB debugging enabled](https://developer.android.com/studio/debug/dev-options) (Android 14+)
+- [Android Studio](https://developer.android.com/studio) **2023.1.1 or newer**
+
+## Setup
+
+### Option A: Using the CLI (Recommended)
+
+Install the CLI and fetch the app with the model:
+
+```bash
+pip install qai-hub-apps
+qai-hub-apps fetch object_detection_android --model yolox --output-dir ~
+cd ~/object_detection_android
+```
+
+This downloads the app source and places the model asset in the correct location automatically.
+
+> [!NOTE]
+> To use a model you exported yourself with [AI Hub Models](https://github.com/qualcomm/ai-hub-models),
+> pass the exported model path to `--model` in place of a model ID. The CLI places the exported
+> assets into the app automatically:
+>
+> ```bash
+> qai-hub-apps fetch object_detection_android --model <path/to/exported_model>
+> ```
+
+### Option B: Cloning the Repo
+
+If you cloned the release branch **with [Git-LFS](https://git-lfs.com) enabled**, the app directory is already self-contained — but **model weights are not included**. Download or export a [compatible model](#compatible-ai-hub-models) from [AI Hub Models](https://aihub.qualcomm.com/mobile/models), then copy the files into place before building:
+- Copy the `.tflite` file to `src/main/assets/detector.tflite`
+- Copy the labels file to `src/main/assets/labels.txt`
+
+## Build
+
+From the app directory (after either option above):
+
+### Option A: Using Android Studio
+To build APK using Android studio:
+- Open this folder in Android Studio
+- Run gradle sync
+- Build and run the `app` target
+    - Click on `Build` -> `Generate App Bundles or APKs` -> `Generate APKs`
+    - Click on `Run` -> `Run 'app'`
+
+The APKs will be at:
+- `build/outputs/apk/debug/app-debug.apk`
+- `build/outputs/apk/androidTest/debug/app-debug-androidTest.apk`
+
+### Option B: Using Docker
+
+> [!IMPORTANT]
+> **Building on an ARM host?**
+> The Android build tools (AAPT2, NDK clang) are x86_64-only binaries. To run them under emulation, register the QEMU x86_64 handler on the **host** before building (run once per boot):
+> ```bash
+> sudo apt-get update && sudo apt-get install -y qemu-user-static binfmt-support
+> sudo update-binfmts --enable qemu-x86_64
+> ```
+
+Build our Docker image with all required dependencies, including the supported Android and QAIRT SDKs.
+```bash
+docker build --build-arg BUILD_TYPE=build -t aiha-detection .
+```
+Build the APK:
+```bash
+docker run --name detection-container aiha-detection bash -c "source /app/scripts/android_utils.sh && cd /app && gradle assembleDebug assembleAndroidTest"
+
+mkdir ./build
+
+docker cp detection-container:/app/build/outputs ./build/outputs
+```
+
+#### Install & Run
+
+Connect your Android device via USB, then:
+
+```bash
+adb install build/outputs/apk/debug/app-debug.apk
+```
+
+Launch the app from your device's app drawer.
 
 ## Supported Hardware (TF Lite Delegates)
 
@@ -24,7 +96,7 @@ By default, this app supports the following hardware:
 * [GPU -- via GPUv2](https://github.com/tensorflow/tensorflow/tree/master/tensorflow/lite/delegates/gpu)
 * [CPU -- via XNNPack](https://github.com/tensorflow/tensorflow/blob/master/tensorflow/lite/delegates/xnnpack/README.md)
 
-Comments have been left in [TFLiteHelpers.java](src/main/java/com/qualcomm/tflite/TFLiteHelpers.java) and [AIHubDefaults.java](src/main/java/com/qualcomm/tflite/AIHubDefaults.java) to guide you on how to add support for additional TF Lite delegates that could target other hardware.
+Comments have been left in [TFLiteHelpers.java](src/main/java/com/quicinc/tflite/TFLiteHelpers.java) and [AIHubDefaults.java](src/main/java/com/quicinc/tflite/AIHubDefaults.java) to guide you on how to add support for additional TF Lite delegates that could target other hardware.
 
 ## AI Model Requirements
 
@@ -47,12 +119,8 @@ The app is developed to work best with a Width/Height ratio of 1.
 
 ## Compatible [AI Hub Models](https://aihub.qualcomm.com/mobile/models)
 
-The app is currently compatible with the TFLite `float` variant of these models:
+The app is currently compatible with the TFLite `w8a8` variant of these models:
 
-- 91-class COCO  ([coco_labels_91.txt](https://github.com/qualcomm/ai-hub-models/tree/main/src/qai_hub_models/labels/coco_labels_91.txt))
-  - [DETR-ResNet50](https://aihub.qualcomm.com/mobile/models/detr_resnet50)
-  - [DETR-ResNet101](https://aihub.qualcomm.com/mobile/models/detr_resnet101)
-- 80-class COCO ([coco_labels.txt](https://github.com/qualcomm/ai-hub-models/tree/main/src/qai_hub_models/labels/coco_labels.txt))
   - [Yolo-v3](https://aihub.qualcomm.com/mobile/models/yolov3)
   - [Yolo-v5](https://aihub.qualcomm.com/mobile/models/yolov5)
   - [Yolo-v6](https://aihub.qualcomm.com/mobile/models/yolov6)
@@ -61,6 +129,8 @@ The app is currently compatible with the TFLite `float` variant of these models:
   - [YOLOv10-Detection](https://aihub.qualcomm.com/mobile/models/yolov10_det)
   - [YOLOv11-Detection](https://aihub.qualcomm.com/mobile/models/yolov11_det)
   - [Yolo-X](https://aihub.qualcomm.com/mobile/models/yolox)
+  - [DETR-ResNet50](https://aihub.qualcomm.com/mobile/models/detr_resnet50)
+  - [DETR-ResNet101](https://aihub.qualcomm.com/mobile/models/detr_resnet101)
 
 ## Replicating an AI Hub Profile / Inference Job
 
@@ -81,7 +151,7 @@ Note that if your job uses delegates other than QNN NPU, GPUv2, and TFLite, then
 
 ## License
 
-This app is released under the [BSD-3 License](../../../LICENSE) found at the root of this repository.
+This app is released under the [BSD-3 License](../../LICENSE) found at the root of this repository.
 
 All models from [AI Hub Models](https://github.com/qualcomm/ai-hub-models) are released under separate license(s). Refer to the [AI Hub Models repository](https://github.com/qualcomm/ai-hub-models) for details on each model.
 

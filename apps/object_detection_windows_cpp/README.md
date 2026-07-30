@@ -1,83 +1,80 @@
+[![Qualcomm® AI Hub Apps](https://qaihub-public-assets.s3.us-west-2.amazonaws.com/qai-hub-models/quic-logo.jpg)](https://aihub.qualcomm.com)
+
 # Object Detection CLI application
 
-Object Detection application for Windows on Snapdragon® with [YOLO-X](https://aihub.qualcomm.com/compute/models/yolox) using ONNX runtime.
+This sample app detects objects in an image and writes the result with bounding boxes drawn.
 
-The app demonstrates how to use the [QNN execution provider](https://onnxruntime.ai/docs/execution-providers/QNN-ExecutionProvider.html) to accelerate the model using the Snapdragon® Neural Processing Unit (NPU).
+The app aims to showcase best practices for using **ONNX Runtime** with the [QNN execution provider](https://onnxruntime.ai/docs/execution-providers/QNN-ExecutionProvider.html) for model inference on Windows on Snapdragon® devices, accelerated on the Snapdragon® NPU.
 
 ## Requirements
 
-### Platform
+- Windows on Snapdragon X Elite
+- [Visual Studio 22](https://visualstudio.microsoft.com/vs/) with the **Desktop development with C++** workload installed
 
-- Snapdragon® Platform (e.g. X Elite)
-- Windows 11+
+## Setup
 
-### Tools and SDK
+### Option A: Using the CLI (Recommended)
 
-- Visual Studio 22
-  - Download any variant of [Visual Studio here](https://visualstudio.microsoft.com/vs/)
-  - Make sure **Desktop development with C++ tools** are selected during installation or installed separately later
+Install the CLI and fetch the app with the model:
 
-## Build App
-
-### Downloading model from AI Hub
-
-Download the **float**/**onnx** variant of [YOLO-X](https://aihub.qualcomm.com/compute/models/yolox) from AI Hub.
-Rename it and place it into:
-```
-<project directory>/assets/models/detection.onnx
+```powershell
+pip install qai-hub-apps
+qai-hub-apps fetch object_detection_windows_cpp --model yolox --output-dir ~
+cd ~\object_detection_windows_cpp
 ```
 
-### Build project in Visual Studio 22
+This downloads the app source and places the model asset in the correct location automatically.
 
-1. Open `ObjectDetection.sln`
-2. Setting up dependencies
-   - NuGet packages
-     - NuGet packages should automatically restore in Visual Studio during build
-     - If packages are not restored automatically, try the following:
-       - If prompted by Visual Studio to `restore` NuGet packages
-         - Click on `restore` to restore all `NuGet` packages
-       - Otherwise,
-         - Go to `Project -> Manage NuGet packages` in Visual studio
-         - Install [ONNX-Runtime-QNN](https://www.nuget.org/packages/Microsoft.ML.OnnxRuntime.QNN) 1.19.0
+> [!NOTE]
+> To use a model you exported yourself with [AI Hub Models](https://github.com/qualcomm/ai-hub-models),
+> pass the exported model path to `--model` in place of a model ID. The CLI places the exported
+> assets into the app automatically:
+>
+> ```powershell
+> qai-hub-apps fetch object_detection_windows_cpp --model <path\to\exported_model>
+> ```
 
-   - vcpkg packages
-     - Project is configured to work with vcpkg in [manifest mode](https://learn.microsoft.com/en-us/vcpkg/concepts/manifest-mode)
-     - If opencv headers are missing, vcpkg is not setup correctly.
-     - [Integrate vcpkg]((https://learn.microsoft.com/en-us/vcpkg/commands/integrate#vcpkg-integrate-install)) with Visual Studio:
-         - Go to `View -> Terminal` in Visual studio
-         - Run the following command in terminal
+Browse the full set of compatible models on [AI Hub](https://aihub.qualcomm.com/models?domain=Computer+Vision&useCase=Object+Detection).
 
-         ```bash
-         vcpkg integrate install
-         ```
+### Option B: Cloning the Repo
 
-3. Build project in Visual Studio
+If you cloned the release branch, the app directory is already self-contained — but **model weights are not included**. Download the **float** ONNX variant of [YOLO-X](https://aihub.qualcomm.com/compute/models/yolox) from AI Hub, unzip the bundle and copy these files into place before building:
+- Copy the ONNX model to `assets\models\detection.onnx`
+- Copy the class labels file to `assets\models\labels.txt`
 
-## Running App
+## Build
 
-### Running via Visual Studio
+From the app directory (after either option above):
 
-Visual studio project is configured with the following command arguments:
+### Option A: Using Visual Studio
+Open `ObjectDetection.sln` and build the `ARM64` configuration. The project restores its dependencies automatically:
+- **NuGet** (ONNX Runtime QNN) restores during build. If not, right-click the solution → `Restore NuGet Packages`.
+- **vcpkg** (OpenCV) is configured in [manifest mode](https://learn.microsoft.com/en-us/vcpkg/concepts/manifest-mode). If OpenCV headers are missing, run `vcpkg integrate install` in a Visual Studio terminal.
 
-```bash
---model .\assets\models\detection.onnx --image .\assets\images\kitchen.jpg
+### Option B: Using Docker
+Build our Docker image with all required dependencies, including the supported MS Build Tools, ONNX Runtime QNN, and OpenCV.
+```powershell
+docker build --build-arg BUILD_TYPE=build -t aiha-detection-win .
+```
+Build the EXE:
+```powershell
+docker run --name detection-container aiha-detection-win powershell -c '. ./install_build.ps1; & $env:MSBUILD_EXE ObjectDetection.sln /p:Configuration=Release /p:Platform=ARM64'
+
+mkdir ./ARM64
+
+docker cp detection-container:C:\app\ARM64 .
 ```
 
-You can simply run the app from Visual Studio to run object detection on sample image.
-
-### Running app via CLI
-
-```bash
-.\ARM64\Debug\ObjectDetection.exe --model .\assets\models\detection.onnx --image .\assets\images\kitchen.jpg
+### Install & Run
+```powershell
+.\ARM64\Release\ObjectDetection.exe --model ".\assets\models\detection.onnx" --labels ".\assets\models\labels.txt" --image ".\assets\images\kitchen.jpg" --output_image detection_output.jpg
 ```
 
-You can additionally run `--help` to get more information about all available options:
+Run `--help` to learn more about all available options, including `--qnn_options` ([QNN EP options](https://onnxruntime.ai/docs/execution-providers/QNN-ExecutionProvider.html#configuration-options)):
 
-```bash
-.\ARM64\Debug\ObjectDetection.exe --help
+```powershell
+.\ARM64\Release\ObjectDetection.exe --help
 ```
-
-Please refer to [QNN EP options](https://onnxruntime.ai/docs/execution-providers/QNN-ExecutionProvider.html#configuration-options) that can be provided as `--qnn_options` to the app.
 
 ### Sample Input
 
@@ -87,31 +84,37 @@ Please refer to [QNN EP options](https://onnxruntime.ai/docs/execution-providers
 
 ![sample_output](assets/images/sample_outputs/kitchen_output.jpg)
 
-## App and model details
+## AI Model Requirements
 
-1. Model input resolution: 640x640
-    - If input image is of different shape, it's resized to 640x640
-    - You can override model input dimensions if model uses different spatial image dimensions
-2. App is built to work with post-processed outputs
-    - App processes output logits and produces consumable output as follows:
-        - Output boxes
-        - Output scores
-        - Output labels
-    - If you want to try out any other model than Yolo (with post-processing included in model), please update output handling accordingly.
+### Model Runtime Formats
+- ONNX (.onnx)
+
+### I/O Specification
+
+| INPUT | Description | Shape | Data Type |
+| -- | -- | -- | -- |
+| Image | An RGB image | [1, 3, Height, Width] | float32 |
+
+| OUTPUT | Description | Shape | Data Type |
+| -- | -- | -- | -- |
+| Boxes | Bounding boxes (post-processed) | [N, 4] | float32 |
+| Scores | Per-box confidence scores | [N] | float32 |
+| Labels | Per-box class indices | [N] | int |
+
+By default the model input resolution is 640x640 (input images are resized). Use `--model_input_ht` / `--model_input_wt` if your model expects different dimensions. The app expects a model with post-processing embedded (e.g. YOLO); other models require updating the output handling.
 
 ## FAQ
 
-1. If you get a DLL error message upon launch (for instance that
-   `opencv_core4d.dll` was not found). Try Build -> Clean Solution and
-   re-build. If this still happens, please go over the NuGet and vcpkg
-   instructions again carefully.
-2. How do I use a model with different input shape than 640x640?
-   - Use `--model_input_ht` / `--model_input_wt` to model input dimensions.
+1. If you get a DLL error message upon launch (for instance that `opencv_core4d.dll` was not found), try Build -> Clean Solution and re-build. If this still happens, please go over the NuGet and vcpkg instructions again carefully.
+2. How do I use a model with a different input shape than 640x640?
+   - Use `--model_input_ht` / `--model_input_wt` to set the model input dimensions.
 3. I have a model that does not have post-processing embedded into the model. Can I still use the app?
-   - You will have to modify the app and add the necessary post-processing to accommodate that models.
+   - You will have to modify the app and add the necessary post-processing to accommodate that model.
 
-## Project setup
+## License
 
-Please see the [Classification app](../Classification/README.md) for
-instructions of how to set up a project with ONNXRuntime QNN Execution Provider
-from scratch.
+This app is released under the [BSD-3 License](../../LICENSE) found at the root of this repository.
+
+All models from [AI Hub Models](https://github.com/qualcomm/ai-hub-models) are released under separate license(s). Refer to the [AI Hub Models repository](https://github.com/qualcomm/ai-hub-models) for details on each model.
+
+The QNN SDK dependency is also released under a separate license. Please refer to the LICENSE file downloaded with the SDK for details.
