@@ -2,20 +2,25 @@
 # Copyright (c) 2025 Qualcomm Technologies, Inc. and/or its subsidiaries.
 # SPDX-License-Identifier: BSD-3-Clause
 # ---------------------------------------------------------------------
-# qai-hub-models requires x64 Python (ARM64 Python is not supported).
+# Install runtime dependencies for the Stable Diffusion demo.
+# All dependencies ship native ARM64 wheels, so this installs whatever Python
+# winget provides by default on the host (ARM64 on Snapdragon).
 $ErrorActionPreference = "Stop"
+$ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 
 . ..\_shared\scripts\load_versions.ps1
 . ..\_shared\scripts\winget_utils.ps1
 . ..\_shared\scripts\pip_utils.ps1
+. ..\_shared\scripts\python_utils.ps1
 
-$majorMinor = ($PYTHON_VERSION -split "\.")[ 0..1] -join "."
-Install-WingetPackage -Id "Python.Python.$majorMinor" -ExtraArgs @("--architecture", "x64", "--source", "winget")
-Install-WingetPackage -Id "Microsoft.Git" -ExtraArgs @("--source", "winget")
+Install-Python
+Install-PipDeps -Packages @("-r", "$ScriptDir\requirements.txt")
 
-# Install app dependencies using x64 Python explicitly.
-# onnxruntime and onnxruntime-qnn conflict — uninstall both then reinstall qnn.
-Install-PipDeps -Python "py -$majorMinor-64" -Packages @("qai-hub-models[stable_diffusion_v2_1]~=0.48.0")
-$VenvPython = Join-Path $PSScriptRoot ".venv\Scripts\python.exe"
-& $VenvPython -m pip uninstall --yes onnxruntime onnxruntime-qnn
-Install-PipDeps -Python "py -$majorMinor-64" -Packages @("onnxruntime-qnn==1.24.4")
+
+# Pre-fetch the CLIP tokenizer here (with visible progress) rather than letting
+# demo.py hit the Hugging Face Hub silently on first run -- on a slow/unstable
+# connection that hidden fetch can hang for a long time with no log output.
+Write-Host "::step::Pre-caching CLIP tokenizer"
+$VenvPython = Join-Path $ScriptDir ".venv\Scripts\python.exe"
+& $VenvPython -c "from transformers import CLIPTokenizer; CLIPTokenizer.from_pretrained('sd2-community/stable-diffusion-2-1', subfolder='tokenizer')"
+Write-Host "::done::tokenizer cache"

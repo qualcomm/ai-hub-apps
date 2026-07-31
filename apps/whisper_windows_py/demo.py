@@ -6,8 +6,7 @@ import argparse
 from datetime import datetime
 
 import sounddevice as sd
-from qai_hub_models.models._shared.hf_whisper.app import HfWhisperApp
-from qai_hub_models.utils.onnx.torch_wrapper import OnnxModelTorchWrapper
+from utils.model import WhisperApp, load_model
 
 
 def main() -> None:
@@ -50,13 +49,6 @@ def main() -> None:
         default="models\\decoder.onnx",
         help="Decoder model path",
     )
-    parser.add_argument(
-        "--model-size",
-        type=str,
-        default="base",
-        choices=["tiny", "base", "small", "medium", "large", "large-v3-turbo"],
-        help="Size of the model being run, corresponding to a specific model checkpoint on huggingface.",
-    )
     args = parser.parse_args()
 
     if args.list_audio_devices:
@@ -64,11 +56,12 @@ def main() -> None:
         return
 
     print("Loading model...")
-    app = HfWhisperApp(
-        OnnxModelTorchWrapper.OnNPU(args.encoder_path),
-        OnnxModelTorchWrapper.OnNPU(args.decoder_path),
-        f"openai/whisper-{args.model_size}",
+    model = load_model(
+        args.encoder_path,
+        args.decoder_path,
     )
+
+    app = WhisperApp(model)
 
     if args.stream_audio_device:
         app.stream(args.stream_audio_device, args.stream_audio_chunk_size)

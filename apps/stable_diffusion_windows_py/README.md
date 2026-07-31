@@ -61,15 +61,14 @@ Then install all platform and Python dependencies:
 ```
 
 This installs:
-- x64 Python (required — ARM64 Python is not supported by all dependencies)
+- ARM64 Python (native ARM64 is required — running x64 Python under emulation breaks NPU access via ONNX Runtime QNN)
 - Git for Windows
-- Python packages including `qai-hub-models` and `onnxruntime-qnn`
+- Python packages listed in `requirements.txt` (Transformers, ONNX Runtime QNN, etc.)
 
 > [!NOTE]
-> If you don't want us to install Python for you via winget, open `install_runtime.ps1` and
-> comment out the `Install-WingetPackage -Id "Python.Python.*"` line. Then update the `-Python`
-> argument in the subsequent `Install-PipDeps` calls to point to your own x64 Python executable
-> (e.g. `-Python "C:\Python311\python.exe"`).
+> To skip the automatic Python install, comment out the `Install-Python` line in
+> `install_runtime.ps1` and add a `-Python` argument to the `Install-PipDeps` calls pointing
+> to your own ARM64 Python executable (e.g. `-Python "C:\Python311-arm64\python.exe"`).
 
 ## Run
 
