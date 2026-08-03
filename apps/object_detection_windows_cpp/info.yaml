@@ -5,7 +5,7 @@ license_type: bsd-3-clause
 model_file_paths:
   - 'assets/models/detection.onnx'
 runtime: onnx
-status: unpublished
+status: published
 domain: 'Computer Vision'
 headline: 'Accelerated object detection with YOLO-X'
 description: 'A sample CLI app for Windows that runs YOLO-X via ONNX Runtime leveraging the QNN execution provider to perform efficient object detection.'

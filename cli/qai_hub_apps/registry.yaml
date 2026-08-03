@@ -185,6 +185,63 @@ apps:
   - models/palm_detector.tflite
   - models/hand_landmark_detector.tflite
   - models/canned_gesture_classifier.tflite
+- name: Object Detection Android
+  id: object_detection_android
+  status: published
+  headline: On-device object detection with TFLite
+  description: A sample Android app that detects and localizes objects in real time using live camera input, demonstrating best practices for integrating streaming camera, TFLite, and OpenCV for on-device AI inference.
+  domain: Computer Vision
+  use_case: Object Detection
+  app_repo_url: https://github.com/qualcomm/ai-hub-apps/tree/main/apps/object_detection_android
+  app_type: android
+  runtime:
+  - tflite
+  related_models:
+  - yolox
+  - yolov3
+  - yolov5
+  - yolov6
+  - yolov7
+  - yolov8_det
+  - yolov10_det
+  - yolov11_det
+  precisions:
+  - w8a8
+  languages:
+  - Java
+  supported_devices:
+  - Snapdragon 8 Elite QRD
+  model_file_paths:
+  - src/main/assets/detector.tflite
+- name: Object Detection Windows
+  id: object_detection_windows_cpp
+  status: published
+  headline: Accelerated object detection with YOLO-X
+  description: A sample CLI app for Windows that runs YOLO-X via ONNX Runtime leveraging the QNN execution provider to perform efficient object detection.
+  domain: Computer Vision
+  use_case: Object Detection
+  app_repo_url: https://github.com/qualcomm/ai-hub-apps/tree/main/apps/object_detection_windows_cpp
+  app_type: windows
+  runtime:
+  - onnx
+  related_models:
+  - yolox
+  - yolov10_det
+  - yolov11_det
+  - yolov3
+  - yolov5
+  - yolov6
+  - yolov7
+  - yolov8_det
+  precisions:
+  - float
+  languages:
+  - C++
+  supported_devices:
+  - Snapdragon X Elite CRD
+  - Snapdragon X2 Elite CRD
+  model_file_paths:
+  - assets/models/detection.onnx
 - name: Posenet Pose Estimation
   id: posenet_ubuntu_py
   status: published

@@ -5,7 +5,7 @@ license_type: bsd-3-clause
 model_file_paths:
   - 'src/main/assets/detector.tflite'
 runtime: tflite
-status: unpublished
+status: published
 domain: 'Computer Vision'
 headline: On-device object detection with TFLite
 description: 'A sample Android app that detects and localizes objects in real time using live camera input, demonstrating best practices for integrating streaming camera, TFLite, and OpenCV for on-device AI inference.'

@@ -55,7 +55,7 @@ __NOTE: Some of these apps will run without NPU acceleration on non-Snapdragon®
 | -- | -- | -- | -- |
 | [ChatApp](apps/chatapp_android) | Java/C++ | Genie SDK | LLM, GenAI |
 | [Image Classification](apps/image_classification_android) | Java | TensorFlow Lite |
-| [Object Detection](https://github.com/qualcomm/ai-hub-apps/tree/main/apps/object_detection_android)* | Java | TensorFlow Lite | OpenCV, Live Camera Feed |
+| [Object Detection](apps/object_detection_android) | Java | TensorFlow Lite | OpenCV, Live Camera Feed |
 | [Semantic Segmentation](apps/semantic_segmentation_android) |  Java | TensorFlow Lite | OpenCV, Live Camera Feed |
 | [Super Resolution](apps/super_resolution_android) | Java | TensorFlow Lite |
 | [WhisperKit (Speech to Text)](https://github.com/argmaxinc/WhisperKitAndroid)* | Various | TensorFlow Lite |
@@ -69,11 +69,12 @@ __NOTE: Some of these apps will run without NPU acceleration on non-Snapdragon®
 | -- | -- | -- | -- |
 | [ChatApp](apps/chatapp_windows_cpp) | C++ | Genie SDK | LLM, GenAI |
 | [Image Classification](apps/image_classification_windows_cpp) | C++ | ONNX | OpenCV |
-| [Object Detection](https://github.com/qualcomm/ai-hub-apps/tree/main/apps/object_detection_windows_cpp)* | C++ | ONNX | OpenCV |
+| [Object Detection](apps/object_detection_windows_cpp) | C++ | ONNX | OpenCV |
 | [Super Resolution](apps/super_resolution_windows_cpp) | C++ | ONNX | OpenCV |
 | [Whisper Speech-to-Text](apps/whisper_windows_py) | Python | ONNX |
 | [Stable Diffusion Image Generation](apps/stable_diffusion_windows_py) | Python | ONNX |
 | [GenieX Chat Windows](https://github.com/qualcomm/geniex)* | Go | GenieX |
+| [SAM3 Segmentation Windows](apps/sam3_segmentation_windows_py) | Python | ONNX |
 <!-- /WINDOWS_APPS -->
 
 <!-- UBUNTU_APPS -->
@@ -83,6 +84,7 @@ __NOTE: Some of these apps will run without NPU acceleration on non-Snapdragon®
 | -- | -- | -- | -- |
 | [Hand Gesture Recognition](apps/mediapipe_hand_gesture_ubuntu_py) | Python | TensorFlow Lite | GStreamer |
 | [Posenet Pose Estimation](apps/posenet_ubuntu_py) | Python | TensorFlow Lite | GStreamer |
+| [YamNet Audio Classification](apps/yamnet_ubuntu_py) | Python | TensorFlow Lite |
 <!-- /UBUNTU_APPS -->
 
 _\* Source available on GitHub; not included in the CLI release._
