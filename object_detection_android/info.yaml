@@ -1,0 +1,32 @@
+name: Object Detection Android
+id: object_detection_android
+license_url: https://github.com/qualcomm/ai-hub-apps/blob/main/LICENSE
+license_type: bsd-3-clause
+model_file_paths:
+  - 'src/main/assets/detector.tflite'
+runtime: tflite
+status: published
+domain: 'Computer Vision'
+headline: On-device object detection with TFLite
+description: 'A sample Android app that detects and localizes objects in real time using live camera input, demonstrating best practices for integrating streaming camera, TFLite, and OpenCV for on-device AI inference.'
+precisions: [w8a8]
+app_type: 'android'
+base_docker: ubuntu.dockerfile
+static_img_filename: 'app_screen.png'
+app_repo_relative_path: 'object_detection_android'
+os:
+  name: Android
+  version: 14+
+languages: ['Java']
+use_case: Object Detection
+related_models: [
+      'yolox',
+      'yolov3',
+      'yolov5',
+      'yolov6',
+      'yolov7',
+      'yolov8_det',
+      'yolov10_det',
+      'yolov11_det'
+]
+supported_devices: ["Snapdragon 8 Elite QRD"]

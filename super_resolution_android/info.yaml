@@ -1,0 +1,24 @@
+name: Super Resolution Android
+id: super_resolution_android
+license_url: https://github.com/qualcomm/ai-hub-apps/blob/main/LICENSE
+license_type: bsd-3-clause
+models: ['esrgan', 'quicksrnetlarge', 'quicksrnetmedium', 'quicksrnetsmall', 'real_esrgan_general_x4v3', 'real_esrgan_x4plus', 'sesr_m5', 'xlsr']
+model_file_paths:
+  - 'src/main/assets/superres.tflite'
+runtime: tflite
+status: published
+domain: 'Computer Vision'
+headline: 'Upscale images efficiently with TFLite'
+description: 'A sample Android app that creates upscaled images, demonstrating best practices for TFLite model inference with a simple and interactive workflow.'
+precisions: [float]
+app_type: 'android'
+base_docker: ubuntu.dockerfile
+static_img_filename: 'app_screen.png'
+app_repo_relative_path: 'super_resolution_android'
+os:
+  name: Android
+  version: 14+
+languages: ['Java']
+use_case: 'Super Resolution'
+related_models: ['xlsr']
+supported_devices: ["Snapdragon 8 Elite QRD"]
