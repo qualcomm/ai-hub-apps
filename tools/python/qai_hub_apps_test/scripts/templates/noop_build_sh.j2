@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+{{ header }}
+set -euo pipefail
+
+APP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$APP_DIR"
+
+USE_DOCKER=1
+CLEAN=0
+# shellcheck disable=SC2034
+for arg in "$@"; do
+    case "$arg" in
+        --no-docker) USE_DOCKER=0 ;;
+        --docker) USE_DOCKER=1 ;;
+        --clean) CLEAN=1 ;;
+        *) echo "::error::Unknown argument: $arg" >&2; exit 2 ;;
+    esac
+done
+
+echo "::skip::Nothing to build for {{ app_id }}; run it directly (see the app README)."

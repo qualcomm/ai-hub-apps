@@ -595,6 +595,22 @@ def test_fetch_dest_exists_uses_next_free_path(monkeypatch, tmp_path):
     assert result.exists()
 
 
+def test_fetch_dest_exists_overwrite_replaces_in_place(monkeypatch, tmp_path):
+    existing = tmp_path / "test_app"
+    existing.mkdir()
+    (existing / "stale.txt").write_text("old")
+    monkeypatch.setattr("qai_hub_apps.registry.base.download", fake_download)
+    monkeypatch.setattr("qai_hub_apps.registry.base._is_dev", lambda: False)
+
+    info = make_app_info(url=AppUrl(source="https://example.com/app.zip"))
+    app = App(info)
+    result = app.fetch(tmp_path, overwrite=True)
+
+    assert result == tmp_path / "test_app"
+    assert result.exists()
+    assert not (result / "stale.txt").exists()
+
+
 def test_detail_fields_contains_id_and_type():
     app = App(make_app_info(id="my_app"))
     fields = dict(app.detail_fields())

@@ -1,2 +1,3 @@
+qai_hub_apps.json
 requirements.txt
 run.py

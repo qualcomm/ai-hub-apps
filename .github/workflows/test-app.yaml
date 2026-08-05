@@ -88,6 +88,11 @@ env:
   PYTEST_DEBUG_TEMPROOT: ${{ inputs.app_type == 'windows' && 'C:\t' || '' }}
   QDC_TOKEN: ${{ secrets.QDC_API_TOKEN }}
   QDC_JOB_LIMIT: ${{ vars.QDC_JOB_LIMIT }}
+  # Runners are on the Qualcomm internal network, so generated build.sh scripts
+  # build against the internal registry mirror and install the Qualcomm CA.
+  QC_INTERNAL_HOST: '1'
+  # Capture full CLI diagnostics (fetch/build) in CI logs.
+  QAI_HUB_APPS_LOG_LEVEL: debug
 
 jobs:
   test:

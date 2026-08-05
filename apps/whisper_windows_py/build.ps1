@@ -1,7 +1,13 @@
+
 # ---------------------------------------------------------------------
 # Copyright (c) 2025 Qualcomm Technologies, Inc. and/or its subsidiaries.
 # SPDX-License-Identifier: BSD-3-Clause
 # ---------------------------------------------------------------------
-from qai_hub_apps_test.builders.android.build import build_app
+# THIS FILE WAS AUTO-GENERATED. DO NOT EDIT MANUALLY.
 
-__all__ = ["build_app"]
+param([switch]$NoDocker, [switch]$Clean)
+$ErrorActionPreference = "Stop"
+
+Set-Location $PSScriptRoot
+
+Write-Host "::skip::Nothing to build for whisper_windows_py; run it directly (see the app README)."

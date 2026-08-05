@@ -1,0 +1,7 @@
+{{ header }}
+param([switch]$NoDocker, [switch]$Clean)
+$ErrorActionPreference = "Stop"
+
+Set-Location $PSScriptRoot
+
+Write-Host "::skip::Nothing to build for {{ app_id }}; run it directly (see the app README)."

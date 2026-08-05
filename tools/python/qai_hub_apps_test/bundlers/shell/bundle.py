@@ -5,8 +5,9 @@
 """Bundle shared shell scripts into a standalone app directory.
 
 The bundler:
-  1. For each install_*.sh / install_*.ps1: rewrites source lines to the
-     bundle-local scripts/ prefix and collects direct shared refs.
+  1. For each install_*.sh / install_*.ps1 / test.{sh,ps1} / build.{sh,ps1}:
+     rewrites source lines to the bundle-local scripts/ prefix and collects
+     direct shared refs.
   2. Transitively copies all referenced shared scripts to out_dir/scripts/.
   3. Copies apps/_shared/scripts/versions.env to out_dir/scripts/versions.env.
 """
@@ -177,10 +178,13 @@ def bundle_scripts(out_dir: Path, shared_scripts_root: Path | None = None) -> No
         + list(out_dir.glob("install_*.ps1"))
         + list(out_dir.glob("test.sh"))
         + list(out_dir.glob("test.ps1"))
+        + list(out_dir.glob("build.sh"))
+        + list(out_dir.glob("build.ps1"))
     )
     if not app_scripts:
         print(
-            "No install_*.sh / install_*.ps1 / test.sh / test.ps1 found; skipping shell script bundling."
+            "No install_*.sh / install_*.ps1 / test.sh / test.ps1 / build.sh / "
+            "build.ps1 found; skipping shell script bundling."
         )
         return
 

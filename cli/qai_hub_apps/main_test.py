@@ -326,6 +326,70 @@ def test_no_command_does_not_crash(monkeypatch, capsys):
     assert "usage" in out.lower() or "qai-hub-apps" in out
 
 
+def _run_build_main(argv, monkeypatch, sample_registry_yaml):
+    """Run `build ...` with the experimental gate open and run_build mocked."""
+    monkeypatch.setenv("QAI_HUB_APPS_EXPERIMENTAL", "1")
+    mock_run_build = MagicMock()
+    monkeypatch.setattr("qai_hub_apps.main.run_build", mock_run_build)
+    _run_main(["build", *argv, "--registry", str(sample_registry_yaml)], monkeypatch)
+    return mock_run_build
+
+
+def test_build_positional_id(monkeypatch, sample_registry_yaml):
+    mock = _run_build_main(["test_app"], monkeypatch, sample_registry_yaml)
+    mock.assert_called_once()
+    app_id, app_path = mock.call_args.args[0], mock.call_args.args[1]
+    assert app_id == "test_app"
+    assert app_path is None
+
+
+def test_build_positional_path(monkeypatch, tmp_path, sample_registry_yaml):
+    app_dir = tmp_path / "test_app"
+    app_dir.mkdir()
+    mock = _run_build_main([str(app_dir)], monkeypatch, sample_registry_yaml)
+    app_id, app_path = mock.call_args.args[0], mock.call_args.args[1]
+    assert app_id is None
+    assert app_path == app_dir
+
+
+def test_build_explicit_app_id(monkeypatch, sample_registry_yaml):
+    mock = _run_build_main(["--app-id", "test_app"], monkeypatch, sample_registry_yaml)
+    assert mock.call_args.args[0] == "test_app"
+
+
+def test_build_explicit_app_path(monkeypatch, tmp_path, sample_registry_yaml):
+    mock = _run_build_main(
+        ["--app-path", str(tmp_path)], monkeypatch, sample_registry_yaml
+    )
+    assert mock.call_args.args[1] == tmp_path
+
+
+def test_build_no_docker_and_clean(monkeypatch, sample_registry_yaml):
+    mock = _run_build_main(
+        ["test_app", "--no-docker", "--clean"], monkeypatch, sample_registry_yaml
+    )
+    assert mock.call_args.kwargs["use_docker"] is False
+    assert mock.call_args.kwargs["clean"] is True
+
+
+def test_build_positional_path_with_overwrite_errors(
+    monkeypatch, tmp_path, sample_registry_yaml
+):
+    app_dir = tmp_path / "test_app"
+    app_dir.mkdir()
+    with pytest.raises(SystemExit) as exc:
+        _run_build_main(
+            [str(app_dir), "--overwrite"], monkeypatch, sample_registry_yaml
+        )
+    assert exc.value.code == 1
+
+
+def test_build_requires_a_target(monkeypatch, sample_registry_yaml):
+    with pytest.raises(SystemExit) as exc:
+        _run_build_main([], monkeypatch, sample_registry_yaml)
+    assert exc.value.code == 2
+
+
 def test_default_registry_calls_ensure_registry(monkeypatch, sample_registry_yaml):
     mock_ensure = MagicMock(return_value=sample_registry_yaml)
     monkeypatch.setattr("qai_hub_apps.registry.base.ensure_registry", mock_ensure)

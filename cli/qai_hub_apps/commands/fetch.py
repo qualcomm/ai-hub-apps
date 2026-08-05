@@ -20,9 +20,13 @@ def run_fetch(
     output_dir: Path,
     registry: Registry,
     model_asset: ModelAsset | None = None,
-) -> None:
+    overwrite: bool = False,
+) -> Path:
+    """Download and extract an app; return the extraction directory."""
     try:
-        app_dest = registry.fetch_app(app_id, output_dir, model_asset=model_asset)
+        app_dest = registry.fetch_app(
+            app_id, output_dir, model_asset=model_asset, overwrite=overwrite
+        )
     except (urllib.error.HTTPError, urllib.error.URLError) as e:
         msg = (
             f"Download failed (HTTP {e.code})"
@@ -32,3 +36,4 @@ def run_fetch(
         raise QAIHubAppsError(msg) from e
     logger.info("Extracted to %s", app_dest.as_posix())
     print(app_dest)
+    return app_dest

@@ -65,10 +65,10 @@ jobs:
         source ${{ env.VENV_PATH }}/bin/activate && pre-commit run --show-diff-on-failure --color=always --all-files
 
   ##
-  ## Registry freshness check
+  ## Generated-file freshness checks (registry.yaml + build scripts)
   ##
-  check_registry:
-    name: "Check registry.yaml is up to date"
+  check_generated_files:
+    name: "Check generated files are up to date"
     if: ${{ inputs.do_all || inputs.do_precommit }}
     runs-on: [tetra-ubuntu-2204, self-hosted]
     env:
@@ -98,6 +98,19 @@ jobs:
           echo ""
           echo "registry.yaml is out of date."
           echo "Please run: python -m qai_hub_apps_test.scripts.generate_registry --output_dir cli/qai_hub_apps/"
+          exit 1
+        fi
+
+    - name: Check build scripts
+      run: |
+        source ${{ env.VENV_PATH }}/bin/activate
+        python -m qai_hub_apps_test.scripts.generate_build_scripts --scope test
+        if [[ -n $(git diff) || -n $(git ls-files --others --exclude-standard) ]]; then
+          git diff
+          git ls-files --others --exclude-standard
+          echo ""
+          echo "Build scripts are out of date."
+          echo "Please run: python -m qai_hub_apps_test.scripts.generate_build_scripts --scope test"
           exit 1
         fi
 

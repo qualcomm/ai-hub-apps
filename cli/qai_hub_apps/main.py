@@ -11,7 +11,13 @@ from qai_hub_apps import __version__, _is_dev
 from qai_hub_apps.commands.fetch import run_fetch
 from qai_hub_apps.commands.list_apps import run_info, run_list
 from qai_hub_apps.configs.model_asset import ModelAsset
-from qai_hub_apps.errors import QAIHubAppsError, RegistryNotFoundError
+from qai_hub_apps.errors import (
+    InvalidArgumentError,
+    QAIHubAppsError,
+    RegistryNotFoundError,
+)
+from qai_hub_apps.experimental import add_experimental_parser
+from qai_hub_apps.experimental.commands.build import run_build
 from qai_hub_apps.logging_utils import configure_logging
 from qai_hub_apps.registry import Registry
 from qai_hub_apps.utils.updates import check_for_update
@@ -49,6 +55,34 @@ def _resolve_model_asset(
             logger.warning("%s is ignored when --model is a local path.", flag)
         return ModelAsset(path=path)
     return ModelAsset(model_id=model, chipset=chipset, device=device)
+
+
+def _resolve_app_target(
+    app: str | None,
+    app_id: str | None,
+    app_path: Path | None,
+    overwrite: bool,
+) -> tuple[str | None, Path | None]:
+    """Resolve the build target into an (app_id, app_path) pair.
+
+    --app-id and --app-path are explicit. The positional ``app`` is auto-resolved:
+    an existing directory is treated as a fetched app path, otherwise as an app
+    ID.
+    """
+    if app is None:
+        return app_id, app_path
+    if Path(app).exists():
+        if overwrite:
+            raise InvalidArgumentError(
+                f"--overwrite has no effect when building an existing directory: "
+                f"'{app}' is a local path ({Path(app).resolve()}), which is built in place. "
+                f"Drop --overwrite to build it as-is, or pass '--app-id {app}' "
+                f"to fetch the app (overwriting any existing copy) and build it."
+            )
+        logger.debug("Auto-resolved '%s' to existing path", app)
+        return None, Path(app)
+    logger.debug("Auto-resolved '%s' to app id", app)
+    return app, None
 
 
 def main() -> None:
@@ -111,6 +145,63 @@ def main() -> None:
             help="App ID (from 'qai-hub-apps list')",
         )
 
+    def add_fetch_args(p: argparse.ArgumentParser) -> None:
+        p.add_argument(
+            "-o",
+            "--output-dir",
+            dest="output_dir",
+            type=Path,
+            default=Path.cwd(),
+            help="Output directory (default: current directory)",
+        )
+        model_group = p.add_mutually_exclusive_group()
+        model_group.add_argument(
+            "--model",
+            dest="model",
+            default=None,
+            metavar="MODEL_ID_OR_PATH",
+            help="Model to bundle: a model ID to download (must be supported by the app), "
+            "or a path to a locally-exported model (directory or .zip). "
+            "Use --model-id or --model-path to be explicit",
+        )
+        model_group.add_argument(
+            "--model-id",
+            dest="model_id",
+            default=None,
+            metavar="MODEL_ID",
+            help="Model ID to download (must be supported by the app)",
+        )
+        model_group.add_argument(
+            "--model-path",
+            dest="model_path",
+            default=None,
+            type=Path,
+            metavar="PATH",
+            help="Path to a locally-exported model (directory or .zip)",
+        )
+        target_group = p.add_mutually_exclusive_group()
+        target_group.add_argument(
+            "--chipset",
+            dest="chipset",
+            default=None,
+            metavar="CHIPSET",
+            help="Chipset to target when downloading model (must be supported by the app)",
+        )
+        target_group.add_argument(
+            "--device",
+            dest="device",
+            default=None,
+            metavar="DEVICE",
+            help="Device to target when downloading model (must be supported by the app)",
+        )
+        p.add_argument(
+            "--overwrite",
+            dest="overwrite",
+            action="store_true",
+            help="Overwrite the app in place if it already exists in the output "
+            "directory (default: save a separate numbered copy)",
+        )
+
     list_parser = subparsers.add_parser("list", help="List available apps")
     add_registry_arg(list_parser)
 
@@ -123,69 +214,69 @@ def main() -> None:
     )
     add_registry_arg(fetch_parser)
     add_app_id_arg(fetch_parser)
-    fetch_parser.add_argument(
-        "-o",
-        "--output-dir",
-        dest="output_dir",
-        type=Path,
-        default=Path.cwd(),
-        help="Output directory (default: current directory)",
-    )
-    model_group = fetch_parser.add_mutually_exclusive_group()
-    model_group.add_argument(
-        "--model",
-        dest="model",
+    add_fetch_args(fetch_parser)
+
+    build_parser = add_experimental_parser(subparsers, "build", help="Build an app")
+    add_registry_arg(build_parser)
+    app_group = build_parser.add_mutually_exclusive_group()
+    app_group.add_argument(
+        "app",
+        nargs="?",
         default=None,
-        metavar="MODEL_ID_OR_PATH",
-        help="Model to bundle: a model ID to download (must be supported by the app), "
-        "or a path to a locally-exported model (directory or .zip). "
-        "Use --model-id or --model-path to be explicit",
+        metavar="APP_ID_OR_PATH",
+        help="App to build: an app ID to fetch-and-build (from 'qai-hub-apps list'), "
+        "or a path to an already-fetched app directory. "
+        "Use --app-id or --app-path to be explicit",
     )
-    model_group.add_argument(
-        "--model-id",
-        dest="model_id",
+    app_group.add_argument(
+        "--app-id",
+        dest="app_id",
         default=None,
-        metavar="MODEL_ID",
-        help="Model ID to download (must be supported by the app)",
+        metavar="APP_ID",
+        help="App ID to build (from 'qai-hub-apps list'); fetched first if needed",
     )
-    model_group.add_argument(
-        "--model-path",
-        dest="model_path",
+    app_group.add_argument(
+        "--app-path",
+        dest="app_path",
         default=None,
         type=Path,
         metavar="PATH",
-        help="Path to a locally-exported model (directory or .zip)",
+        help="Path to an already-fetched app directory to build in place",
     )
-    target_group = fetch_parser.add_mutually_exclusive_group()
-    target_group.add_argument(
-        "--chipset",
-        dest="chipset",
-        default=None,
-        metavar="CHIPSET",
-        help="Chipset to target when downloading model (must be supported by the app)",
+    add_fetch_args(build_parser)
+    build_parser.add_argument(
+        "--no-docker",
+        dest="no_docker",
+        action="store_true",
+        help="Build natively on the host instead of using Docker",
     )
-    target_group.add_argument(
-        "--device",
-        dest="device",
-        default=None,
-        metavar="DEVICE",
-        help="Device to target when downloading model (must be supported by the app)",
+    build_parser.add_argument(
+        "--clean",
+        dest="clean",
+        action="store_true",
+        help="Cleanup prior build artifacts before building",
     )
 
     args = parser.parse_args()
 
     configure_logging(args.log_level)
 
-    if args.command == "fetch" and (args.chipset or args.device):
+    if args.command in ("fetch", "build") and (args.chipset or args.device):
+        cmd_parser = fetch_parser if args.command == "fetch" else build_parser
         flag = "--chipset" if args.chipset else "--device"
         if args.model_path is not None:
-            fetch_parser.error(f"{flag} cannot be used with --model-path")
+            cmd_parser.error(f"{flag} cannot be used with --model-path")
         if args.model is None and args.model_id is None:
-            fetch_parser.error(f"{flag} requires --model or --model-id")
+            cmd_parser.error(f"{flag} requires --model or --model-id")
+
+    if args.command == "build" and (
+        args.app is None and args.app_id is None and args.app_path is None
+    ):
+        build_parser.error("one of APP_ID_OR_PATH, --app-id or --app-path is required")
 
     registry_path = getattr(args, "registry", None)
 
-    if args.command not in ("list", "info", "fetch"):
+    if args.command not in ("list", "info", "fetch", "build"):
         parser.print_help()
         return
 
@@ -203,7 +294,30 @@ def main() -> None:
             model_asset = _resolve_model_asset(
                 args.model, args.model_id, args.model_path, args.chipset, args.device
             )
-            run_fetch(args.app_id, args.output_dir, registry, model_asset)
+            run_fetch(
+                args.app_id,
+                args.output_dir,
+                registry,
+                model_asset,
+                overwrite=args.overwrite,
+            )
+        elif args.command == "build":
+            model_asset = _resolve_model_asset(
+                args.model, args.model_id, args.model_path, args.chipset, args.device
+            )
+            app_id, app_path = _resolve_app_target(
+                args.app, args.app_id, args.app_path, args.overwrite
+            )
+            run_build(
+                app_id,
+                app_path,
+                args.output_dir,
+                registry,
+                model_asset,
+                use_docker=not args.no_docker,
+                clean=args.clean,
+                overwrite=args.overwrite,
+            )
     except QAIHubAppsError as e:
         logger.error(str(e))  # noqa: TRY400
         sys.exit(1)

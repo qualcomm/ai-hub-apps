@@ -1,5 +1,6 @@
 models
 models/metadata.json
 models/whisper_base.onnx
+qai_hub_apps.json
 requirements.txt
 run.py

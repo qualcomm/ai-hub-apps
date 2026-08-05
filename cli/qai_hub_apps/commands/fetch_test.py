@@ -27,7 +27,7 @@ def test_run_fetch_success(caplog, capsys):
     with caplog.at_level("INFO", logger="qai_hub_apps"):
         run_fetch("test_app", Path("/tmp"), registry)
     registry.fetch_app.assert_called_once_with(
-        "test_app", Path("/tmp"), model_asset=None
+        "test_app", Path("/tmp"), model_asset=None, overwrite=False
     )
     assert dest.as_posix() in caplog.text
     # The fetched path is printed to stdout so it can be piped to other commands.
@@ -41,7 +41,7 @@ def test_run_fetch_with_model_asset(capsys):
     asset = ModelAsset(model_id="whisper_base", chipset=None)
     run_fetch("test_app", Path("/tmp"), registry, model_asset=asset)
     registry.fetch_app.assert_called_once_with(
-        "test_app", Path("/tmp"), model_asset=asset
+        "test_app", Path("/tmp"), model_asset=asset, overwrite=False
     )
 
 

@@ -11,6 +11,7 @@ import shutil
 import tempfile
 import zipfile
 from collections.abc import ValuesView
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -53,6 +54,9 @@ logger = logging.getLogger(__name__)
 DEFAULT_DEPRECATION_MESSAGE = (
     "This app is deprecated and may be removed in a future release."
 )
+
+# Provenance file written into every fetched app dir.
+MANIFEST_FILENAME = "qai_hub_apps.json"
 
 
 class App:
@@ -416,15 +420,26 @@ class App:
         self,
         dest: Path,
         model_asset: ModelAsset | None = None,
+        overwrite: bool = False,
     ) -> Path:
-        """Download and extract app source. Returns the extraction path."""
+        """Download and extract app source. Returns the extraction path.
+
+        If the destination already exists, ``overwrite`` removes it and fetches
+        in place; otherwise the app is saved to a non-colliding ``-N`` sibling.
+        """
         logger.debug("fetch('%s'): dest=%s, model_asset=%s", self.id, dest, model_asset)
         app_dest = dest / self.id
 
         if app_dest.exists():
-            new_dest = get_next_free_path(app_dest)
-            logger.info("%s already exists, saving to %s instead.", app_dest, new_dest)
-            app_dest = new_dest
+            if overwrite:
+                logger.info("%s already exists, overwriting.", app_dest)
+                shutil.rmtree(app_dest)
+            else:
+                new_dest = get_next_free_path(app_dest)
+                logger.info(
+                    "%s already exists, saving to %s instead.", app_dest, new_dest
+                )
+                app_dest = new_dest
 
         is_model_required = model_asset is not None
         is_model_local = model_asset is not None and model_asset.path is not None
@@ -492,11 +507,26 @@ class App:
                     )
                 self._place_model_in_app(model_tmp, staged, metadata)
 
+            self._write_manifest(staged)
+
             logger.debug("Moving staged app from %s to %s", staged, app_dest)
             shutil.move(staged, app_dest)
 
         logger.debug("fetch('%s') complete: %s", self.id, app_dest)
         return app_dest
+
+    def _write_manifest(self, app_dir: Path) -> None:
+        """Write the provenance manifest recording the versions that fetched this app."""
+        manifest = {
+            "cli_version": __version__,
+            "qai_hub_models_version": self.qaihm_version or str(QAIHM_VERSION),
+            "registry_version": Registry.load().version,
+            "fetched_at": datetime.now(timezone.utc).isoformat(),
+        }
+        (app_dir / MANIFEST_FILENAME).write_text(
+            json.dumps(manifest, indent=2) + "\n", encoding="utf-8"
+        )
+        logger.debug("Wrote manifest %s: %s", MANIFEST_FILENAME, manifest)
 
     def __repr__(self) -> str:
         banner_lines = [self.name]
@@ -624,6 +654,7 @@ class Registry:
         app_id: str,
         dest: Path,
         model_asset: ModelAsset | None = None,
+        overwrite: bool = False,
     ) -> Path:
         """Find app by ID and download + extract it. Returns the extraction path."""
         logger.debug("fetch_app('%s') -> dest=%s", app_id, dest)
@@ -636,7 +667,7 @@ class Registry:
         if not is_app_supported(app):
             logger.warning("This app may not be supported on the current device.")
 
-        return app.fetch(dest, model_asset=model_asset)
+        return app.fetch(dest, model_asset=model_asset, overwrite=overwrite)
 
 
 def _make_app(info: AppInfo) -> App:

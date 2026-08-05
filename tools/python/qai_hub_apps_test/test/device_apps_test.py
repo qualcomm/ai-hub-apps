@@ -23,9 +23,8 @@ import subprocess
 from pathlib import Path
 
 import pytest
-from tenacity import retry, retry_if_exception, stop_after_attempt
+from tenacity import retry, retry_if_exception, stop_after_attempt, wait_fixed
 
-from qai_hub_apps_test.builders import build_app
 from qai_hub_apps_test.configs.info_yaml import QAIHAAppInfo
 
 pytestmark = pytest.mark.device_test
@@ -38,6 +37,31 @@ def _fetch_failed_on_licensing(err: BaseException) -> bool:
     return isinstance(err, subprocess.CalledProcessError) and (
         _LICENSING_RESTRICTED_MSG in (err.stdout or "")
     )
+
+
+def _run_streamed(cmd: list[str], env: dict[str, str] | None = None) -> None:
+    """Run ``cmd``, streaming its combined stdout/stderr live.
+
+    Raises ``CalledProcessError`` (with captured output) on a non-zero exit.
+    """
+    output = []
+    with subprocess.Popen(
+        cmd,
+        env=env,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        bufsize=1,
+    ) as proc:
+        assert proc.stdout is not None
+        for line in proc.stdout:
+            print(line, end="")
+            output.append(line)
+
+    if proc.returncode != 0:
+        raise subprocess.CalledProcessError(
+            proc.returncode, cmd, output="".join(output)
+        )
 
 
 @retry(
@@ -55,25 +79,21 @@ def _run_fetch(fetch_cmd: list[str]) -> None:
     env = os.environ.copy()
     if _run_fetch.statistics["attempt_number"] > 1:
         env["QAIHM_CLI_USE_INTERNAL_RELEASES"] = "1"
+    _run_streamed(fetch_cmd, env=env)
 
-    output = []
-    with subprocess.Popen(
-        fetch_cmd,
-        env=env,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        text=True,
-        bufsize=1,
-    ) as proc:
-        assert proc.stdout is not None
-        for line in proc.stdout:
-            print(line, end="")
-            output.append(line)
 
-    if proc.returncode != 0:
-        raise subprocess.CalledProcessError(
-            proc.returncode, fetch_cmd, output="".join(output)
-        )
+@retry(reraise=True, wait=wait_fixed(30), stop=stop_after_attempt(2))
+def _run_build(build_cmd: list[str]) -> None:
+    """Run ``qai-hub-apps build``, retrying once on failure.
+
+    ``build`` is experimental, so it is enabled via QAI_HUB_APPS_EXPERIMENTAL.
+    The retry adds --clean to clear up partial build state from previous attempt.
+    """
+    if _run_build.statistics["attempt_number"] > 1 and "--clean" not in build_cmd:
+        build_cmd = [*build_cmd, "--clean"]
+    env = os.environ.copy()
+    env["QAI_HUB_APPS_EXPERIMENTAL"] = "1"
+    _run_streamed(build_cmd, env=env)
 
 
 def _select_models(app_info: QAIHAAppInfo, mode: str) -> list[str]:
@@ -190,7 +210,7 @@ def test_2_build_app(
     test_stage: str,
     use_docker: bool,
 ) -> None:
-    """Build the app from the fetched source."""
+    """Build the fetched app via the qai-hub-apps CLI."""
     app_info, model_id = app_to_test
 
     if test_stage == "fetch":
@@ -201,10 +221,11 @@ def test_2_build_app(
         pytest.skip("Fetch stage did not succeed or was skipped")
 
     assert app_dir is not None
-    try:
-        build_app(app_info, app_dir, use_docker=use_docker)
-    except NotImplementedError as e:
-        pytest.skip(str(e))
+    # Build in place from the already-fetched dir (--app-path; model already fetched).
+    build_cmd = ["qai-hub-apps", "build", "--app-path", str(app_dir)]
+    if not use_docker:
+        build_cmd.append("--no-docker")
+    _run_build(build_cmd)
 
     built_dirs[(app_info.id, model_id)] = app_dir
 
