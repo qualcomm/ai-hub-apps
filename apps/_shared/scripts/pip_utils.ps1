@@ -17,6 +17,7 @@
 $_PipUtilsDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 . "$_PipUtilsDir\load_versions.ps1"
 . "$_PipUtilsDir\interactive.ps1"
+. "$_PipUtilsDir\winget_utils.ps1"
 
 function _Install-PipDeps {
     param(
@@ -30,12 +31,23 @@ function _Install-PipDeps {
     }
     $ver = $PYTHON_VERSION
     $majorMinor = ($ver -split "\.")[ 0..1] -join "."
-    if ($Python -eq "") { $Python = "py -$majorMinor" }
+    if ($Python -eq "") {
+        $py = Resolve-InstalledExe -Name "py.exe"
+        if (-not $py) {
+            Write-Error "py launcher not found. Run Install-Python first, or pass -Python <exe>."
+            exit 1
+        }
+        $PythonExe = $py
+        $PythonArgs = @("-$majorMinor")
+    } else {
+        $PythonExe = $Python
+        $PythonArgs = @()
+    }
     $VenvPython = Join-Path $VenvDir "Scripts\python.exe"
 
     if (-not (Test-Path $VenvPython)) {
         Write-Host "::step::Creating virtual environment at $VenvDir"
-        Invoke-Expression "$Python -m venv `"$VenvDir`""
+        & $PythonExe @PythonArgs -m venv $VenvDir
         Write-Host "::done::virtual environment"
     }
 

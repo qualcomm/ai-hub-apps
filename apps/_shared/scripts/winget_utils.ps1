@@ -23,6 +23,18 @@ if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
     exit 1
 }
 
+# winget adds the install dir to the machine PATH, but the running process won't see it; so
+# temporarily reload PATH to resolve the exe, then restore the original PATH.
+function Resolve-InstalledExe {
+    param([string]$Name)
+    $originalPath = $env:PATH
+    $env:PATH = [System.Environment]::GetEnvironmentVariable("PATH", "Machine") + ";" +
+                [System.Environment]::GetEnvironmentVariable("PATH", "User")
+    $exe = (Get-Command $Name -ErrorAction SilentlyContinue).Source
+    $env:PATH = $originalPath
+    return $exe
+}
+
 function _Install-WingetPackage {
     param(
         [string]$Id,

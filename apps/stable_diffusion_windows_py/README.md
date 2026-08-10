@@ -68,7 +68,7 @@ This installs:
 > [!NOTE]
 > To skip the automatic Python install, comment out the `Install-Python` line in
 > `install_runtime.ps1` and add a `-Python` argument to the `Install-PipDeps` calls pointing
-> to your own ARM64 Python executable (e.g. `-Python "C:\Python311-arm64\python.exe"`).
+> to your own ARM64 Python executable (e.g. `-Python "C:\Python312-arm64\python.exe"`).
 
 ## Run
 

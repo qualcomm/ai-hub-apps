@@ -25,8 +25,16 @@ function _Install-Python {
     $majorMinor = ($ver -split "\.")[ 0..1] -join "."
     Install-WingetPackage -Id "Python.Python.$majorMinor" -ExtraArgs @("--source", "winget")
 
+    # winget just added the `py` launcher to the persistent PATH, but this process
+    # can't see it yet, so resolve it by absolute path from the registry PATH.
+    $py = Resolve-InstalledExe -Name "py.exe"
+    if (-not $py) {
+        Write-Error "py launcher not found after Python install."
+        exit 1
+    }
+
     Write-Host "::step::Bootstrapping uv"
-    py -$majorMinor -m pip install --quiet uv
+    & $py -$majorMinor -m pip install --quiet uv
     Write-Host "::done::uv"
 }
 
