@@ -11,9 +11,11 @@ Bundling is driven by `bundle_app()` in `__init__.py`. It:
    - **`bundle_source`** — copies app source and shared library code
      (per-language: e.g. Python apps get the imported `qai_hub_apps_utils`
      modules plus a merged `requirements.txt`).
-   - **`bundle_scripts`** — processes `install_*.sh` / `install_*.ps1`, rewrites
-     source lines, transitively copies referenced shared scripts to `scripts/`,
-     and copies `versions.env` (shell bundler's job).
+   - **`bundle_scripts`** — processes `install_*.sh` / `install_*.ps1`,
+     `test.sh` / `test.ps1`, and the generated `build.sh` / `build.ps1`
+     (see [Building Apps](../../../../CONTRIBUTING.md#building-apps)), rewrites
+     their source lines, transitively copies referenced shared scripts to
+     `scripts/`, and copies `versions.env` (shell bundler's job).
    - **Finalize** — copies or zips the temp dir to the final output location.
 
 ```
@@ -31,6 +33,7 @@ bundle_app(app_id, output_dir)
   install_runtime.sh       # hand-written; source lines rewritten to scripts/
   install_build.sh         # optional; also rewritten
   install_runtime.ps1      # hand-written; source lines rewritten to scripts/
+  build.sh / build.ps1     # generated (generate_build_scripts); also rewritten
   scripts/
     versions.env           # copied from apps/_shared/scripts/versions.env
     load_versions.sh       # copied (if transitively referenced)
@@ -57,6 +60,12 @@ App developers write their own `install_*.sh` (Ubuntu/Linux) and `install_*.ps1`
 - `install_runtime.sh` / `install_runtime.ps1` — runtime environment setup
 - `install_build.sh` / `install_build.ps1` — build-time setup
 - Any `install_*.sh` / `install_*.ps1` at the **app root** is processed
+- `test.sh` / `test.ps1` (hand-written) and `build.sh` / `build.ps1` (generated) are processed the same way
+
+> `build.sh` / `build.ps1` are **not** hand-written — they are produced by
+> `generate_build_scripts` (see [Building Apps](../../../../CONTRIBUTING.md#building-apps)).
+> The bundler treats them like any other script: it rewrites their `source` lines
+> and pulls in the shared scripts they reference.
 
 ### Available shared utilities
 
