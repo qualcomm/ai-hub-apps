@@ -11,9 +11,6 @@
 #       versions.env) via apt. Also installs python3-venv and pip, then
 #       bootstraps uv for fast package management.
 #
-# Override the version before sourcing or before calling:
-#   PYTHON_VERSION=3.12
-#   install_python
 #
 # Usage: source python_utils.sh
 # ---------------------------------------------------------------------

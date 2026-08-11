@@ -6,6 +6,8 @@
 # workload) and the QAIRT SDK, and exports $env:MSBUILD_EXE for the caller to
 # invoke MSBuild.
 $ErrorActionPreference = "Stop"
+$ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$env:QAIHA_APP_ROOT = $ScriptDir
 
 . ..\_shared\scripts\load_versions.ps1
 . ..\_shared\scripts\winget_utils.ps1

@@ -38,6 +38,9 @@ ENV NON_INTERACTIVE=true
 
 WORKDIR /app
 
+# set QAIHA_APP_ROOT for shared scripts
+ENV QAIHA_APP_ROOT=/app
+
 COPY . /app
 
 # When INSTALL_QUALCOMM_CA is true.

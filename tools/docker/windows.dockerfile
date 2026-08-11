@@ -24,6 +24,9 @@ ENV NON_INTERACTIVE=true
 
 WORKDIR C:\\app
 
+# set QAIHA_APP_ROOT for shared scripts
+ENV QAIHA_APP_ROOT=C:\\app
+
 COPY . C:\\app
 
 RUN powershell -Command \

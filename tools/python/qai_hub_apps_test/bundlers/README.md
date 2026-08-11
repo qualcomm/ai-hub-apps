@@ -71,6 +71,12 @@ App developers write their own `install_*.sh` (Ubuntu/Linux) and `install_*.ps1`
 
 All shared scripts live in `apps/_shared/scripts/`. Each utility script auto-loads version defaults from `versions.env` via `load_versions.sh` / `load_versions.ps1`.
 
+> The entry script **must** export `QAIHA_APP_ROOT` (the app directory) before
+> sourcing any shared utility — `load_versions` errors out if it is unset. If an
+> `apps/<id>/versions.override.env` exists next to the entry script, its keys are
+> layered on top of the global `versions.env` (override wins); the bundler merges
+> it into the bundled `scripts/versions.env`.
+
 #### Ubuntu/Linux (`.sh`)
 
 | Script | Functions | Description |
@@ -93,6 +99,8 @@ All shared scripts live in `apps/_shared/scripts/`. Each utility script auto-loa
 # apps/my_ubuntu_app/install_runtime.sh
 #!/usr/bin/env bash
 set -euo pipefail
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+export QAIHA_APP_ROOT="$SCRIPT_DIR"   # required before sourcing shared scripts
 
 source ../../_shared/scripts/python_utils.sh
 source ../../_shared/scripts/apt_utils.sh
@@ -106,6 +114,8 @@ install_pip_deps "$SCRIPT_DIR/requirements.txt"
 ```powershell
 # apps/my_windows_app/install_runtime.ps1
 $ErrorActionPreference = "Stop"
+$ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$env:QAIHA_APP_ROOT = $ScriptDir   # required before sourcing shared scripts
 
 . ..\..\..\_shared\scripts\python_utils.ps1
 . ..\..\..\_shared\scripts\winget_utils.ps1

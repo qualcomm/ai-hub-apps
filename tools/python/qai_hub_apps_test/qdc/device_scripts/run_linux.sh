@@ -10,6 +10,8 @@ mount -o rw,remount /
 
 APP_DIR=/data/local/tmp/TestContent/app
 LOG_DIR=/data/local/tmp/QDC_logs
+# set QAIHA_APP_ROOT for shared utils
+export QAIHA_APP_ROOT="$APP_DIR"
 # shellcheck disable=SC1072,SC1073
 USE_DOCKER=<<USE_DOCKER>>
 

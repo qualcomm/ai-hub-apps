@@ -9,7 +9,8 @@ The bundler:
      rewrites source lines to the bundle-local scripts/ prefix and collects
      direct shared refs.
   2. Transitively copies all referenced shared scripts to out_dir/scripts/.
-  3. Copies apps/_shared/scripts/versions.env to out_dir/scripts/versions.env.
+  3. Writes out_dir/scripts/versions.env from apps/_shared/scripts/versions.env,
+     merging the app's versions.override.env (if present) on top.
 """
 
 from __future__ import annotations
@@ -20,12 +21,37 @@ import warnings
 from pathlib import Path
 
 from qai_hub_apps_test.bundlers.shell.script_resolver import resolve_scripts_root
+from qai_hub_apps_test.utils.versions import load_versions
 
 # Match: source <path>  (bash)
 _BASH_SOURCE_RE = re.compile(r"""^\s*source\s+["']?(\S+?)["']?\s*$""")
 
 # Match: . <path>  or  & <path>  (PowerShell dot-source / call operator)
 _PS_SOURCE_RE = re.compile(r"""^\s*[.&]\s+["']?(\S+?)["']?\s*$""")
+
+
+def _merge_versions_env(base: Path, override: Path | None, dest: Path) -> None:
+    """Write ``base`` to ``dest`` with keys from ``override`` layered on top."""
+    merged = load_versions(base)
+    if override is not None and override.exists():
+        overrides = load_versions(override)
+        print(
+            f"Found version override '{override.name}'; merging on top of versions.env."
+        )
+        for key, new_value in overrides.items():
+            old_value = merged.get(key)
+            if old_value is None:
+                print(f"  {key}: (unset) -> {new_value}")
+            elif old_value != new_value:
+                print(f"  {key}: {old_value} -> {new_value}")
+            else:
+                print(f"  {key}: {new_value} (unchanged)")
+        merged.update(overrides)
+        # The override is fully resolved into dest now; drop it from the bundle.
+        override.unlink()
+    dest.write_text(
+        "".join(f'{k}="{v}"\n' for k, v in merged.items()), encoding="utf-8"
+    )
 
 
 def collect_and_rewrite_scripts(
@@ -225,4 +251,9 @@ def bundle_scripts(out_dir: Path, shared_scripts_root: Path | None = None) -> No
             f"versions.env not found at '{versions_env_src}'. "
             "It is required when shared scripts are referenced."
         )
-    shutil.copy2(versions_env_src, scripts_dir / "versions.env")
+
+    _merge_versions_env(
+        versions_env_src,
+        out_dir / "versions.override.env",
+        scripts_dir / "versions.env",
+    )

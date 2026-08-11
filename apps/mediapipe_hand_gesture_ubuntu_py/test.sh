@@ -5,6 +5,7 @@
 # ---------------------------------------------------------------------
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+export QAIHA_APP_ROOT="$SCRIPT_DIR"
 
 source ../_shared/scripts/qairt_utils.sh
 

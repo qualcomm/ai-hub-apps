@@ -299,6 +299,16 @@ PYTHON_VERSION, ONNX_RUNTIME_VERSION
 
 Android `build.gradle` reads these at build time via `common.gradle`. Shell scripts source them via `load_versions.sh`.
 
+> [!IMPORTANT]
+> For using any shared scripts, **`QAIHA_APP_ROOT`** (the app directory) must be set
+> before using the utilities.
+
+#### Per-app version overrides
+
+To override versions for an app, add them to `apps/<id>/versions.override.env`
+(creating the file if needed) — same `KEY="VALUE"` format; its keys win over the
+global `versions.env`. Example: `apps/whisper_windows_py/versions.override.env` pins `PYTHON_VERSION="3.12"` for win-arm64.
+
 ### Bash utilities (`.sh`)
 
 | Script | Functions | Description |

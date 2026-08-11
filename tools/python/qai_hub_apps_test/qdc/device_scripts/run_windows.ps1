@@ -6,6 +6,8 @@ $ErrorActionPreference = "Stop"
 
 $AppDir = "C:\Temp\TestContent\app"
 $LogDir = "C:\Temp\QDC_logs"
+# set QAIHA_APP_ROOT for shared utils
+$env:QAIHA_APP_ROOT = $AppDir
 $UseDocker = [System.Convert]::ToBoolean("<<USE_DOCKER>>")
 $ExitCode = 0
 

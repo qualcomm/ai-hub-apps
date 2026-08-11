@@ -9,9 +9,6 @@
 #       Install the Python version given by $PYTHON_VERSION (default from
 #       versions.env) via winget. Also bootstraps uv.
 #
-# Override the version before calling:
-#   $PYTHON_VERSION = "3.12"
-#   Install-Python
 #
 # Usage: . python_utils.ps1
 # ---------------------------------------------------------------------

@@ -15,6 +15,7 @@ from qai_hub_apps_test.bundlers.shell.bundle import (
     collect_and_rewrite_scripts,
     find_transitive_scripts,
 )
+from qai_hub_apps_test.utils.versions import load_versions
 
 pytestmark = pytest.mark.bundler_unit
 
@@ -214,6 +215,47 @@ def test_bundle_scripts_copies_versions_env(
     )
     bundle_scripts(app_dir, dummy_scripts_path)
     assert "PYTHON_VERSION" in (app_dir / "scripts" / "versions.env").read_text()
+
+
+def test_bundle_scripts_merges_versions_override(
+    tmp_path: Path, dummy_scripts_path: Path
+) -> None:
+    app_dir = tmp_path / "myapp"
+    app_dir.mkdir()
+    (app_dir / "install_runtime.sh").write_text(
+        f"source {dummy_scripts_path}/apt_utils.sh\n"
+    )
+    # An override present at the bundle root (as the app copytree would place it).
+    (app_dir / "versions.override.env").write_text(
+        'PYTHON_VERSION="3.12"\nNEW_KEY="abc"\n'
+    )
+    bundle_scripts(app_dir, dummy_scripts_path)
+    versions_env_file = app_dir / "scripts" / "versions.env"
+    merged = load_versions(versions_env_file)
+    # Overridden key wins, new key added, others preserved.
+    assert merged["PYTHON_VERSION"] == "3.12"
+    assert merged["NEW_KEY"] == "abc"
+    assert merged["TF_LITE_VERSION"] == "2.17.0"
+    # No duplicate keys in the written file.
+    text = (versions_env_file).read_text()
+    assert text.count("PYTHON_VERSION=") == 1
+    # Override is fully resolved into versions.env and removed from the bundle.
+    assert not (app_dir / "versions.override.env").exists()
+
+
+def test_bundle_scripts_versions_env_matches_global_without_override(
+    tmp_path: Path, dummy_scripts_path: Path
+) -> None:
+    app_dir = tmp_path / "myapp"
+    app_dir.mkdir()
+    (app_dir / "install_runtime.sh").write_text(
+        f"source {dummy_scripts_path}/apt_utils.sh\n"
+    )
+    bundle_scripts(app_dir, dummy_scripts_path)
+    # No override -> bundled versions.env has the same keys/values as the global.
+    assert load_versions(app_dir / "scripts" / "versions.env") == load_versions(
+        dummy_scripts_path / "versions.env"
+    )
 
 
 def test_bundle_scripts_rewrites_source_lines(

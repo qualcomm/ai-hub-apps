@@ -5,6 +5,8 @@
 # ---------------------------------------------------------------------
 # shellcheck disable=SC2086
 IMAGE="aiha-yamnet"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+export QAIHA_APP_ROOT="$SCRIPT_DIR"
 source "$(dirname "${BASH_SOURCE[0]}")/scripts/qairt_utils.sh"
 
 LIBCDSPRPC_SRC=""

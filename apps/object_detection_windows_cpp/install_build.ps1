@@ -6,6 +6,8 @@
 # NuGet, restores the NuGet packages, and exports $env:MSBUILD_EXE for the
 # caller to invoke MSBuild. OpenCV (vcpkg manifest) is restored during the build.
 $ErrorActionPreference = "Stop"
+$ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$env:QAIHA_APP_ROOT = $ScriptDir
 
 . ..\_shared\scripts\winget_utils.ps1
 . ..\_shared\scripts\msvc_utils.ps1
