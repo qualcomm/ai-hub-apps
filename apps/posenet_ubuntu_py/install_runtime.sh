@@ -30,6 +30,7 @@ install_apt_pkgs \
     gstreamer1.0-plugins-qcom-vtransform \
     v4l2loopback-dkms \
     v4l2loopback-utils \
+    v4l-utils \
     gstreamer1.0-libav
 
 install_apt_pkg unzip

@@ -10,17 +10,25 @@ import warnings
 from pathlib import Path
 from typing import Any
 
+import cv2
 import gi
 import numpy as np
 import qai_hub_apps_utils.webui as ui
 import utils.constants as C
 from ai_edge_litert.interpreter import Delegate, Interpreter
 from qai_hub_apps_utils.fps import FpsCounter
-from qai_hub_apps_utils.image_processing import resize_pad
 from qai_hub_apps_utils.quantization import dequantize, quantize
-from utils.draw import draw_skel_and_kp
 from utils.input_processing import get_gstreamer_input_pipeline
-from utils.model_io_processing import decode_multiple_poses
+from utils.model_io_processing import (
+    blend_mask,
+    blur_background,
+    build_soft_alpha,
+    composite_background,
+    decode_mask,
+    postprocess_mask,
+    resize_to_fit,
+)
+from utils.model_metadata import load_model_metadata
 
 gi.require_version("Gst", "1.0")
 from gi.repository import Gst  # noqa: E402
@@ -62,7 +70,7 @@ def _set_input(
     Parameters
     ----------
     interpreter
-        TFLite interpreter for Posenet.
+        TFLite interpreter for SINet.
     input_details
         Input tensor details from interpreter.get_input_details().
     rgb_input
@@ -80,6 +88,8 @@ def _set_input(
     else:
         # Float model expects RGB in [0, 1].
         input_val = (rgb_input.astype(np.float32) / 255.0).astype(detail["dtype"])
+    if len(detail["shape"]) == 4 and detail["shape"][1] == 3:
+        input_val = np.transpose(input_val, (0, 3, 1, 2))
     interpreter.set_tensor(detail["index"], input_val)
 
 
@@ -89,20 +99,17 @@ def _get_output(
 ) -> np.ndarray:
     """Read one output tensor, dequantizing it if the model is quantized.
 
-    The model emits channels-first tensors of shape [1, C, H, W]; the leading
-    batch dimension is dropped to yield (C, H, W) as expected by the decoder.
-
     Parameters
     ----------
     interpreter
-        TFLite interpreter for Posenet.
+        TFLite interpreter for SINet.
     detail
         A single entry from interpreter.get_output_details().
 
     Returns
     -------
     np.ndarray
-        Output tensor with shape (C, H, W).
+        Output tensor as float, shape [1, H, W, 2] (NHWC).
     """
     tensor = interpreter.get_tensor(detail["index"])
     if np.issubdtype(detail["dtype"], np.integer):
@@ -111,8 +118,7 @@ def _get_output(
             zero_points=detail["quantization_parameters"]["zero_points"],
             scales=detail["quantization_parameters"]["scales"],
         )
-    # [1, C, H, W] -> (C, H, W)
-    return tensor.squeeze(0)
+    return tensor
 
 
 def run_inference(
@@ -120,60 +126,61 @@ def run_inference(
     interpreter: Interpreter,
     input_details: list[dict[str, Any]],
     output_details: list[dict[str, Any]],
-) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """Run Posenet on a single RGB frame and decode pose keypoints.
+    input_size: tuple[int, int],
+) -> np.ndarray:
+    """Run the segmentation model on a single RGB frame and decode the mask.
 
     Parameters
     ----------
     rgb_frame
         Input RGB image as a numpy array of shape [H, W, 3], dtype uint8.
     interpreter
-        TFLite interpreter for Posenet.
+        TFLite interpreter for the segmentation model.
     input_details
         Input tensor details from interpreter.get_input_details().
     output_details
         Output tensor details from interpreter.get_output_details().
+    input_size
+        Model input (height, width) to resize the frame to.
 
     Returns
     -------
-    tuple[np.ndarray, np.ndarray, np.ndarray]
-        pose_scores, keypoint_scores and keypoint_coords. Coordinates are in
-        (y, x) format mapped back to the original frame.
+    np.ndarray
+        Foreground probability map at the model's output resolution, dtype
+        float32, in [0, 1].
     """
-    input_val, scale, pad = resize_pad(rgb_frame, (C.INPUT_HEIGHT, C.INPUT_WIDTH))
-    input_val = np.expand_dims(input_val, axis=0)
+    input_height, input_width = input_size
+    resized = cv2.resize(
+        rgb_frame, (input_width, input_height), interpolation=cv2.INTER_LINEAR
+    )
+    input_val = np.expand_dims(resized, axis=0)
 
     _set_input(interpreter, input_details, input_val)
     interpreter.invoke()
 
-    # Outputs follow the model's export order:
-    #   heatmaps, offsets, displacement_fwd, displacement_bwd, max_vals
-    heatmaps = _get_output(interpreter, output_details[0])
-    offsets = _get_output(interpreter, output_details[1])
-    displacement_fwd = _get_output(interpreter, output_details[2])
-    displacement_bwd = _get_output(interpreter, output_details[3])
-    max_vals = _get_output(interpreter, output_details[4])
-
-    pose_scores, keypoint_scores, keypoint_coords = decode_multiple_poses(
-        heatmaps,
-        offsets,
-        displacement_fwd,
-        displacement_bwd,
-        max_vals,
-    )
-
-    # Map (y, x) keypoint coordinates from network space back to the original frame.
-    pad_left, pad_top = pad
-    keypoint_coords[..., 0] = (keypoint_coords[..., 0] - pad_top) / scale
-    keypoint_coords[..., 1] = (keypoint_coords[..., 1] - pad_left) / scale
-
-    return pose_scores, keypoint_scores, keypoint_coords
+    model_output = _get_output(interpreter, output_details[0])
+    return decode_mask(model_output)
 
 
 def main(args: argparse.Namespace) -> None:
     if args.list_devices:
         subprocess.call(["v4l2-ctl", "--list-devices"])
         return
+
+    bg_image: np.ndarray | None = None
+    if args.background in ("overlay", "blur"):
+        bg_mode = args.background
+    else:
+        bg_path = Path(args.background)
+        bgr = cv2.imread(str(bg_path), cv2.IMREAD_COLOR) if bg_path.exists() else None
+        if bgr is None:
+            raise FileNotFoundError(
+                f"Background image not found or unreadable: {bg_path}"
+            )
+        bg_image = resize_to_fit(
+            bgr[..., ::-1], (args.video_source_width, args.video_source_height)
+        )
+        bg_mode = "image"
 
     Gst.init(None)
 
@@ -193,6 +200,12 @@ def main(args: argparse.Namespace) -> None:
     appsink.set_property("emit-signals", True)
     appsink.connect("new-sample", on_new_sample)
 
+    # Read the model's file name and I/O shapes from metadata.json (shipped with
+    # the asset)
+    models_dir = Path(C.MODELS_DIR)
+    metadata = load_model_metadata(models_dir)
+    input_size = (metadata.input_height, metadata.input_width)
+
     delegate_path = (
         args.qairt_path / "lib" / "aarch64-oe-linux-gcc11.2" / "libQnnTFLiteDelegate.so"
     )
@@ -211,7 +224,7 @@ def main(args: argparse.Namespace) -> None:
     )
 
     interpreter = Interpreter(
-        "models/posenet_mobilenet.tflite", experimental_delegates=[delegate]
+        str(models_dir / metadata.model_filename), experimental_delegates=[delegate]
     )
     interpreter.allocate_tensors()
 
@@ -235,19 +248,26 @@ def main(args: argparse.Namespace) -> None:
         while True:
             rgb_frame = outq.get(timeout=5)
 
-            pose_scores, keypoint_scores, keypoint_coords = run_inference(
+            prob = run_inference(
                 rgb_frame,
                 interpreter,
                 input_details,
                 output_details,
+                input_size,
             )
 
-            draw_skel_and_kp(
-                rgb_frame,
-                pose_scores,
-                keypoint_scores,
-                keypoint_coords,
-            )
+            frame_h, frame_w = rgb_frame.shape[:2]
+            if bg_mode == "overlay":
+                mask = postprocess_mask(prob, (frame_w, frame_h))
+                blend_mask(rgb_frame, mask)
+            else:
+                alpha = build_soft_alpha(prob, (frame_w, frame_h))
+                if bg_mode == "blur":
+                    background = blur_background(rgb_frame)
+                else:
+                    assert bg_image is not None
+                    background = bg_image
+                composite_background(rgb_frame, alpha, background)
 
             fps_counter.tick()
 
@@ -260,7 +280,7 @@ def main(args: argparse.Namespace) -> None:
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Posenet Pose Estimation")
+    parser = argparse.ArgumentParser(description="SINet Portrait Segmentation")
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument(
         "--list-devices", action="store_true", help="List options for --video-device"
@@ -300,6 +320,16 @@ if __name__ == "__main__":
         type=str,
         default="v73",
         help="Hexagon version of the device, e.g. v73, default v73",
+    )
+    parser.add_argument(
+        "--background",
+        type=str,
+        default="blur",
+        help=(
+            'Background mode: "blur" (default) blurs the background, "overlay" '
+            "tints the person with a solid color, or a path to an image to place "
+            "behind the person"
+        ),
     )
 
     args = parser.parse_args()

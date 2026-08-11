@@ -386,7 +386,7 @@ def main(args: argparse.Namespace) -> None:
     )
     appsink = pipeline.get_by_name("appsink")
     if not appsink:
-        raise RuntimeError("Could not find appsink element named 'sink'")
+        raise RuntimeError("Could not find appsink element named 'appsink'")
 
     appsink.set_property("emit-signals", True)
     appsink.connect("new-sample", on_new_sample)
