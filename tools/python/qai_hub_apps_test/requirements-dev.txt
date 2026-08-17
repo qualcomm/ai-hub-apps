@@ -1,7 +1,7 @@
 pytest==9.0.3
 pytest-mock==3.15.1
 pytest-json-report
-qai-hub-models-cli==0.59.0
+qai-hub-models-cli==0.60.0
 qai-hub
 typed-argument-parser
 boto3>=1.26,<=1.40.0 # for fetching test assets
