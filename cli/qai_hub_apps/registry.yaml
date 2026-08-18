@@ -242,6 +242,27 @@ apps:
   - Snapdragon X2 Elite CRD
   model_file_paths:
   - assets/models/detection.onnx
+- name: Portrait Segmentation
+  id: portrait_segmentation_ubuntu_py
+  status: published
+  headline: On-device portrait segmentation with TFLite
+  description: A sample app for Ubuntu integrating the SINet portrait-segmentation model via TFLite Runtime. It uses GStreamer for input video and provides a minimal web interface to stream output frames suitable for embedded applications.
+  domain: Computer Vision
+  use_case: Semantic Segmentation
+  app_repo_url: https://github.com/qualcomm/ai-hub-apps/tree/main/apps/portrait_segmentation_ubuntu_py
+  app_type: ubuntu
+  runtime:
+  - tflite
+  related_models:
+  - sinet
+  precisions:
+  - float
+  languages:
+  - Python
+  supported_devices:
+  - Dragonwing IQ-9075 EVK
+  model_file_paths:
+  - models/sinet.tflite
 - name: Posenet Pose Estimation
   id: posenet_ubuntu_py
   status: published

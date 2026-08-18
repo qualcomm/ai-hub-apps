@@ -85,6 +85,7 @@ __NOTE: Some of these apps will run without NPU acceleration on non-Snapdragon®
 | [Hand Gesture Recognition](apps/mediapipe_hand_gesture_ubuntu_py) | Python | TensorFlow Lite | GStreamer |
 | [Posenet Pose Estimation](apps/posenet_ubuntu_py) | Python | TensorFlow Lite | GStreamer |
 | [YamNet Audio Classification](apps/yamnet_ubuntu_py) | Python | TensorFlow Lite |
+| [Portrait Segmentation](apps/portrait_segmentation_ubuntu_py) | Python | TensorFlow Lite |
 <!-- /UBUNTU_APPS -->
 
 _\* Source available on GitHub; not included in the CLI release._
