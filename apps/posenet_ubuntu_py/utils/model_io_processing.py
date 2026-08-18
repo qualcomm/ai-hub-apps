@@ -220,8 +220,40 @@ def get_instance_score_fast(
     return float(not_overlapped_scores / len(keypoint_scores))
 
 
+def max_pool_2d(scores: np.ndarray, radius: int) -> np.ndarray:
+    """
+    Max pool each (h, w) plane of `scores` with a square kernel of size
+    2 * radius + 1, stride 1, keeping the spatial dimensions unchanged.
+
+    Parameters
+    ----------
+    scores
+        See `decode_multiple_poses`. Shape [17, h, w].
+    radius
+        Neighborhood radius of the pooling kernel.
+
+    Returns
+    -------
+    max_pooled : np.ndarray
+        Element-wise local maximum of `scores`, same shape as `scores`.
+    """
+    kernel = 2 * radius + 1
+    # -inf padding so out-of-bounds neighbors never win the max, matching the
+    # behavior of torch.nn.functional.max_pool2d.
+    padded = np.pad(
+        scores,
+        ((0, 0), (radius, radius), (radius, radius)),
+        mode="constant",
+        constant_values=-np.inf,
+    )
+    windows = np.lib.stride_tricks.sliding_window_view(
+        padded, (kernel, kernel), axis=(1, 2)
+    )
+    return windows.max(axis=(-2, -1))
+
+
 def build_part_with_score(
-    score_threshold: float, max_vals: np.ndarray, scores: np.ndarray
+    score_threshold: float, scores: np.ndarray
 ) -> tuple[np.ndarray, np.ndarray]:
     """
     Get candidate keypoints to be considered the root for a pose. Score for the
@@ -232,8 +264,6 @@ def build_part_with_score(
     ----------
     score_threshold
         Minimum score for a keypoint to be considered as a root.
-    max_vals
-        See `decode_multiple_poses`.
     scores
         See `decode_multiple_poses`.
 
@@ -245,10 +275,18 @@ def build_part_with_score(
         Indices of the considered keypoints. Shape (N, 3) where the 3 indices
         map to the dimensions of the scores tensor with shape (17, h, w).
     """
-    max_loc = (scores == max_vals) & (scores >= score_threshold)
+    # The local maxima are recomputed from `scores` rather than read from a
+    # separate model output: on device the two would be quantized
+    # independently, so the `==` comparison would rarely hold -> zero peaks ->
+    # no keypoints detected. Recomputing keeps the equality exact.
+    max_pooled = max_pool_2d(scores, C.LOCAL_MAXIMUM_RADIUS)
+    max_loc = (scores == max_pooled) & (scores >= score_threshold)
     max_loc_idx = np.argwhere(max_loc)
     scores_vec = scores[max_loc]
-    sort_idx = np.argsort(scores_vec)[::-1]
+    # Stable descending sort, so keypoints with equal scores stay in raster
+    # order. Quantized scores take only 256 distinct values, so ties are
+    # common, and the order decides which poses NMS keeps.
+    sort_idx = np.argsort(-scores_vec, kind="stable")
     return scores_vec[sort_idx], max_loc_idx[sort_idx]
 
 
@@ -257,7 +295,6 @@ def decode_multiple_poses(
     offsets: np.ndarray,
     displacements_fwd: np.ndarray,
     displacements_bwd: np.ndarray,
-    max_vals: np.ndarray,
     max_pose_detections: int = C.MAX_POSE_DETECTIONS,
     score_threshold: float = C.SCORE_THRESHOLD,
     nms_radius: int = C.NMS_RADIUS,
@@ -286,8 +323,6 @@ def decode_multiple_poses(
     displacements_bwd
         Same as displacements_fwd, except when traversing keypoint connections
         in the opposite direction.
-    max_vals
-        Same as scores except with a max pool applied with kernel size 3.
     max_pose_detections
         Maximum number of distinct poses to detect in a single image.
     score_threshold
@@ -307,7 +342,7 @@ def decode_multiple_poses(
     pose_keypoint_coords : np.ndarray
         Numpy array of keypoint coordinates in (y, x) format.
     """
-    part_scores, part_idx = build_part_with_score(score_threshold, max_vals, scores)
+    part_scores, part_idx = build_part_with_score(score_threshold, scores)
 
     height = scores.shape[1]
     width = scores.shape[2]

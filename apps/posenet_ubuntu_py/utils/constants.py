@@ -12,6 +12,9 @@ INPUT_WIDTH = 257
 OUTPUT_STRIDE = 16
 
 # Decode parameters.
+# Radius of the neighborhood a keypoint score must be the maximum of to be
+# considered a peak (i.e. a max pool with kernel size 2 * radius + 1).
+LOCAL_MAXIMUM_RADIUS = 1
 MAX_POSE_DETECTIONS = 10
 SCORE_THRESHOLD = 0.25
 NMS_RADIUS = 20

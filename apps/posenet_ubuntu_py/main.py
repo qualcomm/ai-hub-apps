@@ -147,19 +147,17 @@ def run_inference(
     interpreter.invoke()
 
     # Outputs follow the model's export order:
-    #   heatmaps, offsets, displacement_fwd, displacement_bwd, max_vals
+    #   heatmaps, offsets, displacement_fwd, displacement_bwd
     heatmaps = _get_output(interpreter, output_details[0])
     offsets = _get_output(interpreter, output_details[1])
     displacement_fwd = _get_output(interpreter, output_details[2])
     displacement_bwd = _get_output(interpreter, output_details[3])
-    max_vals = _get_output(interpreter, output_details[4])
 
     pose_scores, keypoint_scores, keypoint_coords = decode_multiple_poses(
         heatmaps,
         offsets,
         displacement_fwd,
         displacement_bwd,
-        max_vals,
     )
 
     # Map (y, x) keypoint coordinates from network space back to the original frame.
