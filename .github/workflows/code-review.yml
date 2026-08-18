@@ -1,0 +1,29 @@
+name: Pull Request Review Agent
+on:
+  pull_request:
+    types: [opened]
+    paths-ignore:
+      - '.gitignore'
+      - '**.png'
+      - '**.jpg'
+      - '**.jpeg'
+      - '**.gif'
+      - '**.svg'
+      - '**.ico'
+      - '**.webp'
+      - '**.bmp'
+      - '**.zip'
+      - '**.tar'
+      - '**.tar.gz'
+      - '**.gz'
+      - '**.rar'
+      - '**.7z'
+      - '**.woff'
+      - '**.woff2'
+      - '**.eot'
+      - '**.ttf'
+      - '**.otf'
+jobs:
+  review:
+    uses: qcom-eng-Nimbus/custom-templates/.github/workflows/breeze-pr-review-agent.yaml@main
+    secrets: inherit

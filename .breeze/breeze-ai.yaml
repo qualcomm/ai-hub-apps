@@ -1,0 +1,51 @@
+# Breeze AI Configuration
+
+agents:
+  # Breeze-AI General Agent
+  breeze-ai:
+    enabled: true
+    # load_local_kb:
+    #   enabled: true
+    #   domains:
+    #     - edgewise
+
+  # PR Review Agent
+  pr-review:
+    enabled: true
+
+    # # Load local knowledge base
+    # load_local_kb:
+    #   enabled: true
+    #   domains:
+    #     - domain-1
+
+    # # MCP servers (Model Context Protocol)
+    # # Only whitelisted servers from configure-mcps/mcp-whitelist.yaml are allowed
+    # mcps:
+    #   - sequential-thinking
+
+    # # Allowed tools for MCP servers
+    # # Must use full format: mcp__server-name__tool_name
+    # # Only tools from whitelisted servers are allowed
+    # allowed_tools:
+    #   - mcp__sequential-thinking__sequentialthinking
+
+    # Custom instructions specific to this project
+    # by default, Breeze AI uses general instructions suitable for most simple projects
+    # for advanced use cases, you should use custom instructions and plugins
+    custom_instructions: |
+      Code review focus:
+      - Code maintainability and readability
+      - Security vulnerabilities
+      - Performance bottlenecks
+      - Best practices adherence
+      - Code style consistency
+      - Potential bugs and edge cases
+      - Test coverage and quality
+      - Documentation completeness
+
+    # # Breeze Code plugins (simple string format: "name@marketplace")
+    # # These will be merged with default plugins from the workflow
+    # # Plugins are advanced tools that extend Breeze AI capabilities
+    # plugins:
+    #   - "demo-pr-reviewer@breeze-claude-plugins"
