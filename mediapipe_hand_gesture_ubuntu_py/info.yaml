@@ -1,0 +1,25 @@
+name: MediaPipe Hand Gesture Recognition
+id: mediapipe_hand_gesture_ubuntu_py
+license_url: https://github.com/qualcomm/ai-hub-apps/blob/main/LICENSE
+license_type: bsd-3-clause
+runtime: tflite
+status: published
+domain: 'Computer Vision'
+headline: 'On-device hand gesture recognition with TFLite'
+description: 'A sample app for Ubuntu integrating the MediaPipe Hand Gesture recognition model via TFLite Runtime. It leverages GStreamer for input video and provides a minimal web interface to stream output frames suitable for embedded applications.'
+precisions: [w8a8]
+app_type: 'ubuntu'
+static_img_filename: 'GestureRecognition-2.png'
+app_repo_relative_path: 'mediapipe_hand_gesture_ubuntu_py'
+model_file_paths:
+  - 'models/palm_detector.tflite'
+  - 'models/hand_landmark_detector.tflite'
+  - 'models/canned_gesture_classifier.tflite'
+os:
+  name: Ubuntu
+  version: 24.04+
+languages: ['Python']
+base_docker: ubuntu.dockerfile
+use_case: 'Object Detection'
+supported_devices: ["Dragonwing IQ-9075 EVK"]
+related_models: ['mediapipe_hand_gesture']
