@@ -52,6 +52,8 @@ import com.geniex.demo.databinding.ActivityMainBinding
 import com.geniex.demo.databinding.DialogSelectPluginIdBinding
 import com.geniex.demo.listeners.CustomDialogInterface
 import com.geniex.demo.utils.ExecShell
+import com.geniex.demo.utils.GgufVisionConfig
+import com.geniex.demo.utils.GgufVisionReader
 import com.geniex.demo.utils.ImgUtil
 import com.geniex.demo.utils.inflate
 import com.geniex.sdk.GenieXSdk
@@ -116,6 +118,13 @@ class MainActivity : FragmentActivity() {
     private var isLoadLlmModel = false
     private var isLoadVlmModel = false
 
+    /**
+     * Vision geometry of the currently loaded VLM, read from its mmproj GGUF.
+     * Null for LLM-only models, and when the mmproj declares nothing usable —
+     * image preprocessing then falls back to [FALLBACK_VLM_IMAGE_SIZE].
+     */
+    private var vlmVisionConfig: GgufVisionConfig? = null
+
     private var enableThinking = false
     private var isGenerating = false
 
@@ -137,6 +146,8 @@ class MainActivity : FragmentActivity() {
     private fun resetLoadState() {
         isLoadLlmModel = false
         isLoadVlmModel = false
+        // Stale geometry would size preprocessing for the previous model.
+        vlmVisionConfig = null
     }
 
     private fun initView() {
@@ -365,13 +376,33 @@ class MainActivity : FragmentActivity() {
 
                 "multimodal", "vlm" -> {
                     val isNpuVlm = pluginId == "qairt"
+                    // Size image preprocessing from the tower this model actually
+                    // ships, not from a constant: Qwen3.5-VL is 768/16 (576
+                    // tokens) but Qwen2.5-VL is 560/14 (1600), so one hardcoded
+                    // number mis-sizes every other model in the catalog.
+                    vlmVisionConfig =
+                        paths.mmproj_path?.takeIf { it.isNotEmpty() }?.let { GgufVisionReader.read(File(it)) }
+                    vlmVisionConfig?.let {
+                        Log.d(
+                            TAG,
+                            "vision tower: ${it.imageSize}px, patch ${it.patchSize}, " +
+                                "merge ${it.spatialMergeSize} -> ${it.tokenCount} image tokens",
+                        )
+                    } ?: Log.w(TAG, "no vision config from mmproj; preprocessing at $FALLBACK_VLM_IMAGE_SIZE")
                     val config =
                         if (isNpuVlm) {
                             // QAIRT rejects non-zero n_ctx / n_gpu_layers for VLM too.
                             ModelConfig(nCtx = 0, nGpuLayers = 0, nThreads = 8, enable_thinking = enableThinking)
                         } else {
                             ModelConfig(
-                                nCtx = 1024,
+                                // One image costs tokenCount tokens (576 on
+                                // Qwen3.5-VL, 1600 on Qwen2.5-VL). nCtx = 1024
+                                // left too little room for the prompt plus a
+                                // reply, and a second image turn died inside
+                                // mtmd_tokenize with "failed to initialize
+                                // batch". Leave room for an image, its answer and
+                                // a follow-up turn.
+                                nCtx = vlmContextSize(vlmVisionConfig),
                                 nThreads = 4,
                                 nBatch = 1,
                                 nUBatch = 1,
@@ -1046,21 +1077,14 @@ class MainActivity : FragmentActivity() {
                 bitmap.compress(Bitmap.CompressFormat.JPEG, 100, out)
             }
 
-            val outFile =
-                File(
-                    tempDir,
-                    "out_${System.currentTimeMillis()}.jpg",
-                )
+            // Crop straight from the full-size temp file. Pre-downscaling on the
+            // *longest* edge first would leave the shorter edge under the target
+            // (e.g. 448x355), forcing squareCrop to upscale it back — two lossy
+            // resamples for a softer result. squareCrop samples down internally.
             ImgUtil.squareCrop(
-                ImgUtil.downscaleAndSave(
-                    imageFile = tempFile,
-                    outFile = outFile,
-                    maxSize = 448,
-                    format = Bitmap.CompressFormat.JPEG,
-                    quality = 90,
-                ),
-                file,
-                448,
+                imageFile = tempFile,
+                outFile = file,
+                size = vlmVisionConfig?.imageSize ?: FALLBACK_VLM_IMAGE_SIZE,
             )
             true
         } catch (e: Exception) {
@@ -1229,5 +1253,31 @@ class MainActivity : FragmentActivity() {
 
     companion object {
         private const val TAG = "GenieXDemo"
+
+        /**
+         * Square edge length used for image preprocessing when the mmproj GGUF
+         * does not declare one. Only a fallback — the real value is read per
+         * model by [GgufVisionReader], since feeding a tower a smaller square
+         * than it was trained on silently discards detail.
+         */
+        private const val FALLBACK_VLM_IMAGE_SIZE = 448
+
+        /** Room for an image, its answer, and a follow-up turn, over the image cost. */
+        private const val VLM_CTX_HEADROOM = 2048
+
+        /** nCtx must be at least this regardless of image cost. */
+        private const val VLM_MIN_CTX = 4096
+
+        /**
+         * Context size that fits one image of [vision]'s token cost plus room to
+         * answer and ask again. Rounded up to a power of two, which is what
+         * llama.cpp KV-cache allocation prefers.
+         */
+        private fun vlmContextSize(vision: GgufVisionConfig?): Int {
+            val needed = (vision?.tokenCount ?: 0) + VLM_CTX_HEADROOM
+            var ctx = VLM_MIN_CTX
+            while (ctx < needed) ctx *= 2
+            return ctx
+        }
     }
 }

@@ -6,12 +6,11 @@ package com.geniex.demo.utils
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.graphics.Canvas
 import android.graphics.Matrix
 import android.media.ExifInterface
-import androidx.core.graphics.createBitmap
 import java.io.File
 import java.io.FileOutputStream
+import kotlin.math.ceil
 
 class ImgUtil {
     companion object {
@@ -111,6 +110,21 @@ class ImgUtil {
             return outFile
         }
 
+        /**
+         * Resize imageFile so its shorter edge is [size], then centre-crop to a
+         * square [size] x [size] and save to outFile (JPEG), returning outFile.
+         *
+         * The square is filled edge to edge with image content on purpose. An
+         * earlier version centred the source on a blank canvas, which left black
+         * letterbox bars on any non-square photo (a 448x355 input wasted rows
+         * 0-46 and 402-447). Vision encoders tokenise the square as a fixed grid
+         * — for Qwen3.5-VL, 14x14 = 196 tokens — so those bars burned ~21% of the
+         * image tokens on padding and squeezed the subject into less than 80% of
+         * the vertical resolution, which was enough to make the model misread it.
+         *
+         * Cropping trades the edges of a wide frame for full resolution on the
+         * centre, which is the standard preprocessing for CLIP-style encoders.
+         */
         fun squareCrop(
             imageFile: File,
             outFile: File,
@@ -119,21 +133,45 @@ class ImgUtil {
             val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
             BitmapFactory.decodeFile(imageFile.absolutePath, bounds)
 
-            val options =
+            val opts =
                 BitmapFactory.Options().apply {
-                    inSampleSize = 1
                     inJustDecodeBounds = false
+                    // Downsample while decoding, but keep the shorter edge at or
+                    // above `size` so the resize below never has to upscale.
+                    inSampleSize =
+                        run {
+                            val shorter = minOf(bounds.outWidth, bounds.outHeight)
+                            var s = 1
+                            while (shorter / (s * 2) >= size) s *= 2
+                            s
+                        }
+                    inPreferredConfig = Bitmap.Config.ARGB_8888
                 }
-            val bitmap = BitmapFactory.decodeFile(imageFile.absolutePath, options)
-            val cropped = createBitmap(size, size)
-            val canvas = Canvas(cropped)
-            canvas.drawBitmap(
-                bitmap,
-                (size - bitmap.width).toFloat() / 2,
-                (size - bitmap.height).toFloat() / 2,
-                null,
-            )
-            if (!bitmap.isRecycled) bitmap.recycle()
+            val bmp = BitmapFactory.decodeFile(imageFile.absolutePath, opts) ?: error("decode fail")
+
+            // Scale so the shorter edge lands exactly on `size`; the longer edge
+            // overflows and is trimmed by the centre-crop below.
+            val scale = size.toFloat() / minOf(bmp.width, bmp.height)
+            val scaledW = ceil(bmp.width * scale).toInt().coerceAtLeast(size)
+            val scaledH = ceil(bmp.height * scale).toInt().coerceAtLeast(size)
+            val scaled =
+                if (bmp.width != scaledW || bmp.height != scaledH) {
+                    Bitmap.createScaledBitmap(bmp, scaledW, scaledH, true)
+                } else {
+                    bmp
+                }
+            if (scaled !== bmp) bmp.recycle()
+
+            val cropped =
+                Bitmap.createBitmap(
+                    scaled,
+                    (scaled.width - size) / 2,
+                    (scaled.height - size) / 2,
+                    size,
+                    size,
+                )
+            if (cropped !== scaled) scaled.recycle()
+
             FileOutputStream(outFile).use { fos ->
                 cropped.compress(Bitmap.CompressFormat.JPEG, 100, fos)
             }
