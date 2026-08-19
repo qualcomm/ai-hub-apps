@@ -11,15 +11,12 @@ from urllib.parse import quote
 
 from platformdirs import user_cache_dir
 
-from qai_hub_apps import _is_dev
+from qai_hub_apps import _BUNDLED_REGISTRY, _is_dev
 from qai_hub_apps.errors import RegistryFetchError
 
 _S3_BASE = "https://qaihub-public-assets.s3.us-west-2.amazonaws.com"
 _S3_PREFIX = "qai-hub-apps/releases"
 _S3_PREFIX_DEV = f"{_S3_PREFIX}/dev"
-
-# registry.yaml sits at cli/qai_hub_apps/registry.yaml; this file is one level deeper
-_BUNDLED_REGISTRY = Path(__file__).parent.parent / "registry.yaml"
 
 
 def _registry_s3_url(version: str) -> str:

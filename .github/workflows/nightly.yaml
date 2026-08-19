@@ -154,6 +154,9 @@ jobs:
       - name: Send Slack Notification
         id: slack_notification
         uses: slackapi/slack-github-action@v4.0.0
+        env:
+          # when test_on_device_apps skips, result_payload is empty and fromJson() would fail.
+          RESULT_PAYLOAD: ${{ needs.test_on_device_apps.outputs.result_payload || '{"summary":{"passed":"n/a","failed":"n/a","skipped":"n/a"}}' }}
         with:
           method: chat.postMessage
           token: ${{ secrets.SLACK_NOTIFIER_TOKEN }}
@@ -163,7 +166,7 @@ jobs:
               🚨 QAI Hub Apps Nightly Failed
               Workflow: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}
               GitHub Issue: ${{ steps.create-github-issue.outputs.issue_url }}
-              App Results: ✅ ${{ fromJson(needs.test_on_device_apps.outputs.result_payload).summary.passed }} passed | ❌ ${{ fromJson(needs.test_on_device_apps.outputs.result_payload).summary.failed }} failed | ⏭ ${{ fromJson(needs.test_on_device_apps.outputs.result_payload).summary.skipped }} skipped
+              App Results: ✅ ${{ fromJson(env.RESULT_PAYLOAD).summary.passed }} passed | ❌ ${{ fromJson(env.RESULT_PAYLOAD).summary.failed }} failed | ⏭ ${{ fromJson(env.RESULT_PAYLOAD).summary.skipped }} skipped
               See full results table in the workflow summary.
 
   notify_success:
