@@ -7,6 +7,7 @@
 #include <onnxruntime_cxx_api.h>
 #include <onnxruntime_session_options_config_keys.h>
 
+#include <cstring>
 #include <filesystem>
 #include <iostream>
 #include <sstream>
@@ -66,8 +67,25 @@ void SuperResolutionApp::PrepareModelForInference(const App::BackendOption backe
         qnn_options["enable_htp_fp16_precision"] = "1";
     }
 
+    constexpr const char* qnn_ep_name = "QNNExecutionProvider";
+    m_env.RegisterExecutionProviderLibrary(qnn_ep_name, ORT_TSTR("onnxruntime_providers_qnn.dll"));
+
+    std::vector<Ort::ConstEpDevice> qnn_ep_devices;
+    for (const Ort::ConstEpDevice& ep_device : m_env.GetEpDevices())
+    {
+        if (std::strcmp(ep_device.EpName(), qnn_ep_name) == 0)
+        {
+            qnn_ep_devices.push_back(ep_device);
+        }
+    }
+    if (qnn_ep_devices.empty())
+    {
+        throw std::runtime_error("QNN execution provider device not found. Ensure onnxruntime_providers_qnn.dll and "
+                                 "the Qnn*.dll backend libraries are next to the executable.");
+    }
+
     // Additional options to set
-    session_options.AppendExecutionProvider("QNN", qnn_options);
+    session_options.AppendExecutionProvider_V2(m_env, qnn_ep_devices, qnn_options);
     if (!std::filesystem::exists(m_model_path))
     {
         std::ostringstream err_msg;
