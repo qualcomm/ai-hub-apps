@@ -1,0 +1,23 @@
+name: Semantic Segmentation Ubuntu
+id: semantic_segmentation_ubuntu_py
+license_url: https://github.com/qualcomm/ai-hub-apps/blob/main/LICENSE
+license_type: bsd-3-clause
+runtime: tflite
+status: unpublished
+domain: 'Computer Vision'
+headline: 'On-device semantic segmentation with TFLite'
+description: 'A sample app for Ubuntu demonstrating semantic segmentation on a live camera stream via TFLite Runtime. It uses GStreamer for input video and provides a minimal web interface to stream the color-overlaid output frames, suitable for embedded applications.'
+precisions: [w8a8]
+app_type: 'ubuntu'
+static_img_filename: 'DeepLabXception.png'
+app_repo_relative_path: 'semantic_segmentation_ubuntu_py'
+model_file_paths:
+  - 'models/deeplab_xception.tflite'
+os:
+  name: Ubuntu
+  version: 24.04+
+languages: ['Python']
+base_docker: ubuntu.dockerfile
+use_case: 'Semantic Segmentation'
+supported_devices: ["Dragonwing IQ-9075 EVK"]
+related_models: ['deeplab_xception', 'deeplabv3_plus_mobilenet', 'fcn_resnet50']
