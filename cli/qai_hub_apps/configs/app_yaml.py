@@ -74,3 +74,15 @@ class AppInfo(BaseConfig):
         if isinstance(value, str):
             return [value]
         return value
+
+    @field_validator("supported_devices", mode="before")
+    @classmethod
+    def _normalize_supported_devices(cls, value: object) -> object:
+        """Normalize devices to names; mapping entries keep only their ``name``.
+
+        Registries may list a device either as a plain name or as a mapping with
+        a ``name`` and internal test ``status``.
+        """
+        if isinstance(value, list):
+            return [v.get("name") if isinstance(v, dict) else v for v in value]
+        return value

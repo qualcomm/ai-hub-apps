@@ -94,7 +94,7 @@ def test_related_models(app_info: QAIHAAppInfo) -> None:
 
     runtime = [str(r) for r in app_info.runtime] or None
     precision = [str(p) for p in app_info.precisions] or None
-    devices = [str(d) for d in app_info.supported_devices] or None
+    devices = [str(d.name) for d in app_info.supported_devices] or None
     listed = [str(m) for m in app_info.related_models]
 
     # Every listed model must match the app's runtime/precision/devices.

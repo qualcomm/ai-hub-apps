@@ -81,6 +81,18 @@ def _is_supported_app(info: QAIHAAppInfo) -> bool:
     return info.app_type == AppType.WINDOWS and AppLanguage.CPP in info.languages
 
 
+def _to_cli_info(info: QAIHAAppInfo, **updates: object) -> QAIHACLIAppInfo:
+    """Project full app info onto the CLI-facing subset, applying *updates*.
+
+    Structured ``supported_devices`` entries are flattened to device names, as
+    test status is internal to CI.
+    """
+    fields = {name: getattr(info, name) for name in QAIHACLIAppInfo.model_fields}
+    fields["supported_devices"] = [d.name for d in info.supported_devices]
+    fields.update(updates)
+    return QAIHACLIAppInfo.model_validate(fields)
+
+
 def _read_cli_version() -> str:
     from setuptools_scm import get_version
 
@@ -268,9 +280,7 @@ def generate_registry(
                 source_url = (
                     f"{s3_base}/{s3_prefix}/{quote(cli_version)}/{info.id}/source.zip"
                 )
-                bundled_apps.append(
-                    info.model_copy(update={"url": AppUrl(source=source_url)})
-                )
+                bundled_apps.append(_to_cli_info(info, url=AppUrl(source=source_url)))
     else:
         for info, _ in public_apps:
             print(f"\n{f' {info.id} ':─^60}")
@@ -280,7 +290,7 @@ def generate_registry(
                     f"(type={info.app_type.value}, languages={[l.value for l in info.languages]})"
                 )
                 continue
-            bundled_apps.append(info)
+            bundled_apps.append(_to_cli_info(info))
             print("Registered (no bundle)")
 
     registry = AppRegistry(

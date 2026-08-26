@@ -68,6 +68,36 @@ def test_app_info_optional_environment_defaults_none():
     assert info.environment is None
 
 
+def test_supported_devices_accepts_names():
+    info = AppInfo(**_REQUIRED_FIELDS, supported_devices=["Device A", "Device B"])
+    assert info.supported_devices == ["Device A", "Device B"]
+
+
+def test_supported_devices_accepts_mappings():
+    info = AppInfo.model_validate(
+        {
+            **_REQUIRED_FIELDS,
+            "supported_devices": [
+                {"name": "Device A", "status": "Tested"},
+                {"name": "Device B", "status": "Not Tested"},
+            ],
+        }
+    )
+    assert info.supported_devices == ["Device A", "Device B"]
+
+
+def test_supported_devices_mapping_without_name_raises():
+    with pytest.raises(ValidationError):
+        AppInfo.model_validate(
+            {**_REQUIRED_FIELDS, "supported_devices": [{"status": "Tested"}]}
+        )
+
+
+def test_supported_devices_non_list_raises():
+    with pytest.raises(ValidationError):
+        AppInfo.model_validate({**_REQUIRED_FIELDS, "supported_devices": "Device A"})
+
+
 def test_app_url_source_field():
     url = AppUrl(source="https://example.com/source.zip")
     assert url.source == "https://example.com/source.zip"

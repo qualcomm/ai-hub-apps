@@ -21,4 +21,6 @@ os:
 languages: ['C++']
 use_case: 'Super Resolution'
 related_models: [xlsr]
-supported_devices: ["Snapdragon X Elite CRD"]
+supported_devices:
+  - name: "Snapdragon X Elite CRD"
+    status: "Tested"

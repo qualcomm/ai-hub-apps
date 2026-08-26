@@ -19,5 +19,7 @@ os:
 languages: ['Python']
 base_docker: ubuntu.dockerfile
 use_case: 'Semantic Segmentation'
-supported_devices: ["Dragonwing IQ-9075 EVK"]
+supported_devices:
+  - name: "Dragonwing IQ-9075 EVK"
+    status: "Tested"
 related_models: ['sinet']

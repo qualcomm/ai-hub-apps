@@ -29,5 +29,7 @@ app_repo_url: 'https://github.com/qualcomm/geniex'
 os:
   name: Ubuntu
   version: 24.04+
-supported_devices: ["Dragonwing IQ-9075 EVK"]
+supported_devices:
+  - name: "Dragonwing IQ-9075 EVK"
+    status: "Tested"
 languages: ['Go']

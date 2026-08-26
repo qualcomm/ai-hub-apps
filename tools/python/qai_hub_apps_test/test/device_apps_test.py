@@ -179,8 +179,10 @@ def test_1_fetch_app(
 
     if app_info.skip_test:
         pytest.skip(app_info.skip_test)
-    if not app_info.supported_devices:
+    tested_device = app_info.tested_device
+    if tested_device is None:
         pytest.fail(f"No supported_devices defined in {app_info.id}/info.yaml")
+    assert tested_device is not None
 
     out_parent = tmp_path_factory.mktemp(f"{app_info.id}__{model_id}")
     fetch_cmd = [
@@ -197,7 +199,7 @@ def test_1_fetch_app(
             "--model",
             model_id,
             "--chipset",
-            app_info.supported_devices[0].chipset,
+            tested_device.chipset,
         ]
     _run_fetch(fetch_cmd)
     fetched_dirs[(app_info.id, model_id)] = out_parent / app_info.id
@@ -248,10 +250,12 @@ def test_3_on_device_app(
 
     if not qdc_token:
         pytest.fail("--qdc-token is required for on-device tests")
-    if not app_info.supported_devices:
+    tested_device = app_info.tested_device
+    if tested_device is None:
         pytest.fail(f"No supported_devices defined in {app_info.id}/info.yaml")
+    assert tested_device is not None
 
-    device = app_info.supported_devices[0].reference_device_name
+    device = tested_device.reference_device_name
 
     assert qdc_token is not None
     assert app_dir is not None

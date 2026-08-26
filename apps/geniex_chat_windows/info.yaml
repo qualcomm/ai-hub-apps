@@ -32,5 +32,9 @@ app_repo_url: 'https://github.com/qualcomm/geniex'
 os:
   name: Windows
   version: 11+
-supported_devices: ["Snapdragon X Elite CRD", "Snapdragon X2 Elite CRD"]
+supported_devices:
+  - name: "Snapdragon X Elite CRD"
+    status: "Tested"
+  - name: "Snapdragon X2 Elite CRD"
+    status: "Not Tested"
 languages: ['Go']

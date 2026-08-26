@@ -21,4 +21,6 @@ os:
 languages: ['Java', 'C++']
 use_case: Text Generation
 related_models: ['qwen3_4b_instruct_2507', 'llama_v3_2_3b_instruct']
-supported_devices: ["Snapdragon 8 Elite QRD"]
+supported_devices:
+  - name: "Snapdragon 8 Elite QRD"
+    status: "Tested"

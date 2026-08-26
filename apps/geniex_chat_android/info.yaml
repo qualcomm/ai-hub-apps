@@ -28,7 +28,11 @@ related_models: [
 precisions: []
 static_img_filename: 'app_screen.png'
 app_repo_relative_path: 'geniex_chat_android'
-supported_devices: ["Snapdragon 8 Elite QRD", "Snapdragon 8 Elite Gen 5 QRD"]
+supported_devices:
+  - name: "Snapdragon 8 Elite QRD"
+    status: "Tested"
+  - name: "Snapdragon 8 Elite Gen 5 QRD"
+    status: "Not Tested"
 base_docker: ubuntu.dockerfile
 # This app downloads models at runtime via the GenieX SDK rather than bundling
 disable_cli_model_fetch: true

@@ -22,4 +22,6 @@ related_models: [whisper_base]
 model_file_paths:
   - 'models/encoder.onnx'
   - 'models/decoder.onnx'
-supported_devices: ["Snapdragon X Elite CRD"]
+supported_devices:
+  - name: "Snapdragon X Elite CRD"
+    status: "Tested"

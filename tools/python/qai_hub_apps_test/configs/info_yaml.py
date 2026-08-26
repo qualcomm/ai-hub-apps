@@ -54,6 +54,17 @@ class AppType(Enum):
     UBUNTU = "ubuntu"
 
 
+@unique
+class DeviceTestStatus(Enum):
+    TESTED = "Tested"  # The device this app is tested on in CI
+    NOT_TESTED = "Not Tested"
+
+
+class SupportedDevice(BaseConfig):
+    name: Device
+    status: DeviceTestStatus = DeviceTestStatus.NOT_TESTED
+
+
 class AppOS(BaseConfig):
     name: str
     version: str
@@ -81,6 +92,8 @@ class QAIHACLIAppInfo(BaseConfig):
     related_models: list[str]
     precisions: list[Precision]
     languages: list[AppLanguage]
+    # Flat device names; generate_registry flattens info.yaml's structured
+    # supported_devices onto this field.
     supported_devices: list[Device] = Field(default_factory=list)
     model_file_paths: list[
         Path
@@ -143,10 +156,38 @@ class QAIHAAppInfo(QAIHACLIAppInfo):
 
     skip_test: str | None = None
     skip_related_models_verify: str | None = None
-    supported_devices: list[Device] = Field(default_factory=list)
+    supported_devices: list[SupportedDevice] = Field(  # type: ignore[assignment]
+        default_factory=list
+    )
     app_repo_relative_path: str | None = (
         None  # relative path within qualcomm/ai-hub-apps
     )
+
+    @model_validator(mode="after")
+    def _validate_supported_devices(self) -> "QAIHAAppInfo":
+        if not self.supported_devices:
+            return self
+        tested = [
+            d for d in self.supported_devices if d.status is DeviceTestStatus.TESTED
+        ]
+        if len(tested) != 1:
+            raise ValueError(
+                f"App '{self.id}': exactly one supported_devices entry must have "
+                f"status '{DeviceTestStatus.TESTED.value}', got {len(tested)}"
+            )
+        return self
+
+    @property
+    def tested_device(self) -> Device | None:
+        """The device this app is tested on, or None if no devices are declared."""
+        return next(
+            (
+                d.name
+                for d in self.supported_devices
+                if d.status is DeviceTestStatus.TESTED
+            ),
+            None,
+        )
 
     @model_validator(mode="after")
     def _validate_repo(self) -> "QAIHAAppInfo":

@@ -240,7 +240,7 @@ Every app must have an `info.yaml`. Copy from a similar app and adjust.
 | `languages` | list | e.g. `['Java']`, `['Python']`, `['Java', 'C++']` |
 | `related_models` | list | All compatible model IDs (used for CLI fetch + testing). The first entry is the seed model tested on-device. CI fails if any entry has no AI Hub Models asset matching the app's `runtime`/`precisions`/`supported_devices` |
 | `precisions` | list | e.g. `[float]`, `[w4a16]` |
-| `supported_devices` | list | Device names — **must match a key in `HUB_DEVICE_TO_QDC_DEVICE_MAP`** in `tools/python/qai_hub_apps_test/qdc/qdc_jobs.py` |
+| `supported_devices` | list of mappings | Each entry has `name` (**must match a key in `HUB_DEVICE_TO_QDC_DEVICE_MAP`** in `tools/python/qai_hub_apps_test/qdc/qdc_jobs.py`) and `status` (`Tested` \| `Not Tested`, default `Not Tested`). Exactly one entry must be `Tested` — that is the device the app is tested on in CI. See [Supported devices](#supported-devices) |
 | `license_type` | `bsd-3-clause` | License (almost always BSD-3) |
 | `license_url` | string | Link to LICENSE file |
 | `app_repo_relative_path` | string | Path within the public repo, usually `id` (e.g. `image_classification_android`) |
@@ -257,6 +257,22 @@ Every app must have an `info.yaml`. Copy from a similar app and adjust.
 | `skip_related_models_verify` | — | String reason to skip `related_models` verification for this app |
 | `app_repo_url` | — | Explicit GitHub URL (overrides `app_repo_relative_path` — use for external repos) |
 | `qaihm_version` | — | Explicit Qualcomm AI Hub Models CLI version to use when dowloading model assets. By default, the installed version of the models-cli is used, if provided, this version will be used instead |
+
+### Supported devices
+
+```yaml
+supported_devices:
+  - name: "Snapdragon 8 Elite QRD"
+    status: "Tested"
+  - name: "Snapdragon 8 Elite Gen 5 QRD"
+    status: "Not Tested"
+```
+
+Exactly one entry must be marked `Tested`; the on-device (nightly) test uses that
+device for its QDC job and its chipset for `qai-hub-apps fetch`. The generated CLI
+`registry.yaml` keeps only the device names — test status is internal to CI. (The
+CLI's `AppInfo` accepts either form and normalizes to names, so a registry carrying
+the structured entries still loads.)
 
 ### App Status
 
@@ -563,7 +579,7 @@ mkdir apps/<app_name>_<platform>[_<language>]
 
 Copy from a similar app (e.g. `image_classification_android/info.yaml`). Set:
 - `status: unpublished` until the app is ready (see [App Status](#app-status))
-- `supported_devices` — check `HUB_DEVICE_TO_QDC_DEVICE_MAP` in `tools/python/qai_hub_apps_test/qdc/qdc_jobs.py` for valid device names
+- `supported_devices` — check `HUB_DEVICE_TO_QDC_DEVICE_MAP` in `tools/python/qai_hub_apps_test/qdc/qdc_jobs.py` for valid device names, and mark exactly one entry `Tested` (see [Supported devices](#supported-devices))
 
 ### 3. Add platform-specific files
 

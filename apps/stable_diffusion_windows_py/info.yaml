@@ -23,4 +23,6 @@ model_file_paths:
   - 'model/text_encoder.onnx'
   - 'model/unet.onnx'
   - 'model/vae.onnx'
-supported_devices: ["Snapdragon X Elite CRD"]
+supported_devices:
+  - name: "Snapdragon X Elite CRD"
+    status: "Tested"
