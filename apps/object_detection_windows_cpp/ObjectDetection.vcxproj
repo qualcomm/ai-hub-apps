@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="packages\Microsoft.ML.OnnxRuntime.QNN.1.22.0\build\native\Microsoft.ML.OnnxRuntime.QNN.props" Condition="Exists('packages\Microsoft.ML.OnnxRuntime.QNN.1.22.0\build\native\Microsoft.ML.OnnxRuntime.QNN.props')" />
+  <Import Project="packages\Microsoft.ML.OnnxRuntime.1.27.0\build\native\Microsoft.ML.OnnxRuntime.props" Condition="Exists('packages\Microsoft.ML.OnnxRuntime.1.27.0\build\native\Microsoft.ML.OnnxRuntime.props')" />
+  <Import Project="packages\Qualcomm.ML.OnnxRuntime.QNN.2.3.0\build\native\Qualcomm.ML.OnnxRuntime.QNN.props" Condition="Exists('packages\Qualcomm.ML.OnnxRuntime.QNN.2.3.0\build\native\Qualcomm.ML.OnnxRuntime.QNN.props')" />
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
@@ -220,13 +221,16 @@
   </Target>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
-    <Import Project="packages\Microsoft.ML.OnnxRuntime.QNN.1.22.0\build\native\Microsoft.ML.OnnxRuntime.QNN.targets" Condition="Exists('packages\Microsoft.ML.OnnxRuntime.QNN.1.22.0\build\native\Microsoft.ML.OnnxRuntime.QNN.targets')" />
+    <Import Project="packages\Microsoft.ML.OnnxRuntime.1.27.0\build\native\Microsoft.ML.OnnxRuntime.targets" Condition="Exists('packages\Microsoft.ML.OnnxRuntime.1.27.0\build\native\Microsoft.ML.OnnxRuntime.targets')" />
+    <Import Project="packages\Qualcomm.ML.OnnxRuntime.QNN.2.3.0\build\native\Qualcomm.ML.OnnxRuntime.QNN.targets" Condition="Exists('packages\Qualcomm.ML.OnnxRuntime.QNN.2.3.0\build\native\Qualcomm.ML.OnnxRuntime.QNN.targets')" />
   </ImportGroup>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
-    <Error Condition="!Exists('packages\Microsoft.ML.OnnxRuntime.QNN.1.22.0\build\native\Microsoft.ML.OnnxRuntime.QNN.props')" Text="$([System.String]::Format('$(ErrorText)', 'packages\Microsoft.ML.OnnxRuntime.QNN.1.22.0\build\native\Microsoft.ML.OnnxRuntime.QNN.props'))" />
-    <Error Condition="!Exists('packages\Microsoft.ML.OnnxRuntime.QNN.1.22.0\build\native\Microsoft.ML.OnnxRuntime.QNN.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\Microsoft.ML.OnnxRuntime.QNN.1.22.0\build\native\Microsoft.ML.OnnxRuntime.QNN.targets'))" />
+    <Error Condition="!Exists('packages\Microsoft.ML.OnnxRuntime.1.27.0\build\native\Microsoft.ML.OnnxRuntime.props')" Text="$([System.String]::Format('$(ErrorText)', 'packages\Microsoft.ML.OnnxRuntime.1.27.0\build\native\Microsoft.ML.OnnxRuntime.props'))" />
+    <Error Condition="!Exists('packages\Microsoft.ML.OnnxRuntime.1.27.0\build\native\Microsoft.ML.OnnxRuntime.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\Microsoft.ML.OnnxRuntime.1.27.0\build\native\Microsoft.ML.OnnxRuntime.targets'))" />
+    <Error Condition="!Exists('packages\Qualcomm.ML.OnnxRuntime.QNN.2.3.0\build\native\Qualcomm.ML.OnnxRuntime.QNN.props')" Text="$([System.String]::Format('$(ErrorText)', 'packages\Qualcomm.ML.OnnxRuntime.QNN.2.3.0\build\native\Qualcomm.ML.OnnxRuntime.QNN.props'))" />
+    <Error Condition="!Exists('packages\Qualcomm.ML.OnnxRuntime.QNN.2.3.0\build\native\Qualcomm.ML.OnnxRuntime.QNN.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\Qualcomm.ML.OnnxRuntime.QNN.2.3.0\build\native\Qualcomm.ML.OnnxRuntime.QNN.targets'))" />
   </Target>
 </Project>

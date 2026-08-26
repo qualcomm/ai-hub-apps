@@ -3,7 +3,7 @@ setlocal EnableDelayedExpansion
 
 REM Locate the QNN EP nuget package directory
 set "PACKAGE_DIR="
-for /d %%f in ("%~dp0packages\Microsoft.ML.OnnxRuntime.QNN.*") do (
+for /d %%f in ("%~dp0packages\Qualcomm.ML.OnnxRuntime.QNN.*") do (
     set "PACKAGE_DIR=%%f\runtimes\win-arm64\native"
     goto :found_package
 )
@@ -23,11 +23,11 @@ if "%OUTPUT_DIR%"=="" (
 
 echo Copying missing QNN EP files from !PACKAGE_DIR! to %OUTPUT_DIR%
 
-REM Required in older versions (<1.21)
-copy /Y "!PACKAGE_DIR!\onnxruntime_providers_shared.dll" "%OUTPUT_DIR%"
-REM Required in most recent (as of 1.22)
+REM QNN EP + backend libraries (onnxruntime.dll and onnxruntime_providers_shared.dll
+REM are copied automatically by the Microsoft.ML.OnnxRuntime package).
 copy /Y "!PACKAGE_DIR!\onnxruntime_providers_qnn.dll" "%OUTPUT_DIR%"
 copy /Y "!PACKAGE_DIR!\Qnn*.dll" "%OUTPUT_DIR%"
 copy /Y "!PACKAGE_DIR!\lib*.so" "%OUTPUT_DIR%"
+copy /Y "!PACKAGE_DIR!\lib*.cat" "%OUTPUT_DIR%"
 
 endlocal
