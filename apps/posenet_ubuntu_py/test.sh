@@ -20,6 +20,9 @@ source "$SCRIPT_DIR/.venv/bin/activate"
 
 wget -q -O "$TEST_VIDEO" "$TEST_VIDEO_URL"
 
+# Force decodebin to use the installed libav software decoder.
+export GST_PLUGIN_FEATURE_RANK="v4l2h264dec:0,qtivdec:0,qtivdechw:0"
+
 python main.py \
     --video-gstreamer-source "filesrc location=$TEST_VIDEO ! decodebin" \
     --qairt-path "$QAIRT_PATH"

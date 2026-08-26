@@ -1,0 +1,24 @@
+name: 3D Object Detection
+id: object_detection_3d_ubuntu_py
+license_url: https://github.com/qualcomm/ai-hub-apps/blob/main/LICENSE
+license_type: bsd-3-clause
+runtime: tflite
+status: unpublished
+domain: 'Computer Vision'
+headline: 'On-device 3D object detection with TFLite'
+description: 'A sample app for Ubuntu integrating the 3D-Deep-BOX model via TFLite Runtime. A 2D detector locates objects in each frame and a second network estimates their 3D orientation and dimensions, which are solved into oriented 3D boxes and drawn on the frame. It uses GStreamer for input video and provides a minimal web interface to stream output frames suitable for embedded applications.'
+precisions: [float]
+app_type: 'ubuntu'
+static_img_filename: 'DeepBox.png'
+app_repo_relative_path: 'object_detection_3d_ubuntu_py'
+model_file_paths:
+  - 'models/yolo_2d_detection.tflite'
+  - 'models/vgg_3d_detection.tflite'
+os:
+  name: Ubuntu
+  version: 24.04+
+languages: ['Python']
+base_docker: ubuntu.dockerfile
+use_case: 'Object Detection'
+supported_devices: ["Dragonwing IQ-9075 EVK"]
+related_models: ['deepbox']
