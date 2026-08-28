@@ -28,9 +28,10 @@ from qai_hub_apps.validate.platform_check import get_host_info
 logger = logging.getLogger(__name__)
 
 
-def _prompt_for_device() -> DeviceInfo:
+def prompt_for_device(
+    devices: list[DeviceInfo], title: str = "Select your device"
+) -> DeviceInfo:
     """Prompt the user to pick a device from a numbered list; return it."""
-    devices = list_supported_devices()
     if not devices:
         issue_url = make_issue_url(
             title="No supported devices are available to configure",
@@ -54,7 +55,7 @@ def _prompt_for_device() -> DeviceInfo:
             ["#", "Name", "OS", "Chipset"],
             rows,
             wrap_column="Name",
-            title="Select your device",
+            title=title,
         )
     )
 
@@ -90,7 +91,11 @@ def run_configure(device: str | None, show: bool = False) -> None:
             print(f"Configured device: {current.name}")
         return
 
-    info = resolve_device_info(device) if device is not None else _prompt_for_device()
+    info = (
+        resolve_device_info(device)
+        if device is not None
+        else prompt_for_device(list_supported_devices())
+    )
     path = set_configured_device(info)
 
     logger.info("Configured target device '%s' (%s).", info.name, path)

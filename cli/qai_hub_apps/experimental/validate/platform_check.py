@@ -108,11 +108,11 @@ def ensure_build_supported(app: App, use_docker: bool) -> None:
 def ensure_run_supported(app: App, device: DeviceInfo, use_docker: bool) -> None:
     """Raise ``AppIncompatibleError`` if the app cannot be run on this host/device.
 
-    - Android apps run on-device; ``run`` is not yet supported from the CLI.
+    - Android apps install onto a connected device, which requires ``adb``.
     - Windows apps can only be run on a Windows host.
-    - Ubuntu apps can only be run on native Linux (not Windows, macOS, or WSL).
-    - The configured device must be one of the app's supported devices.
-    - Docker-mode runs require Docker to be installed and running.
+    - Ubuntu apps can only be run on native Linux (not Windows, macOS, or WSL),
+      and docker-mode runs require Docker to be installed and running.
+    - The target device must be one of the app's supported devices.
     """
     logger.debug(
         "Checking run support for '%s': app_type=%s, device=%s, use_docker=%s",
@@ -122,24 +122,26 @@ def ensure_run_supported(app: App, device: DeviceInfo, use_docker: bool) -> None
         use_docker,
     )
     if app.app_type == AppType.ANDROID:
-        raise AppIncompatibleError(
-            f"'{app.id}' is an Android app; 'run' is not yet supported. Build the "
-            "APK with 'qai-hub-apps build' and install it on a device with "
-            "'adb install'."
-        )
-    if app.app_type == AppType.WINDOWS and sys.platform != "win32":
-        raise AppIncompatibleError(
-            f"'{app.id}' is a Windows app and can only be run on Windows "
-            f"(detected platform: {sys.platform})."
-        )
-    if app.app_type == AppType.UBUNTU and (sys.platform != "linux" or _is_wsl()):
-        raise AppIncompatibleError(
-            f"'{app.id}' is an Ubuntu app and can only be run on native Linux "
-            "(Windows, macOS, and WSL are not supported)."
-        )
+        if shutil.which("adb") is None:
+            raise AppIncompatibleError(
+                f"Running '{app.id}' requires 'adb'. Install the Android "
+                "platform-tools and connect a device with USB debugging enabled."
+            )
+    elif app.app_type == AppType.WINDOWS:
+        if sys.platform != "win32":
+            raise AppIncompatibleError(
+                f"'{app.id}' is a Windows app and can only be run on Windows "
+                f"(detected platform: {sys.platform})."
+            )
+    elif app.app_type == AppType.UBUNTU:
+        if sys.platform != "linux" or _is_wsl():
+            raise AppIncompatibleError(
+                f"'{app.id}' is an Ubuntu app and can only be run on native Linux "
+                "(Windows, macOS, and WSL are not supported)."
+            )
+        if use_docker:
+            ensure_docker_available()
     ensure_device_supported(app, device.name)
-    if use_docker:
-        ensure_docker_available()
     logger.debug("Run support check passed for '%s'", app.id)
 
 

@@ -14,11 +14,14 @@ from qai_hub_apps.configs.app_yaml import AppType
 from qai_hub_apps.configs.model_asset import ModelAsset
 from qai_hub_apps.errors import QAIHubAppsError
 from qai_hub_apps.experimental.commands.build import _resolve_app_from_dir, run_build
-from qai_hub_apps.experimental.commands.configure import run_configure
+from qai_hub_apps.experimental.commands.configure import (
+    prompt_for_device,
+    run_configure,
+)
 from qai_hub_apps.experimental.validate import ensure_run_supported
 from qai_hub_apps.registry import App, Registry
 from qai_hub_apps.user_config import get_configured_device
-from qai_hub_apps.utils.devices import device_env
+from qai_hub_apps.utils.devices import device_env, list_android_devices
 
 logger = logging.getLogger(__name__)
 
@@ -81,17 +84,6 @@ def run_run(
         app_args,
     )
 
-    device = get_configured_device()
-    if device is None:
-        logger.info("No target device configured; let's set one up.")
-        run_configure(None)
-        device = get_configured_device()
-    if device is None:
-        raise QAIHubAppsError(
-            "No target device configured. Run 'qai-hub-apps configure' to select "
-            "one before running an app."
-        )
-
     require_build = app_id is not None
 
     if require_build:
@@ -100,6 +92,27 @@ def run_run(
         assert app_path is not None
         app_path = app_path.resolve()
         app = _resolve_app_from_dir(app_path, registry)
+
+    # Android apps run on a mobile device, not the configured environment device,
+    # so pick an Android target for this run.
+    if app.app_type == AppType.ANDROID:
+        android_devices = list_android_devices()
+        if app.supported_devices:
+            android_devices = [
+                d for d in android_devices if d.name in app.supported_devices
+            ]
+        device = prompt_for_device(android_devices, title="Select your Android device")
+    else:
+        device = get_configured_device()
+        if device is None:
+            logger.info("No target device configured; let's set one up.")
+            run_configure(None)
+            device = get_configured_device()
+        if device is None:
+            raise QAIHubAppsError(
+                "No target device configured. Run 'qai-hub-apps configure' to "
+                "select one before running an app."
+            )
 
     ensure_run_supported(app, device, use_docker)
 

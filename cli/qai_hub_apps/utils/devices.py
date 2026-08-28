@@ -6,8 +6,10 @@
 
 from __future__ import annotations
 
+from qai_hub_models_cli.proto.platform_pb2 import OperatingSystem, OperatingSystemType
 from qai_hub_models_cli.proto_helpers.platform import (
     DeviceInfo,
+    filter_devices,
     get_platform,
     resolve_chipset,
     resolve_device,
@@ -50,6 +52,22 @@ def list_supported_devices() -> list[DeviceInfo]:  # pragma: no cover
         All supported devices.
     """
     return list(get_platform().devices)
+
+
+def list_android_devices() -> list[DeviceInfo]:  # pragma: no cover
+    """Return every supported AI Hub device whose OS is Android.
+
+    Returns
+    -------
+    list[DeviceInfo]
+        All supported Android devices.
+    """
+    platform = get_platform()
+    return filter_devices(
+        platform.devices,
+        platform.chipsets,
+        os=OperatingSystem(ostype=OperatingSystemType.OPERATING_SYSTEM_TYPE_ANDROID),
+    )
 
 
 def resolve_device_info(device: str) -> DeviceInfo:  # pragma: no cover

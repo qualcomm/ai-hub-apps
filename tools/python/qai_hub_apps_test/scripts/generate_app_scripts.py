@@ -4,6 +4,7 @@
 # ---------------------------------------------------------------------
 from __future__ import annotations
 
+import re
 import stat
 from pathlib import Path
 
@@ -27,6 +28,9 @@ _environment = Environment(
     keep_trailing_newline=True,
     trim_blocks=True,
     lstrip_blocks=True,
+    # Shell uses ``${#arr[@]}``; move the comment delimiter off the default ``{#``.
+    comment_start_string="{##",
+    comment_end_string="##}",
 )
 
 _KIND_TEMPLATE = {
@@ -37,12 +41,24 @@ _KIND_TEMPLATE = {
 }
 
 
-def _launch_plan(info: QAIHAAppInfo) -> tuple[str, str, dict[str, object]]:
+def _android_package(app_dir: Path) -> str:
+    """Return the Android applicationId from the app's build.gradle."""
+    gradle = app_dir / "build.gradle"
+    match = re.search(r"""applicationId\s*=?\s*["']([^"']+)["']""", gradle.read_text())
+    if match is None:
+        raise SystemExit(f"Error: no applicationId found in '{gradle}'.")
+    return match.group(1)
+
+
+def _launch_plan(
+    info: QAIHAAppInfo, app_dir: Path
+) -> tuple[str, str, dict[str, object]]:
     """Return ``(template, out_filename, context)`` for an app's launch script."""
     context: dict[str, object] = {"header": HEADER, "app_id": info.id}
     if info.app_type == AppType.UBUNTU:
         return "ubuntu/launch_sh.j2", "launch.sh", context
     if info.app_type == AppType.ANDROID:
+        context["package"] = _android_package(app_dir)
         return "android/launch_sh.j2", "launch.sh", context
     return "default_launch_ps1.j2", "launch.ps1", context
 
@@ -122,7 +138,7 @@ def generate_app_scripts(
         print(f"\n{f' {info.id} ':─^60}")
         for template_name, out_filename, context in (
             _build_plan(info, app_dir),
-            _launch_plan(info),
+            _launch_plan(info, app_dir),
         ):
             print(f"Template:  {template_name}")
             for key, value in context.items():
