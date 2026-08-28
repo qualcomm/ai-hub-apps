@@ -5,7 +5,7 @@
 # ---------------------------------------------------------------------
 # THIS FILE WAS AUTO-GENERATED. DO NOT EDIT MANUALLY.
 
-param([switch]$NoDocker, [switch]$Clean,
+param([switch]$NoDocker, [switch]$Clean, [switch]$Test,
       [Parameter(ValueFromRemainingArguments = $true)][string[]]$AppArgs)
 $ErrorActionPreference = "Stop"
 $AppDir = $PSScriptRoot
@@ -22,6 +22,8 @@ if (Test-Path "$AppDir\install_runtime.ps1") {
     & .\install_runtime.ps1
 }
 
+$Script = if ($Test) { "test.ps1" } else { "run.ps1" }
+
 Write-Host "::step::Running super_resolution_windows_cpp natively"
-& .\run.ps1 @AppArgs
+& ".\$Script" @AppArgs
 exit $LASTEXITCODE

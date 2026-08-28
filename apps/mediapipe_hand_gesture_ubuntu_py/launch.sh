@@ -14,17 +14,22 @@ cd "$APP_DIR"
 
 USE_DOCKER=1
 CLEAN=0
+RUN_TEST=0
 APP_ARGS=()
 while [ $# -gt 0 ]; do
     case "$1" in
         --no-docker) USE_DOCKER=0 ;;
         --docker) USE_DOCKER=1 ;;
         --clean) CLEAN=1 ;;
+        --test) RUN_TEST=1 ;;
         --) shift; APP_ARGS=("$@"); break ;;
         *) echo "::error::Unknown argument: $1" >&2; exit 2 ;;
     esac
     shift
 done
+
+SCRIPT="run.sh"
+[ "$RUN_TEST" -eq 1 ] && SCRIPT="test.sh"
 
 if [ "$USE_DOCKER" -eq 0 ]; then
     if [ -f install_runtime.sh ]; then
@@ -32,7 +37,7 @@ if [ "$USE_DOCKER" -eq 0 ]; then
         bash install_runtime.sh
     fi
     echo "::step::Running mediapipe_hand_gesture_ubuntu_py natively"
-    exec bash run.sh "${APP_ARGS[@]}"
+    exec bash "$SCRIPT" "${APP_ARGS[@]}"
 fi
 
 if [ ! -f "$APP_DIR/Dockerfile" ]; then
@@ -80,5 +85,5 @@ docker run --rm --privileged \
     -p 8080:8080 \
     "${device_env_args[@]}" \
     -w /app \
-    "$IMAGE_TAG" bash run.sh "${APP_ARGS[@]}"
+    "$IMAGE_TAG" bash "$SCRIPT" "${APP_ARGS[@]}"
 echo "::done::run"

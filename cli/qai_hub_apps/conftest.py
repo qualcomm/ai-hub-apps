@@ -8,6 +8,11 @@ import logging
 from pathlib import Path
 
 import pytest
+from qai_hub_models_cli.proto.platform_pb2 import (
+    DeviceInfo,
+    OperatingSystem,
+    OperatingSystemType,
+)
 
 from qai_hub_apps.configs.app_yaml import AppInfo, AppLanguage, AppType
 from qai_hub_apps.registry.base import Registry
@@ -40,6 +45,20 @@ def make_app_info(**overrides) -> AppInfo:
     )
     defaults.update(overrides)
     return AppInfo(**defaults)
+
+
+def make_device(
+    name: str = "Snapdragon 8 Elite QRD",
+    ostype: int = OperatingSystemType.OPERATING_SYSTEM_TYPE_ANDROID,
+    os_version: str = "15",
+    chipset: str = "qualcomm-snapdragon-8-elite",
+) -> DeviceInfo:
+    """Factory for a DeviceInfo proto with sensible defaults."""
+    return DeviceInfo(
+        name=name,
+        chipset=chipset,
+        os=OperatingSystem(ostype=ostype, version=os_version),
+    )
 
 
 @pytest.fixture(autouse=True)

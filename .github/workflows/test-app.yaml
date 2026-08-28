@@ -23,6 +23,11 @@ on:
         description: "How far to run: fetch, build, or all (includes on-device QDC)"
         type: string
         default: all
+      use_docker:
+        description: "Build and run inside Docker (true) or natively (false)."
+        type: boolean
+        required: false
+        default: true
       version:
         description: "qai-hub-apps version to install (required unless install_source=source)."
         type: string
@@ -67,6 +72,11 @@ on:
         type: choice
         options: [fetch, build, all]
         default: all
+      use_docker:
+        description: "Build and run inside Docker (true) or natively (false)."
+        required: false
+        type: boolean
+        default: true
       version:
         description: "qai-hub-apps version to install (required unless install_source=source)."
         required: false
@@ -187,7 +197,7 @@ jobs:
         run: |
           ${{ env.ACTIVATE_VENV }}
           cd tools/python/qai_hub_apps_test/
-          python -m pytest -vv -ra -s -m device_test --model-selection "${{ inputs.model_selection }}" --test-stage "${{ inputs.test_stage }}" --qdc-token "${{ env.QDC_TOKEN }}" --json-report --json-report-file="${{ inputs.app }}-results.json" -k "${{ inputs.app }}"
+          python -m pytest -vv -ra -s -m device_test --model-selection "${{ inputs.model_selection }}" --test-stage "${{ inputs.test_stage }}" ${{ inputs.use_docker == false && '--no-docker' || '' }} --qdc-token "${{ env.QDC_TOKEN }}" --cli-version "${{ inputs.version }}" --cli-source "${{ inputs.install_source }}" --json-report --json-report-file="${{ inputs.app }}-results.json" -k "${{ inputs.app }}"
 
       - name: Ensure json-report-file (Linux)
         if: ${{ always() && inputs.app_type != 'windows' }}

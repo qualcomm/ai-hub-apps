@@ -112,23 +112,22 @@ jobs:
             --cli_version "${{ steps.version.outputs.version }}" $EXTRA
 
       - name: Build wheel
+        id: wheel
         run: |
           source ${{ env.VENV_PATH }}/bin/activate
-          pip install build
-          rm -rf ${{env.CLI_EGG_INFO_DIR}}
-          rm -f cli/build/wheel/*.whl
           # The working tree is dirty after registry generation, so pin the version explicitly.
-          SETUPTOOLS_SCM_PRETEND_VERSION="${{ steps.version.outputs.version }}" \
-            python -m build --wheel --outdir cli/build/wheel/ cli/
+          WHEEL="$(SETUPTOOLS_SCM_PRETEND_VERSION="${{ steps.version.outputs.version }}" \
+            python tools/ci/build_cli_wheel.py cli/build/wheel)"
+          echo "path=$WHEEL" >> "$GITHUB_OUTPUT"
 
       - name: Upload wheel to S3 + regenerate index
         # run always except when staging
         if: ${{ inputs.target != 'staging' }}
         run: |
           source ${{ env.VENV_PATH }}/bin/activate
-          WHEEL="$(ls cli/build/wheel/*.whl)"
           python -m qai_hub_apps_test.scripts.publish_wheel_s3 \
-            --wheel_path "$WHEEL" --cli_version "${{ steps.version.outputs.version }}"
+            --wheel_path "${{ steps.wheel.outputs.path }}" \
+            --cli_version "${{ steps.version.outputs.version }}"
 
       - name: Upload to PyPI
         if: ${{ inputs.target != 'dev' }}
@@ -139,5 +138,4 @@ jobs:
         run: |
           source ${{ env.VENV_PATH }}/bin/activate
           pip install twine
-          WHEELS="cli/build/wheel/*.whl"
-          twine upload --verbose $WHEELS
+          twine upload --verbose "${{ steps.wheel.outputs.path }}"

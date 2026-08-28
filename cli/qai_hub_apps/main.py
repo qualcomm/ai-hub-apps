@@ -275,6 +275,11 @@ def main() -> None:
     run_parser = add_experimental_parser(subparsers, "run", help="Run an app")
     add_app_action_args(run_parser, "run")
 
+    test_parser = add_experimental_parser(
+        subparsers, "test", help="Run an app's on-device test"
+    )
+    add_app_action_args(test_parser, "test")
+
     configure_parser = add_experimental_parser(
         subparsers, "configure", help="Configure the target device"
     )
@@ -297,27 +302,42 @@ def main() -> None:
 
     configure_logging(args.log_level)
 
-    if args.command in ("fetch", "build", "run") and (args.chipset or args.device):
+    if args.command in ("fetch", "build", "run", "test") and (
+        args.chipset or args.device
+    ):
         cmd_parser = {
             "fetch": fetch_parser,
             "build": build_parser,
             "run": run_parser,
+            "test": test_parser,
         }[args.command]
         flag = "--chipset" if args.chipset else "--device"
         if args.model_path is not None:
             cmd_parser.error(f"{flag} cannot be used with --model-path")
         if args.model is None and args.model_id is None:
             cmd_parser.error(f"{flag} requires --model or --model-id")
+        if args.command in ("run", "test") and args.chipset:
+            cmd_parser.error("--chipset cannot be used with run/test; pass --device.")
 
-    if args.command in ("build", "run") and (
+    if args.command in ("build", "run", "test") and (
         args.app is None and args.app_id is None and args.app_path is None
     ):
-        cmd_parser = build_parser if args.command == "build" else run_parser
+        cmd_parser = {"build": build_parser, "run": run_parser, "test": test_parser}[
+            args.command
+        ]
         cmd_parser.error("one of APP_ID_OR_PATH, --app-id or --app-path is required")
 
     registry_path = getattr(args, "registry", None)
 
-    if args.command not in ("list", "info", "fetch", "build", "run", "configure"):
+    if args.command not in (
+        "list",
+        "info",
+        "fetch",
+        "build",
+        "run",
+        "test",
+        "configure",
+    ):
         parser.print_help()
         return
 
@@ -359,7 +379,7 @@ def main() -> None:
                 clean=args.clean,
                 overwrite=args.overwrite,
             )
-        elif args.command == "run":
+        elif args.command in ("run", "test"):
             model_asset = _resolve_model_asset(
                 args.model, args.model_id, args.model_path, args.chipset, args.device
             )
@@ -376,6 +396,7 @@ def main() -> None:
                 clean=args.clean,
                 overwrite=args.overwrite,
                 app_args=app_args,
+                test=args.command == "test",
             )
         elif args.command == "configure":
             run_configure(args.device, show=args.show)

@@ -50,6 +50,17 @@ def _android_package(app_dir: Path) -> str:
     return match.group(1)
 
 
+def _android_instrumentation_runner(app_dir: Path) -> str:
+    """Return the instrumentation runner (``<applicationId>.test/<runner>``)."""
+    gradle = app_dir / "build.gradle"
+    match = re.search(
+        r"""testInstrumentationRunner\s*=?\s*["']([^"']+)["']""", gradle.read_text()
+    )
+    if match is None:
+        raise SystemExit(f"Error: no testInstrumentationRunner found in '{gradle}'.")
+    return f"{_android_package(app_dir)}.test/{match.group(1)}"
+
+
 def _launch_plan(
     info: QAIHAAppInfo, app_dir: Path
 ) -> tuple[str, str, dict[str, object]]:
@@ -59,6 +70,7 @@ def _launch_plan(
         return "ubuntu/launch_sh.j2", "launch.sh", context
     if info.app_type == AppType.ANDROID:
         context["package"] = _android_package(app_dir)
+        context["runner"] = _android_instrumentation_runner(app_dir)
         return "android/launch_sh.j2", "launch.sh", context
     if info.app_type == AppType.WINDOWS:
         return "windows/launch_ps1.j2", "launch.ps1", context

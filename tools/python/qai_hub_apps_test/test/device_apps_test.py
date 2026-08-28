@@ -7,12 +7,19 @@
 Three stages, run in order by name prefix (test_1_, test_2_, test_3_):
   1. Fetch  — downloads app + model via `qai-hub-apps fetch`
   2. Build  — builds the app from the fetched source
-  3. Device — submits the built app to QDC for on-device execution
+  3. Device — submits the built app to QDC, where the device installs the CLI and
+              runs `qai-hub-apps test --app-path`
+
+The device always installs a bundled CLI wheel (deps resolved from PyPI, which every QDC
+device can reach) plus the bundled registry. --cli-source selects how the host obtains
+the wheel: source (built from this checkout, the default), s3 (nightly index), or prod
+(PyPI).
 
 Usage:
   pytest -m device_test --model-selection first --test-stage fetch
   pytest -m device_test --model-selection first --test-stage build
   pytest -m device_test --model-selection first --test-stage all --qdc-token $QDC_API_TOKEN
+  pytest -m device_test --model-selection first --test-stage all --qdc-token $QDC_API_TOKEN --cli-source s3 --cli-version <ver>
 """
 
 from __future__ import annotations
@@ -25,7 +32,7 @@ from pathlib import Path
 import pytest
 from tenacity import retry, retry_if_exception, stop_after_attempt, wait_fixed
 
-from qai_hub_apps_test.configs.info_yaml import QAIHAAppInfo
+from qai_hub_apps_test.configs.info_yaml import AppType, QAIHAAppInfo
 
 pytestmark = pytest.mark.device_test
 
@@ -237,12 +244,21 @@ def test_3_on_device_app(
     built_dirs: dict,
     qdc_token: str | None,
     test_stage: str,
+    use_docker: bool,
+    cli_version: str | None,
+    cli_bundle: tuple[str, str] | None,
 ) -> None:
     """Submit app to QDC for on-device execution."""
     app_info, model_id = app_to_test
 
     if test_stage in ("fetch", "build"):
         pytest.skip(f"--test-stage={test_stage}; skipping on-device stage")
+
+    if not cli_bundle:
+        pytest.fail(
+            "On-device tests require a CLI wheel + registry; none was produced (see the "
+            "cli_bundle fixture / --cli-wheel)."
+        )
 
     app_dir = built_dirs.get((app_info.id, model_id))
     if app_dir is None:
@@ -257,18 +273,30 @@ def test_3_on_device_app(
 
     device = tested_device.reference_device_name
 
+    # Windows apps run natively on-device (no Windows container), even though the host
+    # build can use Docker.
+    if use_docker and app_info.app_type == AppType.WINDOWS:
+        print("Windows app runs natively on-device; ignoring --docker.")
+        use_docker = False
+
     assert qdc_token is not None
     assert app_dir is not None
+    assert cli_bundle is not None
 
     from qai_hub_apps_test.qdc.app_test_job import (  # lazy import, QDC SDK not required for other tests
         submit_app_bundle_to_qdc_device,
     )
 
+    cli_wheel, registry_path = cli_bundle
     success = submit_app_bundle_to_qdc_device(
         api_token=qdc_token,
         device=device,
         app_dir=app_dir,
-        use_docker=True,
+        model_id=model_id,
+        use_docker=use_docker,
+        cli_version=cli_version,
+        cli_wheel=cli_wheel,
+        registry_path=registry_path,
         job_name=f"{app_info.id}-{model_id}",
     )
     assert success, f"QDC job failed for {app_info.id} with model {model_id}"

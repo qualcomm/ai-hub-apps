@@ -149,6 +149,7 @@ jobs:
       app_type: ubuntu
       model_selection: ${{ inputs.model_selection }}
       test_stage: ${{ inputs.test_stage }}
+      use_docker: true
       version: ${{ inputs.version }}
       install_source: ${{ inputs.install_source }}
     secrets:
@@ -172,6 +173,7 @@ jobs:
       app_type: android
       model_selection: ${{ inputs.model_selection }}
       test_stage: ${{ inputs.test_stage }}
+      use_docker: true
       version: ${{ inputs.version }}
       install_source: ${{ inputs.install_source }}
     secrets:
@@ -195,6 +197,7 @@ jobs:
       app_type: windows
       model_selection: ${{ inputs.model_selection }}
       test_stage: ${{ inputs.test_stage }}
+      use_docker: true
       version: ${{ inputs.version }}
       install_source: ${{ inputs.install_source }}
     secrets:

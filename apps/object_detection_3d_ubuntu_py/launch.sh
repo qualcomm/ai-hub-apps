@@ -1,5 +1,11 @@
 #!/usr/bin/env bash
-{{ header }}
+
+# ---------------------------------------------------------------------
+# Copyright (c) 2025 Qualcomm Technologies, Inc. and/or its subsidiaries.
+# SPDX-License-Identifier: BSD-3-Clause
+# ---------------------------------------------------------------------
+# THIS FILE WAS AUTO-GENERATED. DO NOT EDIT MANUALLY.
+
 set -euo pipefail
 
 APP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -30,12 +36,12 @@ if [ "$USE_DOCKER" -eq 0 ]; then
         echo "::step::Installing runtime"
         bash install_runtime.sh
     fi
-    echo "::step::Running {{ app_id }} natively"
+    echo "::step::Running object_detection_3d_ubuntu_py natively"
     exec bash "$SCRIPT" "${APP_ARGS[@]}"
 fi
 
 if [ ! -f "$APP_DIR/Dockerfile" ]; then
-    echo "::error::No Dockerfile found for {{ app_id }}. Re-run with --no-docker to run natively." >&2
+    echo "::error::No Dockerfile found for object_detection_3d_ubuntu_py. Re-run with --no-docker to run natively." >&2
     exit 1
 fi
 
@@ -70,7 +76,7 @@ for var in "${!QAI_HUB_APPS_@}"; do
     device_env_args+=(-e "$var")
 done
 
-echo "::step::Running {{ app_id }} in Docker"
+echo "::step::Running object_detection_3d_ubuntu_py in Docker"
 docker run --rm --privileged \
     -v /usr/lib/:/opt/host/lib/:ro \
     -v "$LIBCDSPRPC_SRC:/usr/lib/libcdsprpc.so:ro" \

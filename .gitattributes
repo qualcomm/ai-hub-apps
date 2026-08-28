@@ -1,3 +1,4 @@
 *.jpg filter=lfs diff=lfs merge=lfs -text
 *.png filter=lfs diff=lfs merge=lfs -text
 *.jar filter=lfs diff=lfs merge=lfs -text
+tools/python/qai_hub_apps_test/qdc/bash_static/bash-static-x86_64 filter=lfs diff=lfs merge=lfs -text

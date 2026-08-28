@@ -1,5 +1,5 @@
 {{ header }}
-param([switch]$NoDocker, [switch]$Clean,
+param([switch]$NoDocker, [switch]$Clean, [switch]$Test,
       [Parameter(ValueFromRemainingArguments = $true)][string[]]$AppArgs)
 $ErrorActionPreference = "Stop"
 $AppDir = $PSScriptRoot
@@ -16,6 +16,8 @@ if (Test-Path "$AppDir\install_runtime.ps1") {
     & .\install_runtime.ps1
 }
 
+$Script = if ($Test) { "test.ps1" } else { "run.ps1" }
+
 Write-Host "::step::Running {{ app_id }} natively"
-& .\run.ps1 @AppArgs
+& ".\$Script" @AppArgs
 exit $LASTEXITCODE

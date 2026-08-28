@@ -399,3 +399,51 @@ def test_default_registry_calls_ensure_registry(monkeypatch, sample_registry_yam
     _run_main(["list"], monkeypatch)
 
     mock_ensure.assert_called_once()
+
+
+def _run_experimental_main(argv: list[str], monkeypatch, target: str) -> MagicMock:
+    """Run `argv` with the experimental gate open and `target` in main mocked."""
+    monkeypatch.setenv("QAI_HUB_APPS_EXPERIMENTAL", "1")
+    mock = MagicMock()
+    monkeypatch.setattr(f"qai_hub_apps.main.{target}", mock)
+    _run_main(argv, monkeypatch)
+    return mock
+
+
+def _run_run_main(argv: list[str], monkeypatch, sample_registry_yaml) -> MagicMock:
+    """Run a `run`/`test` invocation against the sample registry with run_run mocked."""
+    command, *rest = argv
+    return _run_experimental_main(
+        [command, "--registry", str(sample_registry_yaml), *rest],
+        monkeypatch,
+        "run_run",
+    )
+
+
+def test_run_command_passes_through_app_args(monkeypatch, sample_registry_yaml):
+    mock = _run_run_main(
+        ["run", "test_app", "--", "--verbose", "1"], monkeypatch, sample_registry_yaml
+    )
+    assert mock.call_args.kwargs["app_args"] == ["--verbose", "1"]
+
+
+def test_run_command_rejects_chipset(monkeypatch, sample_registry_yaml):
+    with pytest.raises(SystemExit) as exc:
+        _run_run_main(
+            [
+                "run",
+                "test_app",
+                "--model",
+                "whisper_base",
+                "--chipset",
+                "snapdragon_8_gen_3",
+            ],
+            monkeypatch,
+            sample_registry_yaml,
+        )
+    assert exc.value.code == 2
+
+
+def test_configure_show_calls_run_configure(monkeypatch):
+    mock = _run_experimental_main(["configure", "--show"], monkeypatch, "run_configure")
+    mock.assert_called_once_with(None, show=True)

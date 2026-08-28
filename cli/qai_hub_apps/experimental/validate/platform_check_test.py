@@ -10,12 +10,15 @@ from unittest.mock import MagicMock
 import pytest
 
 from qai_hub_apps.configs.app_yaml import AppLanguage, AppType
-from qai_hub_apps.conftest import make_app_info
+from qai_hub_apps.conftest import make_app_info, make_device
 from qai_hub_apps.errors import AppIncompatibleError, QAIHubAppsError
 from qai_hub_apps.experimental.validate import platform_check
 from qai_hub_apps.experimental.validate.platform_check import (
+    _is_wsl,
     ensure_build_supported,
+    ensure_device_supported,
     ensure_docker_available,
+    ensure_run_supported,
 )
 from qai_hub_apps.registry.base import App
 
@@ -93,3 +96,51 @@ def test_no_docker_skips_docker_check(monkeypatch):
         App(make_app_info(app_type=AppType.UBUNTU)), use_docker=False
     )
     docker_check.assert_not_called()
+
+
+def test_is_wsl(monkeypatch):
+    monkeypatch.setattr(
+        platform_check.platform,
+        "uname",
+        lambda: MagicMock(release="6.8.0-45-generic"),
+    )
+    assert _is_wsl() is False
+
+
+def test_run_android_requires_adb(monkeypatch):
+    monkeypatch.setattr(platform_check.shutil, "which", lambda _: None)
+    app = App(make_app_info(app_type=AppType.ANDROID, languages=[AppLanguage.JAVA]))
+    with pytest.raises(AppIncompatibleError, match="requires 'adb'"):
+        ensure_run_supported(app, make_device(), use_docker=False)
+
+
+def test_run_windows_app_on_non_windows_raises(monkeypatch):
+    monkeypatch.setattr(platform_check.sys, "platform", "linux")
+    app = App(make_app_info(app_type=AppType.WINDOWS, languages=[AppLanguage.CPP]))
+    with pytest.raises(AppIncompatibleError, match="can only be run on Windows"):
+        ensure_run_supported(app, make_device(), use_docker=False)
+
+
+def test_run_ubuntu_app_on_wsl_raises(monkeypatch):
+    monkeypatch.setattr(platform_check.sys, "platform", "linux")
+    monkeypatch.setattr(platform_check, "_is_wsl", lambda: True)
+    app = App(make_app_info(app_type=AppType.UBUNTU))
+    with pytest.raises(AppIncompatibleError, match="native Linux"):
+        ensure_run_supported(app, make_device(), use_docker=False)
+
+
+def test_run_ubuntu_docker_checks_docker(monkeypatch):
+    monkeypatch.setattr(platform_check.sys, "platform", "linux")
+    monkeypatch.setattr(platform_check, "_is_wsl", lambda: False)
+    docker_check = MagicMock()
+    monkeypatch.setattr(platform_check, "ensure_docker_available", docker_check)
+    ensure_run_supported(
+        App(make_app_info(app_type=AppType.UBUNTU)), make_device(), use_docker=True
+    )
+    docker_check.assert_called_once()
+
+
+def test_ensure_device_supported_rejects_other_device():
+    app = App(make_app_info(supported_devices=["Device A"]))
+    with pytest.raises(AppIncompatibleError, match="does not support the configured"):
+        ensure_device_supported(app, "Device B")

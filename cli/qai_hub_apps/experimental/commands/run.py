@@ -21,23 +21,34 @@ from qai_hub_apps.experimental.commands.configure import (
 from qai_hub_apps.experimental.validate import ensure_run_supported
 from qai_hub_apps.registry import App, Registry
 from qai_hub_apps.user_config import get_configured_device
-from qai_hub_apps.utils.devices import device_env, list_android_devices
+from qai_hub_apps.utils.devices import (
+    device_env,
+    list_android_devices,
+    resolve_device_info,
+)
 
 logger = logging.getLogger(__name__)
 
 
 def _run_command(
-    app: App, app_dir: Path, use_docker: bool, clean: bool, app_args: list[str]
+    app: App,
+    app_dir: Path,
+    use_docker: bool,
+    clean: bool,
+    app_args: list[str],
+    test: bool,
 ) -> list[str]:
     """Return the command that runs the app's generated launch script."""
     if app.app_type == AppType.WINDOWS:
         script = app_dir / "launch.ps1"
         command = ["powershell", "-File", str(script)]
         no_docker_flag, clean_flag = "-NoDocker", "-Clean"
+        test_flag = "-Test"
     else:
         script = app_dir / "launch.sh"
         command = ["bash", str(script)]
         no_docker_flag, clean_flag = "--no-docker", "--clean"
+        test_flag = "--test"
     logger.debug("Launch script for '%s' (%s): %s", app.id, app.app_type.value, script)
     if not script.is_file():
         fix = (
@@ -52,6 +63,8 @@ def _run_command(
         command.append(no_docker_flag)
     if clean:
         command.append(clean_flag)
+    if test:
+        command.append(test_flag)
     if app_args:
         command += ["--", *app_args]
     logger.debug("Run command: %s", command)
@@ -68,6 +81,7 @@ def run_run(
     clean: bool = False,
     overwrite: bool = False,
     app_args: list[str] | None = None,
+    test: bool = False,
 ) -> None:
     """Resolve the run target, validate it, build it if needed, and run it."""
     if app_id is not None and app_path is not None:
@@ -75,13 +89,14 @@ def run_run(
 
     logger.debug(
         "run_run: app_id=%s, app_path=%s, use_docker=%s, clean=%s, overwrite=%s, "
-        "app_args=%s",
+        "app_args=%s, test=%s",
         app_id,
         app_path,
         use_docker,
         clean,
         overwrite,
         app_args,
+        test,
     )
 
     require_build = app_id is not None
@@ -92,14 +107,29 @@ def run_run(
         assert app_path is not None
         app_path = app_path.resolve()
         app = _resolve_app_from_dir(app_path, registry)
+        if model_asset is not None:
+            logger.warning(
+                "Running an already-fetched app; --model/--model-id are not "
+                "used. Using device '%s' as the run target.",
+                model_asset.device or "<configured>",
+            )
 
-    if app.app_type == AppType.WINDOWS and use_docker:
-        logger.info("Windows apps run natively; ignoring Docker mode.")
-        use_docker = False
+    # Windows apps can be built in a Windows container, but always run natively.
+    run_docker = use_docker
+    if app.app_type == AppType.WINDOWS and run_docker:
+        logger.info("Windows apps run natively; ignoring Docker mode for the run.")
+        run_docker = False
 
+    override = (
+        resolve_device_info(model_asset.device)
+        if model_asset is not None and model_asset.device
+        else None
+    )
     # Android apps run on a mobile device, not the configured environment device,
     # so pick an Android target for this run.
-    if app.app_type == AppType.ANDROID:
+    if override is not None:
+        device = override
+    elif app.app_type == AppType.ANDROID:
         android_devices = list_android_devices()
         if app.supported_devices:
             android_devices = [
@@ -118,7 +148,7 @@ def run_run(
                 "select one before running an app."
             )
 
-    ensure_run_supported(app, device, use_docker)
+    ensure_run_supported(app, device, run_docker)
 
     if require_build:
         if (
@@ -150,11 +180,11 @@ def run_run(
     device_vars = device_env(device)
     env = {**os.environ, **device_vars}
 
-    command = _run_command(app, app_dir, use_docker, clean, app_args or [])
+    command = _run_command(app, app_dir, run_docker, clean, app_args or [], test)
     logger.info(
         "Running '%s' (%s) on device '%s'...",
         app.id,
-        "docker" if use_docker else "native",
+        "docker" if run_docker else "native",
         device.name,
     )
     logger.debug("Running %s (cwd=%s)", command, app_dir)

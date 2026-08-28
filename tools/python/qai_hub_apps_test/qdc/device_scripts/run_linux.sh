@@ -3,7 +3,6 @@
 # Copyright (c) 2025 Qualcomm Technologies, Inc. and/or its subsidiaries.
 # SPDX-License-Identifier: BSD-3-Clause
 # ---------------------------------------------------------------------
-
 set -euo pipefail
 
 mount -o rw,remount /
@@ -12,44 +11,41 @@ APP_DIR=/data/local/tmp/TestContent/app
 LOG_DIR=/data/local/tmp/QDC_logs
 # set QAIHA_APP_ROOT for shared utils
 export QAIHA_APP_ROOT="$APP_DIR"
-# shellcheck disable=SC1072,SC1073
-USE_DOCKER=<<USE_DOCKER>>
+USE_DOCKER="<<USE_DOCKER>>"
 
 mkdir -p "$LOG_DIR"
 exec > "$LOG_DIR/script.log" 2>&1
 
 cd "$APP_DIR"
 
-if [ "$USE_DOCKER" = "true" ]; then
-    # shellcheck source=/dev/null
-    source "$APP_DIR/scripts/qairt_utils.sh"
+# Install the qai-hub-apps CLI, then run the app's on-device test through it. The
+# CLI's launch.sh owns install_runtime and docker/native execution, so this script
+# does not duplicate that logic.
+export QAI_HUB_APPS_EXPERIMENTAL=1
+export QAI_HUB_APPS_LOG_LEVEL=debug
+# No TTY on the QDC device; skip install-time approval prompts.
+export NON_INTERACTIVE=true
 
-    IMAGE_NAME="aiha-app-test"
+# The device Python has no venv module and apt is unavailable; use uv to provision
+# an isolated Python and venv for the CLI.
+pip3 install uv
+export PATH="/root/.local/bin:$PATH"
+uv python install "<<PYTHON_VERSION>>"
 
-    echo "Building Docker image ..."
-    docker build \
-        --build-arg BUILD_TYPE=runtime \
-        -t "$IMAGE_NAME" "$APP_DIR"
+CLI_VENV=/data/local/tmp/cli-venv
+uv venv --python "<<PYTHON_VERSION>>" "$CLI_VENV"
+# shellcheck disable=SC1091
+source "$CLI_VENV/bin/activate"
 
-    echo "Running inside container ..."
-    docker run --rm --privileged \
-        -v "$QAIRT_ROOT:$QAIRT_ROOT" \
-        -v /usr/lib/libcdsprpc.so:/usr/lib/libcdsprpc.so:ro \
-        -v /usr/lib/libcdsprpc.so.1:/usr/lib/libcdsprpc.so.1:ro \
-        -v /usr/lib/libcdsprpc.so.1.0.0:/usr/lib/libcdsprpc.so.1.0.0:ro \
-        -v /usr/lib/libdmabufheap.so.0:/usr/lib/libdmabufheap.so.0:ro \
-        -v /usr/lib/libdmabufheap.so.0.0.0:/usr/lib/libdmabufheap.so.0.0.0:ro \
-        -w /app \
-        "$IMAGE_NAME" \
-        bash -euo pipefail -c '<<RUN_COMMAND>>'
-else
-    if [ -f "install_runtime.sh" ]; then
-        echo "Running install_runtime.sh ..."
-        NON_INTERACTIVE=true bash install_runtime.sh
-    fi
-    echo "Running app command ..."
-    <<RUN_COMMAND>>
-fi
+# The CLI is a bundled wheel; its dependencies resolve from PyPI.
+uv pip install --pre "<<CLI_SPEC>>"
+
+REGISTRY_PATH="<<REGISTRY_PATH>>"
+TEST_ARGS=(--app-path "$APP_DIR" --device "<<DEVICE_NAME>>" --model-id "<<MODEL_ID>>")
+[ -n "$REGISTRY_PATH" ] && TEST_ARGS+=(--registry "$REGISTRY_PATH")
+[ "$USE_DOCKER" = "false" ] && TEST_ARGS+=(--no-docker)
+
+qai-hub-apps test "${TEST_ARGS[@]}"
 
 mount -o rw,remount /
 

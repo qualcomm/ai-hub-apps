@@ -578,7 +578,7 @@ def test_fetch_model_missing_metadata_json_raises(monkeypatch, tmp_path):
     )
     app = App(info)
     asset = ModelAsset(model_id="test_model", chipset=None)
-    with pytest.raises(AppIncompatibleError, match="is missing metadata\.json"):
+    with pytest.raises(AppIncompatibleError, match=r"is missing metadata\.json"):
         app.fetch(tmp_path, model_asset=asset)
 
 
