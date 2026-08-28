@@ -28,6 +28,11 @@ if [ "$USE_DOCKER" -eq 0 ]; then
     exit 1
 fi
 
+if [ ! -f "$APP_DIR/Dockerfile" ]; then
+    echo "::error::No Dockerfile found for image_classification_android; it cannot be built." >&2
+    exit 1
+fi
+
 # Derive unique image/container names from the app directory so two copies of
 # the same app in different directories never collide.
 HASH="$(printf '%s' "$APP_DIR" | sha1sum | cut -c1-12)"

@@ -7,7 +7,7 @@ import logging
 import sys
 from pathlib import Path
 
-from qai_hub_apps import __version__, _is_dev
+from qai_hub_apps import PACKAGE_NAME, __version__, _is_dev
 from qai_hub_apps.commands.fetch import run_fetch
 from qai_hub_apps.commands.list_apps import run_info, run_list
 from qai_hub_apps.configs.model_asset import ModelAsset
@@ -18,6 +18,8 @@ from qai_hub_apps.errors import (
 )
 from qai_hub_apps.experimental import add_experimental_parser
 from qai_hub_apps.experimental.commands.build import run_build
+from qai_hub_apps.experimental.commands.configure import run_configure
+from qai_hub_apps.experimental.commands.run import run_run
 from qai_hub_apps.logging_utils import configure_logging
 from qai_hub_apps.registry import Registry
 from qai_hub_apps.utils.updates import check_for_update
@@ -85,6 +87,14 @@ def _resolve_app_target(
     return app, None
 
 
+def _split_passthrough(argv: list[str]) -> tuple[list[str], list[str]]:
+    """Split argv at the first ``--``; the tail is passed through to the run target."""
+    if "--" in argv:
+        sep = argv.index("--")
+        return argv[:sep], argv[sep + 1 :]
+    return argv, []
+
+
 def main() -> None:
     epilog = (
         "Examples:\n"
@@ -93,7 +103,7 @@ def main() -> None:
         "  qai-hub-apps fetch <app_id>         Download an app's source\n"
     )
     parser = argparse.ArgumentParser(
-        prog="qai-hub-apps",
+        prog=PACKAGE_NAME,
         description="CLI for browsing and downloading Qualcomm® AI Hub Apps.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=epilog,
@@ -202,6 +212,49 @@ def main() -> None:
             "directory (default: save a separate numbered copy)",
         )
 
+    def add_app_action_args(p: argparse.ArgumentParser, verb: str) -> None:
+        """Add the shared app-target + fetch + docker/clean args to build/run."""
+        add_registry_arg(p)
+        app_group = p.add_mutually_exclusive_group()
+        app_group.add_argument(
+            "app",
+            nargs="?",
+            default=None,
+            metavar="APP_ID_OR_PATH",
+            help=f"App to {verb}: an app ID to fetch-and-{verb} (from "
+            "'qai-hub-apps list'), or a path to an already-fetched app directory. "
+            "Use --app-id or --app-path to be explicit",
+        )
+        app_group.add_argument(
+            "--app-id",
+            dest="app_id",
+            default=None,
+            metavar="APP_ID",
+            help=f"App ID to {verb} (from 'qai-hub-apps list'); fetched first if "
+            "needed",
+        )
+        app_group.add_argument(
+            "--app-path",
+            dest="app_path",
+            default=None,
+            type=Path,
+            metavar="PATH",
+            help=f"Path to an already-fetched app directory to {verb} in place",
+        )
+        add_fetch_args(p)
+        p.add_argument(
+            "--no-docker",
+            dest="no_docker",
+            action="store_true",
+            help=f"{verb.capitalize()} natively on the host instead of using Docker",
+        )
+        p.add_argument(
+            "--clean",
+            dest="clean",
+            action="store_true",
+            help="Cleanup prior build artifacts before building",
+        )
+
     list_parser = subparsers.add_parser("list", help="List available apps")
     add_registry_arg(list_parser)
 
@@ -217,66 +270,54 @@ def main() -> None:
     add_fetch_args(fetch_parser)
 
     build_parser = add_experimental_parser(subparsers, "build", help="Build an app")
-    add_registry_arg(build_parser)
-    app_group = build_parser.add_mutually_exclusive_group()
-    app_group.add_argument(
-        "app",
-        nargs="?",
-        default=None,
-        metavar="APP_ID_OR_PATH",
-        help="App to build: an app ID to fetch-and-build (from 'qai-hub-apps list'), "
-        "or a path to an already-fetched app directory. "
-        "Use --app-id or --app-path to be explicit",
+    add_app_action_args(build_parser, "build")
+
+    run_parser = add_experimental_parser(subparsers, "run", help="Run an app")
+    add_app_action_args(run_parser, "run")
+
+    configure_parser = add_experimental_parser(
+        subparsers, "configure", help="Configure the target device"
     )
-    app_group.add_argument(
-        "--app-id",
-        dest="app_id",
+    configure_parser.add_argument(
+        "--device",
+        dest="device",
         default=None,
-        metavar="APP_ID",
-        help="App ID to build (from 'qai-hub-apps list'); fetched first if needed",
+        metavar="DEVICE",
+        help="Device name to set as the target (default: prompt to pick one)",
     )
-    app_group.add_argument(
-        "--app-path",
-        dest="app_path",
-        default=None,
-        type=Path,
-        metavar="PATH",
-        help="Path to an already-fetched app directory to build in place",
-    )
-    add_fetch_args(build_parser)
-    build_parser.add_argument(
-        "--no-docker",
-        dest="no_docker",
+    configure_parser.add_argument(
+        "--show",
+        dest="show",
         action="store_true",
-        help="Build natively on the host instead of using Docker",
-    )
-    build_parser.add_argument(
-        "--clean",
-        dest="clean",
-        action="store_true",
-        help="Cleanup prior build artifacts before building",
+        help="Show the currently configured device and exit",
     )
 
-    args = parser.parse_args()
+    argv, app_args = _split_passthrough(sys.argv[1:])
+    args = parser.parse_args(argv)
 
     configure_logging(args.log_level)
 
-    if args.command in ("fetch", "build") and (args.chipset or args.device):
-        cmd_parser = fetch_parser if args.command == "fetch" else build_parser
+    if args.command in ("fetch", "build", "run") and (args.chipset or args.device):
+        cmd_parser = {
+            "fetch": fetch_parser,
+            "build": build_parser,
+            "run": run_parser,
+        }[args.command]
         flag = "--chipset" if args.chipset else "--device"
         if args.model_path is not None:
             cmd_parser.error(f"{flag} cannot be used with --model-path")
         if args.model is None and args.model_id is None:
             cmd_parser.error(f"{flag} requires --model or --model-id")
 
-    if args.command == "build" and (
+    if args.command in ("build", "run") and (
         args.app is None and args.app_id is None and args.app_path is None
     ):
-        build_parser.error("one of APP_ID_OR_PATH, --app-id or --app-path is required")
+        cmd_parser = build_parser if args.command == "build" else run_parser
+        cmd_parser.error("one of APP_ID_OR_PATH, --app-id or --app-path is required")
 
     registry_path = getattr(args, "registry", None)
 
-    if args.command not in ("list", "info", "fetch", "build"):
+    if args.command not in ("list", "info", "fetch", "build", "run", "configure"):
         parser.print_help()
         return
 
@@ -318,6 +359,26 @@ def main() -> None:
                 clean=args.clean,
                 overwrite=args.overwrite,
             )
+        elif args.command == "run":
+            model_asset = _resolve_model_asset(
+                args.model, args.model_id, args.model_path, args.chipset, args.device
+            )
+            app_id, app_path = _resolve_app_target(
+                args.app, args.app_id, args.app_path, args.overwrite
+            )
+            run_run(
+                app_id,
+                app_path,
+                args.output_dir,
+                registry,
+                model_asset,
+                use_docker=not args.no_docker,
+                clean=args.clean,
+                overwrite=args.overwrite,
+                app_args=app_args,
+            )
+        elif args.command == "configure":
+            run_configure(args.device, show=args.show)
     except QAIHubAppsError as e:
         logger.error(str(e))  # noqa: TRY400
         sys.exit(1)

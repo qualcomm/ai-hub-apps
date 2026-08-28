@@ -206,11 +206,16 @@ def bundle_scripts(out_dir: Path, shared_scripts_root: Path | None = None) -> No
         + list(out_dir.glob("test.ps1"))
         + list(out_dir.glob("build.sh"))
         + list(out_dir.glob("build.ps1"))
+        + list(out_dir.glob("launch.sh"))
+        + list(out_dir.glob("launch.ps1"))
+        + list(out_dir.glob("run.sh"))
+        + list(out_dir.glob("run.ps1"))
     )
     if not app_scripts:
         print(
             "No install_*.sh / install_*.ps1 / test.sh / test.ps1 / build.sh / "
-            "build.ps1 found; skipping shell script bundling."
+            "build.ps1 / launch.sh / launch.ps1 / run.sh / run.ps1 found; "
+            "skipping shell script bundling."
         )
         return
 

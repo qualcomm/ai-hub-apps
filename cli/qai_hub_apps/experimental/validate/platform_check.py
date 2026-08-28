@@ -15,9 +15,18 @@ from qai_hub_apps.configs.app_yaml import AppType
 from qai_hub_apps.errors import AppIncompatibleError, QAIHubAppsError
 
 if TYPE_CHECKING:
+    from qai_hub_models_cli.proto_helpers.platform import DeviceInfo
+
     from qai_hub_apps.registry import App
 
 logger = logging.getLogger(__name__)
+
+
+def _is_wsl() -> bool:
+    """Return True when running under the Windows Subsystem for Linux."""
+    release = platform.uname().release
+    logger.debug(f"Detected OS release: {release}")
+    return "-Microsoft" in release or "microsoft-standard-WSL" in release
 
 
 def ensure_docker_available() -> None:
@@ -94,3 +103,68 @@ def ensure_build_supported(app: App, use_docker: bool) -> None:
     if use_docker:
         ensure_docker_available()
     logger.debug("Build support check passed for '%s'", app.id)
+
+
+def ensure_run_supported(app: App, device: DeviceInfo, use_docker: bool) -> None:
+    """Raise ``AppIncompatibleError`` if the app cannot be run on this host/device.
+
+    - Android apps run on-device; ``run`` is not yet supported from the CLI.
+    - Windows apps can only be run on a Windows host.
+    - Ubuntu apps can only be run on native Linux (not Windows, macOS, or WSL).
+    - The configured device must be one of the app's supported devices.
+    - Docker-mode runs require Docker to be installed and running.
+    """
+    logger.debug(
+        "Checking run support for '%s': app_type=%s, device=%s, use_docker=%s",
+        app.id,
+        app.app_type.value,
+        device.name,
+        use_docker,
+    )
+    if app.app_type == AppType.ANDROID:
+        raise AppIncompatibleError(
+            f"'{app.id}' is an Android app; 'run' is not yet supported. Build the "
+            "APK with 'qai-hub-apps build' and install it on a device with "
+            "'adb install'."
+        )
+    if app.app_type == AppType.WINDOWS and sys.platform != "win32":
+        raise AppIncompatibleError(
+            f"'{app.id}' is a Windows app and can only be run on Windows "
+            f"(detected platform: {sys.platform})."
+        )
+    if app.app_type == AppType.UBUNTU and (sys.platform != "linux" or _is_wsl()):
+        raise AppIncompatibleError(
+            f"'{app.id}' is an Ubuntu app and can only be run on native Linux "
+            "(Windows, macOS, and WSL are not supported)."
+        )
+    ensure_device_supported(app, device.name)
+    if use_docker:
+        ensure_docker_available()
+    logger.debug("Run support check passed for '%s'", app.id)
+
+
+def ensure_device_supported(app: App, device: str) -> None:
+    """Raise ``AppIncompatibleError`` if *device* is not a supported device.
+
+    Warn when the app declares no ``supported_devices``.
+    """
+    if not app.supported_devices:
+        logger.warning(
+            "'%s' does not declare supported devices; it may not work as "
+            "expected on '%s'.",
+            app.id,
+            device,
+        )
+        return
+    logger.debug(
+        "Checking device '%s' against supported devices %s for '%s'",
+        device,
+        app.supported_devices,
+        app.id,
+    )
+    if device not in app.supported_devices:
+        available = ", ".join(app.supported_devices)
+        raise AppIncompatibleError(
+            f"'{app.id}' does not support the configured device '{device}'. "
+            f"Supported devices: {available}."
+        )

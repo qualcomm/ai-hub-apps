@@ -14,17 +14,16 @@ from packaging.version import Version
 from packaging.version import parse as parse_version
 from platformdirs import user_cache_dir
 
-from qai_hub_apps import __version__
+from qai_hub_apps import PACKAGE_NAME, __version__
 
 logger = logging.getLogger(__name__)
 
-_PACKAGE = "qai-hub-apps"
-_PYPI_URL = f"https://pypi.org/pypi/{_PACKAGE}/json"
+_PYPI_URL = f"https://pypi.org/pypi/{PACKAGE_NAME}/json"
 _CACHE_MAX_AGE_SECONDS = 3 * 24 * 60 * 60  # 3 days
 
 
 def _cache_path() -> Path:  # pragma: no cover
-    return Path(user_cache_dir(_PACKAGE)) / "latest-version.txt"
+    return Path(user_cache_dir(PACKAGE_NAME)) / "latest-version.txt"
 
 
 def _fetch_latest_version() -> Version:  # pragma: no cover
@@ -70,8 +69,8 @@ def check_for_update() -> None:
         logger.info(
             "A newer version of %s is available (%s); you have %s. "
             "\nUpgrade: pip install --upgrade %s",
-            _PACKAGE,
+            PACKAGE_NAME,
             latest,
             __version__,
-            _PACKAGE,
+            PACKAGE_NAME,
         )

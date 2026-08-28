@@ -37,8 +37,20 @@ _KIND_TEMPLATE = {
 }
 
 
-def _plan(info: QAIHAAppInfo, app_dir: Path) -> tuple[str, str, dict[str, object]]:
-    """Return ``(template, out_filename, context)`` for an app.
+def _launch_plan(info: QAIHAAppInfo) -> tuple[str, str, dict[str, object]]:
+    """Return ``(template, out_filename, context)`` for an app's launch script."""
+    context: dict[str, object] = {"header": HEADER, "app_id": info.id}
+    if info.app_type == AppType.UBUNTU:
+        return "ubuntu/launch_sh.j2", "launch.sh", context
+    if info.app_type == AppType.ANDROID:
+        return "android/launch_sh.j2", "launch.sh", context
+    return "default_launch_ps1.j2", "launch.ps1", context
+
+
+def _build_plan(
+    info: QAIHAAppInfo, app_dir: Path
+) -> tuple[str, str, dict[str, object]]:
+    """Return ``(template, out_filename, context)`` for an app's build script.
 
     Raises ``SystemExit`` if the app's type/language has no build script.
     """
@@ -80,10 +92,10 @@ def _write_executable(path: Path, content: str) -> None:
     path.chmod(mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
 
 
-def generate_build_scripts(
+def generate_app_scripts(
     app_id: str | None = None, scope: RegistryScope = RegistryScope.PRODUCTION
 ) -> None:
-    """Generate a build script for each in-scope app.
+    """Generate the build and launch scripts for each in-scope app.
 
     Parameters
     ----------
@@ -92,7 +104,7 @@ def generate_build_scripts(
     scope:
         Which apps to include (see :class:`RegistryScope`).
     """
-    print(f"\n{'  Generating build scripts  ':=^60}")
+    print(f"\n{'  Generating app scripts  ':=^60}")
     print(f"Scope:     {scope.value}")
     print(f"App:       {app_id or 'all in-scope apps'}")
 
@@ -108,27 +120,30 @@ def generate_build_scripts(
     generated = 0
     for info, app_dir in all_apps:
         print(f"\n{f' {info.id} ':─^60}")
-        template_name, out_filename, context = _plan(info, app_dir)
-        print(f"Template:  {template_name}")
-        for key, value in context.items():
-            print(f"  {key}: {value}")
-        content = _environment.get_template(template_name).render(context)
-        _write_executable(app_dir / out_filename, content)
-        print(f"Generated {app_dir / out_filename}")
-        generated += 1
+        for template_name, out_filename, context in (
+            _build_plan(info, app_dir),
+            _launch_plan(info),
+        ):
+            print(f"Template:  {template_name}")
+            for key, value in context.items():
+                print(f"  {key}: {value}")
+            content = _environment.get_template(template_name).render(context)
+            _write_executable(app_dir / out_filename, content)
+            print(f"Generated {app_dir / out_filename}")
+            generated += 1
 
     print(f"\n{'  Summary  ':=^60}")
-    print(f"Generated {generated} build script(s) for scope '{scope.value}'.")
+    print(f"Generated {generated} app script(s) for scope '{scope.value}'.")
 
 
-class GenerateBuildScriptsParser(Tap):
+class GenerateAppScriptsParser(Tap):
     app_id: str | None = None  # Generate for a single app id under scope
     scope: RegistryScope = RegistryScope.PRODUCTION  # Which apps to include
 
 
 def main() -> None:
-    args = GenerateBuildScriptsParser().parse_args()
-    generate_build_scripts(args.app_id, args.scope)
+    args = GenerateAppScriptsParser().parse_args()
+    generate_app_scripts(args.app_id, args.scope)
 
 
 if __name__ == "__main__":

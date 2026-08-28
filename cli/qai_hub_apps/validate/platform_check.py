@@ -4,6 +4,7 @@
 # ---------------------------------------------------------------------
 from __future__ import annotations
 
+import platform
 import sys
 from typing import TYPE_CHECKING
 
@@ -25,3 +26,16 @@ def check_platform(app: App) -> bool:
         return True
 
     return sys.platform == required_platform
+
+
+def get_host_info() -> str:
+    return (
+        f"OS: {platform.platform()}\n"
+        f"System: {platform.system()}\n"
+        f"OS release: {platform.release()}\n"
+        f"OS version: {platform.version()}\n"
+        f"Architecture: {platform.machine()}\n"
+        f"Processor: {platform.processor()}\n"
+        f"Python: {sys.version.split()[0]}\n"
+        f"Python executable: {sys.executable}\n"
+    )

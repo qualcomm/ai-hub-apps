@@ -13,6 +13,7 @@ set_log_level()
 
 # registry.yaml is excluded from the wheel, so its presence means a source checkout.
 _BUNDLED_REGISTRY = Path(__file__).parent / "registry.yaml"
+PACKAGE_NAME = "qai-hub-apps"
 
 
 def _is_dev(version: str | None = None) -> bool:
@@ -35,4 +36,4 @@ def _is_dev(version: str | None = None) -> bool:
     return parse_version(__version__).is_devrelease or _BUNDLED_REGISTRY.exists()
 
 
-__all__ = ["__version__", "_is_dev"]
+__all__ = ["PACKAGE_NAME", "__version__", "_is_dev"]

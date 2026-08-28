@@ -11,7 +11,7 @@ from urllib.parse import quote
 
 from platformdirs import user_cache_dir
 
-from qai_hub_apps import _BUNDLED_REGISTRY, _is_dev
+from qai_hub_apps import _BUNDLED_REGISTRY, PACKAGE_NAME, _is_dev
 from qai_hub_apps.errors import RegistryFetchError
 
 _S3_BASE = "https://qaihub-public-assets.s3.us-west-2.amazonaws.com"
@@ -25,7 +25,7 @@ def _registry_s3_url(version: str) -> str:
 
 
 def _get_cached_registry_path(version: str) -> Path:
-    return Path(user_cache_dir("qai-hub-apps")) / version / "registry.yaml"
+    return Path(user_cache_dir(PACKAGE_NAME)) / version / "registry.yaml"
 
 
 @functools.cache

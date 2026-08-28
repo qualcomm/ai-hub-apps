@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+{{ header }}
+set -euo pipefail
+
+APP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$APP_DIR"
+
+echo "::error::'run' is not yet supported for {{ app_id }}. Build the APK with build.sh and install it on a device with 'adb install'." >&2
+exit 1

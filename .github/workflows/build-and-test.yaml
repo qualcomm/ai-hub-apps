@@ -101,16 +101,16 @@ jobs:
           exit 1
         fi
 
-    - name: Check build scripts
+    - name: Check app scripts
       run: |
         source ${{ env.VENV_PATH }}/bin/activate
-        python -m qai_hub_apps_test.scripts.generate_build_scripts --scope test
+        python -m qai_hub_apps_test.scripts.generate_app_scripts --scope test
         if [[ -n $(git diff) || -n $(git ls-files --others --exclude-standard) ]]; then
           git diff
           git ls-files --others --exclude-standard
           echo ""
-          echo "Build scripts are out of date."
-          echo "Please run: python -m qai_hub_apps_test.scripts.generate_build_scripts --scope test"
+          echo "App scripts (build/launch) are out of date."
+          echo "Please run: python -m qai_hub_apps_test.scripts.generate_app_scripts --scope test"
           exit 1
         fi
 

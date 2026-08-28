@@ -27,6 +27,7 @@ from qai_hub_apps_utils.image_processing import (
     denormalize_coordinates,
     resize_pad,
 )
+from qai_hub_apps_utils.platform import get_current_device
 from qai_hub_apps_utils.quantization import dequantize, quantize
 from utils.draw import draw_predictions
 from utils.input_processing import get_gstreamer_input_pipeline
@@ -514,11 +515,12 @@ if __name__ == "__main__":
         required=True,
         help="Path to QAIRT SDK root",
     )
+    device = get_current_device()
     parser.add_argument(
         "--hexagon-version",
         type=str,
-        default="v73",
-        help="Hexagon version of the device, e.g. v73, default v73",
+        default=device.htp_version if device else None,
+        help="Hexagon version of the device, e.g. v73",
     )
 
     args = parser.parse_args()

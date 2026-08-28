@@ -61,6 +61,11 @@ if ($Clean) {
     Write-Host "::done::clean"
 }
 
+if (-not (Test-Path "$AppDir\Dockerfile")) {
+    Write-Error "::error::No Dockerfile found for object_detection_windows_cpp. Re-run with -NoDocker to build natively."
+    exit 1
+}
+
 try {
     Write-Host "::step::Building Docker image"
     docker build --build-arg BUILD_TYPE=build -t $ImageTag .

@@ -108,7 +108,7 @@ def _build_command(app: App, app_dir: Path, use_docker: bool, clean: bool) -> li
     if not script.is_file():
         fix = (
             "Regenerate it with "
-            "'python -m qai_hub_apps_test.scripts.generate_build_scripts'."
+            "'python -m qai_hub_apps_test.scripts.generate_app_scripts'."
             if _is_dev()
             else "The app bundle is incomplete; re-fetch it with --overwrite "
             "or pass an updated --app-path, then retry."
@@ -131,7 +131,7 @@ def run_build(
     use_docker: bool = True,
     clean: bool = False,
     overwrite: bool = False,
-) -> None:
+) -> Path:
     """Resolve the build target, fetch it if needed, and run its build script."""
     logger.debug(
         "run_build: app_id=%s, app_path=%s, use_docker=%s, clean=%s",
@@ -156,3 +156,4 @@ def run_build(
         ) from e
     logger.debug("Build subprocess for '%s' exited 0", app.id)
     logger.info("Build complete for '%s'.", app.id)
+    return app_dir
