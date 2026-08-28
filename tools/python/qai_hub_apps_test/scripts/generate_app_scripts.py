@@ -60,7 +60,11 @@ def _launch_plan(
     if info.app_type == AppType.ANDROID:
         context["package"] = _android_package(app_dir)
         return "android/launch_sh.j2", "launch.sh", context
-    return "default_launch_ps1.j2", "launch.ps1", context
+    if info.app_type == AppType.WINDOWS:
+        return "windows/launch_ps1.j2", "launch.ps1", context
+    raise SystemExit(
+        f"Error: no launch script for '{info.id}' (type={info.app_type.value})."
+    )
 
 
 def _build_plan(

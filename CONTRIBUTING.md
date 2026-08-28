@@ -13,6 +13,7 @@ This guide covers dev environment setup, repo architecture, app conventions, tes
 - [Shared Scripts](#shared-scripts-apps_sharedscripts)
 - [Shared Python Utilities](#shared-python-utilities-qai_hub_apps_utils)
 - [Building Apps](#building-apps)
+- [Running Apps](#running-apps)
 - [Experimental CLI Features](#experimental-cli-features)
 - [Testing Infrastructure](#testing-infrastructure)
 - [Code Style and Linting](#code-style-and-linting)
@@ -105,6 +106,11 @@ qai-hub-apps fetch <app_id> --model <model_id>
 
 qai-hub-apps build <app_id_or_path>          # experimental (see below)
   └─ fetches the app if needed, then execs the bundled build.sh / build.ps1
+
+qai-hub-apps configure                       # experimental — pick & persist a target device
+qai-hub-apps run <app_id_or_path>            # experimental (see below)
+  └─ validates run-compatibility, builds if needed, then execs the bundled
+     launch.sh / launch.ps1 (which drives the app's run.sh / run.ps1)
 ```
 
 ### Fetch provenance manifest
@@ -196,6 +202,7 @@ App directories follow the pattern: `{app_name}_{platform}[_{language}]`
 ├── README.md
 ├── install_runtime.sh      # sources shared scripts (python_utils, pip_utils, etc.)
 ├── test.sh                 # entry point run on-device by run_linux.sh (e.g. runs main.py)
+├── run.sh                  # hand-written env-agnostic launch (see Running Apps)
 ├── requirements.txt
 └── <source files>
 ```
@@ -209,11 +216,12 @@ App directories follow the pattern: `{app_name}_{platform}[_{language}]`
 ├── info.yaml               ├── info.yaml
 ├── README.md               ├── README.md
 ├── <App>.sln               ├── install_runtime.ps1
-├── <App>.vcxproj           ├── requirements.txt
-├── vcpkg.json              └── <source files>
+├── <App>.vcxproj           ├── run.ps1
+├── vcpkg.json              ├── requirements.txt
+├── run.ps1                 └── <source files>
 └── src/
 ```
-
+`run.ps1` is the hand-written, env-agnostic launch script (see [Running Apps](#running-apps)).
 ---
 
 ## info.yaml Schema
@@ -397,20 +405,22 @@ build it directly with `bash build.sh` without the CLI installed.
 
 ### Scripts are generated, not hand-written
 
-Build scripts are produced from Jinja2 templates by
-`tools/python/qai_hub_apps_test/scripts/generate_build_scripts.py` — the same pattern
-as `generate_registry.py`. **Do not hand-edit a committed `build.sh` / `build.ps1`**;
-edit the template and regenerate.
+Build **and** launch scripts are produced from Jinja2 templates by
+`tools/python/qai_hub_apps_test/scripts/generate_app_scripts.py` — the same pattern
+as `generate_registry.py`. Each in-scope app gets a `build.sh` / `build.ps1` (see
+below) and a `launch.sh` / `launch.ps1` (see [Running Apps](#running-apps)).
+**Do not hand-edit a committed `build.*` / `launch.*`** — edit the template and
+regenerate.
 
 ```bash
 # Generate for every in-scope app (default scope: production)
-python -m qai_hub_apps_test.scripts.generate_build_scripts
+python -m qai_hub_apps_test.scripts.generate_app_scripts
 
 # CI regenerates with --scope test and fails if the result differs from what's committed
-python -m qai_hub_apps_test.scripts.generate_build_scripts --scope test
+python -m qai_hub_apps_test.scripts.generate_app_scripts --scope test
 
 # Single app
-python -m qai_hub_apps_test.scripts.generate_build_scripts --app_id posenet_ubuntu_py
+python -m qai_hub_apps_test.scripts.generate_app_scripts --app_id posenet_ubuntu_py
 ```
 
 The generated script (and the shared scripts it sources, e.g. `interactive.sh`) is
@@ -419,7 +429,7 @@ carried into the bundle by the [shell bundler](tools/python/qai_hub_apps_test/bu
 ### Templates by app type
 
 The generator picks a template from the app's `app_type` + `languages`
-(`_plan()` in `generate_build_scripts.py`). Templates live under
+(`_build_plan()` in `generate_app_scripts.py`). Templates live under
 `tools/python/qai_hub_apps_test/scripts/templates/`:
 
 | App type | Template | Output | What it does |
@@ -465,17 +475,73 @@ injection), so external contributors can build unchanged.
 ### CI keeps generated scripts in sync
 
 `build-and-test.yaml`'s **"Check generated files are up to date"** job regenerates
-both the registry and the build scripts (`--scope test`) and fails if the working
-tree differs — so a template change with stale committed output is caught in CI, just
-like `registry.yaml`. Regenerate and commit whenever you touch a template or add an
-app.
+both the registry and the app scripts — `build.*` and `launch.*` (`--scope test`) —
+and fails if the working tree differs, so a template change with stale committed
+output is caught in CI, just like `registry.yaml`. Regenerate and commit whenever you
+touch a template or add an app.
+
+---
+
+## Running Apps
+
+Running mirrors building, but with **two** layers so an app can run identically
+whether the CLI orchestrates it or a user runs it by hand:
+
+- **`launch.sh` / `launch.ps1`** — the **generated** orchestrator (sibling of
+  `build.*`, same `generate_app_scripts.py` + Jinja templates; **do not hand-edit**).
+  It prepares the execution environment for the app's `app_type` — native vs Docker,
+  installing runtime deps, or `adb` install — then invokes the app's run script.
+- **`run.sh` / `run.ps1`** — **hand-written** and environment-agnostic (sibling of
+  `test.*`). It runs the app with sensible defaults and forwards any passthrough args;
+  it assumes deps are already installed and does not know or care about Docker. Android
+  apps have **no** run script — their `launch.sh` installs and launches the APK via
+  `adb` directly.
+
+The CLI's experimental `run` command is a thin wrapper: `qai-hub-apps run
+<app_id_or_path>` resolves (and, given an id, fetches + builds) the app, validates it
+can run on this host and target device (`ensure_run_supported`,
+`cli/qai_hub_apps/experimental/validate/platform_check.py`), then execs the bundled
+`launch.*`. Keeping the launch logic *in the script* means a fetched app runs on its
+own with `bash launch.sh` (no CLI needed).
+
+### Launch templates by app type
+
+`_launch_plan()` in `generate_app_scripts.py` picks the template from `app_type`:
+
+| App type | Template | Output | What it does |
+|----------|----------|--------|--------------|
+| Ubuntu Python | `ubuntu/launch_sh.j2` | `launch.sh` | Native (`install_runtime.sh` → `run.sh`) or Docker (build the runtime image, run `run.sh` inside with the device env forwarded) |
+| Android | `android/launch_sh.j2` | `launch.sh` | `adb`: pick a connected device (auto if one, prompt if many), `adb install` the APK, launch it via `monkey` |
+| Windows (C++ / Python) | `windows/launch_ps1.j2` | `launch.ps1` | **Native only** — Windows has no runtime container; runs `install_runtime.ps1` if present (Python apps), then `run.ps1` |
+
+An `app_type` with no launch template makes the generator **fail loudly**
+(`SystemExit`), like the build side.
+
+### Target device and the run environment
+
+`qai-hub-apps configure` picks and persists a target device; `run` injects it into
+the launch/run environment as `QAI_HUB_APPS_*` variables (`DEVICE_NAME`,
+`HEXAGON_VERSION`, `DEVICE_OS`, `CHIPSET`, `SOC_MODEL`). Apps read them via
+`qai_hub_apps_utils.platform.get_current_device()` — see [Shared Python
+Utilities](#shared-python-utilities-qai_hub_apps_utils). Android runs ignore the
+configured device (that's the build host) and prompt for a mobile device each run.
+
+### Common conventions
+
+- **Args:** `--no-docker` / `--docker` mirror the build scripts (Ubuntu default is
+  Docker; **Windows is always native**, so the flag is a no-op there). Everything
+  after a `--` separator is passthrough: `qai-hub-apps run <app> -- <app_args>`
+  forwards `<app_args>` through `launch.*` to the app's `run.*`.
+- **Error handling:** same as the build scripts — bash `set -euo pipefail`; PowerShell
+  `$ErrorActionPreference = "Stop"`.
 
 ---
 
 ## Experimental CLI Features
 
 Some CLI features are **experimental** — opt-in, unstable, and hidden from end users
-until they graduate. The `build` command is currently experimental.
+until they graduate. The `build`, `run`, and `configure` commands are currently
+experimental.
 
 The gate lives in `cli/qai_hub_apps/experimental/__init__.py` and is driven entirely
 by the `QAI_HUB_APPS_EXPERIMENTAL` environment variable (`1`/`true`/`yes`/`on`):
@@ -645,15 +711,22 @@ Then commit the updated `cli/qai_hub_apps/registry.yaml`. When the app is ready 
 
 To inspect the output without touching the bundled file, point `--output_dir` at a scratch path (e.g. `/tmp/reg_test`). To preview the full test set (including unpublished apps), add `--scope test` (see [App Status](#app-status)).
 
-### 8. Generate and commit the build script
+### 8. Generate and commit the app scripts
 
-Every in-scope app needs a committed `build.sh` / `build.ps1` — CI's "Check generated files" job regenerates them with `--scope test` and fails if any is missing or stale (see [Building Apps](#building-apps)). Generate for your new app and commit the result:
+Every in-scope app needs committed `build.sh` / `build.ps1` **and** `launch.sh` /
+`launch.ps1` — CI's "Check generated files" job regenerates them with `--scope test`
+and fails if any is missing or stale (see [Building Apps](#building-apps) and
+[Running Apps](#running-apps)). Generate for your new app and commit the result:
 
 ```bash
-python -m qai_hub_apps_test.scripts.generate_build_scripts --app_id <your_app_id> --scope test
+python -m qai_hub_apps_test.scripts.generate_app_scripts --app_id <your_app_id> --scope test
 ```
 
-If the generator errors that there's no template for your app's `app_type` / `languages`, that combination has no build recipe yet — add a template and wire it into `_plan()` in `generate_build_scripts.py`.
+If the generator errors that there's no template for your app's `app_type` /
+`languages`, that combination has no recipe yet — add a template and wire it into
+`_build_plan()` / `_launch_plan()` in `generate_app_scripts.py`. Ubuntu and Windows
+apps also need a hand-written `run.sh` / `run.ps1` (Android apps do not — see
+[Running Apps](#running-apps)).
 
 ### 9. Run on-device tests locally
 

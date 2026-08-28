@@ -93,6 +93,10 @@ def run_run(
         app_path = app_path.resolve()
         app = _resolve_app_from_dir(app_path, registry)
 
+    if app.app_type == AppType.WINDOWS and use_docker:
+        logger.info("Windows apps run natively; ignoring Docker mode.")
+        use_docker = False
+
     # Android apps run on a mobile device, not the configured environment device,
     # so pick an Android target for this run.
     if app.app_type == AppType.ANDROID:

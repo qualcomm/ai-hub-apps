@@ -1,8 +1,0 @@
-{{ header }}
-param([switch]$NoDocker, [switch]$Clean)
-$ErrorActionPreference = "Stop"
-
-Set-Location $PSScriptRoot
-
-Write-Error "::error::'run' is not yet supported for {{ app_id }} on Windows."
-exit 1

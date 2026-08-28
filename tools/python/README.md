@@ -25,7 +25,7 @@ qai_hub_apps_test/
 │   ├── android/      # Gradle build and version verification
 │   └── windows/      # Visual Studio / MSBuild helpers
 ├── qdc/              # Qualcomm Device Cloud job submission and polling
-├── scripts/          # CLI entry points (generate_registry, generate_build_scripts, publish_wheel_s3) + build-script templates/
+├── scripts/          # CLI entry points (generate_registry, generate_app_scripts, publish_wheel_s3) + build/launch script templates/
 └── test/             # pytest fixtures and integration tests
 ```
 
@@ -46,9 +46,10 @@ qai_hub_apps_test/
 # Generate registry.yaml from all published apps (optionally build + upload to S3)
 python -m qai_hub_apps_test.scripts.generate_registry --output_dir cli/qai_hub_apps/
 
-# Generate each in-scope app's build.sh / build.ps1 from the Jinja templates
-# (see CONTRIBUTING.md "Building Apps"). CI regenerates with --scope test.
-python -m qai_hub_apps_test.scripts.generate_build_scripts --scope test
+# Generate each in-scope app's build.sh/.ps1 and launch.sh/.ps1 from the Jinja
+# templates (see CONTRIBUTING.md "Building Apps" / "Running Apps"). CI regenerates
+# with --scope test.
+python -m qai_hub_apps_test.scripts.generate_app_scripts --scope test
 ```
 
 ## Configuration files

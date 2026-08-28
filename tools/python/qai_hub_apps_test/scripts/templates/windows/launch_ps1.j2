@@ -1,10 +1,4 @@
-
-# ---------------------------------------------------------------------
-# Copyright (c) 2025 Qualcomm Technologies, Inc. and/or its subsidiaries.
-# SPDX-License-Identifier: BSD-3-Clause
-# ---------------------------------------------------------------------
-# THIS FILE WAS AUTO-GENERATED. DO NOT EDIT MANUALLY.
-
+{{ header }}
 param([switch]$NoDocker, [switch]$Clean,
       [Parameter(ValueFromRemainingArguments = $true)][string[]]$AppArgs)
 $ErrorActionPreference = "Stop"
@@ -22,6 +16,6 @@ if (Test-Path "$AppDir\install_runtime.ps1") {
     & .\install_runtime.ps1
 }
 
-Write-Host "::step::Running object_detection_windows_cpp natively"
+Write-Host "::step::Running {{ app_id }} natively"
 & .\run.ps1 @AppArgs
 exit $LASTEXITCODE
