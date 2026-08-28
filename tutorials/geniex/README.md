@@ -70,7 +70,7 @@ platform-specific path-resolution details.
 
 GenieX powers higher-level applications as well as the CLI:
 
-- [GenieX Android ChatApp](https://github.com/qualcomm/ai-hub-apps/tree/main/apps/geniex_chat_android)
+- [GenieX Android ChatApp](../../apps/geniex_chat_android)
 
 ## Questions
 

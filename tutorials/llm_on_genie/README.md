@@ -63,7 +63,7 @@ can also download it directly using `wget` with the URL shown in the Software
 Center. Alternately, download [QAIRT SDK](https://qpm.qualcomm.com/#/main/tools/details/Qualcomm_AI_Runtime_SDK) and install it via [QPM.](https://docs.qualcomm.com/bundle/publicresource/topics/80-88500-5/install_qualcomm_package_manager_qpm.html)
 
 > [!IMPORTANT]
-> Automotive devices require access to the Auto specific QAIRT SDK which can be obtained by contacting your Qualcomm Account Manager, for those looking to purchase Auto SoCs and gain access to Auto SDK, please reach out on our [Qualcomm AI Hub Slack Community](http://aihub.qualcomm.com/community/slack) for next steps. Additional steps required to set up auto devices can be found in [Android (Automotive)](https://github.com/qcom-ai-hub/ai-hub-apps-internal/tree/main/tutorials/llm_on_genie#android-automotive)
+> Automotive devices require access to the Auto specific QAIRT SDK which can be obtained by contacting your Qualcomm Account Manager, for those looking to purchase Auto SoCs and gain access to Auto SDK, please reach out on our [Qualcomm AI Hub Slack Community](http://aihub.qualcomm.com/community/slack) for next steps. Additional steps required to set up auto devices can be found in [Android (Automotive)](#android-automotive)
 
 
 Once downloaded, please set the following environment variables:
@@ -183,8 +183,8 @@ You have four options to run the LLM on device:
 
 - Option 1: Use the `genie-t2t-run` CLI command
 - Option 2: Use the `genie-app` CLI command with a model-provided script (if available)
-- Option 3: Use the [CLI Windows ChatApp](https://github.com/qualcomm/ai-hub-apps/tree/main/apps/chatapp_windows_cpp)
-- Option 4: Use the [Android ChatApp](https://github.com/qualcomm/ai-hub-apps/tree/main/apps/chatapp_android)
+- Option 3: Use the [CLI Windows ChatApp](../../apps/chatapp_windows_cpp)
+- Option 4: Use the [Android ChatApp](../../apps/chatapp_android)
 
 ### *Option 1*: Run Genie via `genie-t2t-run`
 
@@ -293,14 +293,14 @@ that the model pipeline (text + image) is working on device.
 
 We provide a sample C++ app to show how to build an application using the Genie
 SDK. See the [CLI Windows
-ChatApp](https://github.com/qualcomm/ai-hub-apps/tree/main/apps/chatapp_windows_cpp)
+ChatApp](../../apps/chatapp_windows_cpp)
 for more details.
 
 ### Option 4: Sample Android Chat App Powered by Genie SDK
 
 We provide a sample Android app (Java and C++) to show how to build an
 application using the Genie SDK for mobile. See [Android
-ChatApp](https://github.com/qualcomm/ai-hub-apps/tree/main/apps/chatapp_android) for
+ChatApp](../../apps/chatapp_android) for
 more details.
 
 ## Additional Assistance
