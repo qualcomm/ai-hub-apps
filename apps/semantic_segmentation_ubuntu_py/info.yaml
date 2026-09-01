@@ -3,7 +3,7 @@ id: semantic_segmentation_ubuntu_py
 license_url: https://github.com/qualcomm/ai-hub-apps/blob/main/LICENSE
 license_type: bsd-3-clause
 runtime: tflite
-status: unpublished
+status: published
 domain: 'Computer Vision'
 headline: 'On-device semantic segmentation with TFLite'
 description: 'A sample app for Ubuntu demonstrating semantic segmentation on a live camera stream via TFLite Runtime. It uses GStreamer for input video and provides a minimal web interface to stream the color-overlaid output frames, suitable for embedded applications.'
