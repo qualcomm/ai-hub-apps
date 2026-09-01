@@ -7,22 +7,22 @@ from __future__ import annotations
 import os
 import random
 import time
-import uuid
 from collections.abc import Callable, Iterator
 
 import httpx
 import qai_hub as hub
-import requests
 from qualcomm_device_cloud_sdk.api import qdc_api
 from qualcomm_device_cloud_sdk.models import (
     ArtifactType,
     JobMode,
+    JobResult,
     JobState,
     JobSubmissionParameter,
     JobType,
+    LogUploadStatus,
     TestFramework,
 )
-from qualcomm_device_cloud_sdk.models.job_type_0 import JobType0 as Job
+from qualcomm_device_cloud_sdk.models import JobType0 as Job
 from tenacity import (
     RetryCallState,
     retry,
@@ -33,10 +33,16 @@ from tenacity import (
 
 # States in which a job is still in progress (not yet terminal)
 _RUNNING_STATES = {
-    JobState.DISPATCHED.value,
-    JobState.RUNNING.value,
-    JobState.SETUP.value,
-    JobState.SUBMITTED.value,
+    JobState.DISPATCHED,
+    JobState.RUNNING,
+    JobState.SETUP,
+    JobState.SUBMITTED,
+}
+# Log-upload states that are terminal (no further polling will change them)
+_TERMINAL_LOG_UPLOAD_STATES = {
+    LogUploadStatus.COMPLETED,
+    LogUploadStatus.FAILED,
+    LogUploadStatus.NOLOGS,
 }
 
 # Map from hub device names to QDC target device names
@@ -46,7 +52,6 @@ HUB_DEVICE_TO_QDC_DEVICE_MAP = {
     "Snapdragon X Elite CRD": "SC8380XP",
 }
 
-QDC_REST_BASE_URL = "https://api.qualcomm.com/deviceloud/v1"
 # QDC job limit
 QDC_JOB_LIMIT = int(os.getenv("QDC_JOB_LIMIT", "1"))
 # Default timeout for job status polling (in seconds)
@@ -100,7 +105,8 @@ def _matched_retryable_status_code(
 
 
 # Note: We only have to do this hack because the QDC API re-throws as bare
-# exceptions. We have asked them not to do this (so revisit after 0.2.3)
+# exceptions (still true as of SDK 0.4.1 -- ``qdc_api.try_call`` does
+# ``raise Exception(msg) from e``). We have asked them not to do this.
 # https://jira-dc.qualcomm.com/jira/browse/QDC-5475
 def _unwrap_causes(err: BaseException) -> Iterator[BaseException]:
     """Yield ``err`` and every exception in its __cause__/__context__ chain."""
@@ -314,22 +320,10 @@ class QDCJobs:
             on_behalf_of_header="ai_hub_models",
             client_type_header="Python",
         )
-        self._api_key = api_key
-        self._app_name_header = app_name_header
-        self._session = requests.Session()
-        self._session.headers.update(
-            {
-                "accept": "application/json",
-                "Authorization": api_key,
-                "X-QCOM-TokenType": "apikey",
-                "X-QCOM-AppName": app_name_header,
-                "X-QCOM-ClientType": "appName",
-            }
-        )
 
     @retry_qdc()
     def get_job(self, job_id: str) -> Job:
-        """Fetch job details from the QDC REST API.
+        """Fetch full job details from QDC, retrying transient errors.
 
         Parameters
         ----------
@@ -339,29 +333,24 @@ class QDCJobs:
         Returns
         -------
         job : Job
-            Job object constructed from the ``GET /jobs/{job_id}`` response.
+            Job object parsed from the ``GET /jobs/{job_id}`` response.
 
         Raises
         ------
-        requests.HTTPError
-            If the API returns a non-2xx status code.
+        ValueError
+            If QDC returns no job for ``job_id``.
         """
-        # Currently there is no support for get_job in the QDC Python API
-        # This is an interim solution until QDC-5417 is resolved
-        # https://jira-dc.qualcomm.com/jira/browse/QDC-5417
-        response = self._session.get(
-            f"{QDC_REST_BASE_URL}/jobs/{job_id}",
-            headers={"X-QCOM-TracingId": str(uuid.uuid4())},
-        )
-        response.raise_for_status()
-        return Job.from_dict(response.json())
+        job = qdc_api.get_job_by_id(self.client, job_id)
+        if job is None:
+            raise ValueError(f"Failure in `get_job_by_id`. No job found for {job_id}.")
+        return job
 
     @retry_qdc()
-    def get_job_status(self, job_id: str) -> str:
+    def get_job_status(self, job_id: str) -> JobState:
         """Fetch a job's lifecycle state, retrying transient QDC errors."""
         return qdc_api.get_job_status(self.client, job_id)
 
-    def status(self, job_id: str, timeout: int = DEFAULT_JOB_TIMEOUT) -> str:
+    def status(self, job_id: str, timeout: int = DEFAULT_JOB_TIMEOUT) -> JobState:
         """
         Poll and return the terminal status for a job (e.g., Completed/Canceled).
 
@@ -375,8 +364,8 @@ class QDCJobs:
 
         Returns
         -------
-        job_status : str
-            Final status of the job.
+        job_status : JobState
+            Final state of the job.
 
         Raises
         ------
@@ -394,7 +383,7 @@ class QDCJobs:
             elapsed += POLL_INTERVAL
 
         job_status = self.get_job_status(job_id)
-        if job_status in {"Completed", "Canceled", "Failed", "Error", "Aborted"}:
+        if job_status not in _RUNNING_STATES:
             return job_status
         qdc_api.abort_job(self.client, job_id)
         raise TimeoutError(
@@ -402,11 +391,11 @@ class QDCJobs:
             f"Last status: {job_status}"
         )
 
-    def result(self, job_id: str) -> str | None:
-        """Return the terminal result of a job (e.g. "Successful"/"Unsuccessful").
+    def result(self, job_id: str) -> JobResult | None:
+        """Return the terminal result of a job (e.g. Successful/Unsuccessful).
 
-        ``status()`` reports only the lifecycle ``state`` ("Completed"); a job can
-        reach "Completed" yet still have failed device-side execution, which shows
+        ``status()`` reports only the lifecycle ``state`` (``COMPLETED``); a job can
+        reach ``COMPLETED`` yet still have failed device-side execution, which shows
         up in the separate ``result`` field.
 
         Parameters
@@ -416,12 +405,11 @@ class QDCJobs:
 
         Returns
         -------
-        result : str | None
-            The job's terminal result (e.g. "Successful"/"Unsuccessful"), or None
-            if the field is absent.
+        result : JobResult | None
+            The job's terminal result, or None if the field is unset.
         """
-        job = self.get_job(job_id)
-        return getattr(job, "result", None)
+        result = getattr(self.get_job(job_id), "result", None)
+        return result if isinstance(result, JobResult) else None
 
     def get_active_jobs(self) -> list[Job]:
         """Return all currently active (non-terminal) jobs for this user.
@@ -439,7 +427,11 @@ class QDCJobs:
                 "Failure in `get_jobs_list`. Could not get job lists for user"
             )
 
-        return [job for job in jobs.data if job.state in _RUNNING_STATES]
+        return [
+            job
+            for job in (jobs.data or [])
+            if job is not None and job.state in _RUNNING_STATES
+        ]
 
     def submit_automated_job(
         self,
@@ -525,7 +517,7 @@ class QDCJobs:
         )
 
     @retry_qdc()
-    def get_job_log_upload_status(self, job_id: str) -> str:
+    def get_job_log_upload_status(self, job_id: str) -> LogUploadStatus:
         """Fetch a job's log-upload status, retrying transient QDC errors."""
         return qdc_api.get_job_log_upload_status(self.client, job_id)
 
@@ -551,8 +543,8 @@ class QDCJobs:
         status = None
         elapsed = 0
         while elapsed <= timeout:
-            status = self.get_job_log_upload_status(job_id).lower()
-            if status not in {"completed", "failed"}:
+            status = self.get_job_log_upload_status(job_id)
+            if status not in _TERMINAL_LOG_UPLOAD_STATES:
                 print(
                     f"Job is completed and the server is uploading logs, "
                     f"waiting for {POLL_INTERVAL} seconds."

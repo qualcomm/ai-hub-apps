@@ -15,7 +15,7 @@ import time
 import zipfile
 from abc import ABC, abstractmethod
 
-from qualcomm_device_cloud_sdk.models import ArtifactType
+from qualcomm_device_cloud_sdk.models import ArtifactType, JobResult, JobState
 
 from qai_hub_apps_test.qdc.qdc_jobs import (
     HUB_DEVICE_TO_QDC_DEVICE_MAP,
@@ -641,19 +641,21 @@ def submit_app_bundle_to_qdc_device(
     job_status = app_job.status(job_id)
     print(f"QDC job {job_id} completed with status: {job_status}")
 
-    job = app_job.get_job(job_id)
-    print(f"QDC job {job_id} test finished with status: {job.result.value}")
-    succeeded = job.result == "Successful"
+    job_result = app_job.result(job_id)
+    print(f"QDC job {job_id} test finished with result: {job_result}")
+    succeeded = job_result == JobResult.SUCCESSFUL
 
-    if not succeeded and job_status == "Completed":
+    if not succeeded and job_status == JobState.COMPLETED:
         app_job.log_upload_status(job_id)
         job_log_files = app_job.get_job_log_files(job_id)
         time.sleep(POLL_INTERVAL)
         if job_log_files:
             with tempfile.TemporaryDirectory() as tmpdirname:
                 for job_log in job_log_files:
-                    filename = job_log.filename
-                    if not filename.lower().endswith(TEXT_LOG_EXTENSIONS):
+                    filename = getattr(job_log, "filename", None)
+                    if not filename or not filename.lower().endswith(
+                        TEXT_LOG_EXTENSIONS
+                    ):
                         continue  # skip .mp4 and other non-text artifacts
 
                     base_name = os.path.basename(filename)
