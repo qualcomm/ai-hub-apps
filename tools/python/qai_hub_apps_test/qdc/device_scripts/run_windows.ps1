@@ -37,12 +37,17 @@ Set-Location "$AppDir"
 Write-Host "Installing Python (<<PYTHON_VERSION>>) using winget ..."
 # The task has no console, so winget must never prompt: accept both agreements and
 # fail (rather than ask) on anything else. --silent keeps the installer headless.
-`$list = winget list --id '<<PYTHON_VERSION>>' --exact --accept-source-agreements 2>&1
-if (`$LASTEXITCODE -eq 0 -and (`$list -match '<<PYTHON_VERSION>>')) {
+# There is no pre-check for an existing install; winget install makes that call itself.
+# For details, see apps/_shared/scripts/winget_utils.ps1.
+winget install --id '<<PYTHON_VERSION>>' --exact --silent --source winget --accept-package-agreements --accept-source-agreements --disable-interactivity
+# An already-installed package exits non-zero (UPDATE_NOT_APPLICABLE,
+# PACKAGE_ALREADY_INSTALLED, INSTALL_ALREADY_INSTALLED). HRESULTs surface as negative
+# ints, so mask before comparing.
+`$code = `$LASTEXITCODE -band 0xFFFFFFFF
+if (@(0x8A15002B, 0x8A150061, 0x8A15010D) -contains `$code) {
     Write-Host "<<PYTHON_VERSION>> is already installed."
-} else {
-    winget install --id '<<PYTHON_VERSION>>' --exact --silent --source winget --accept-package-agreements --accept-source-agreements --disable-interactivity
-    if (`$LASTEXITCODE -ne 0) { throw "winget install <<PYTHON_VERSION>> failed with exit code `$LASTEXITCODE." }
+} elseif (`$LASTEXITCODE -ne 0) {
+    throw "winget install <<PYTHON_VERSION>> failed with exit code `$LASTEXITCODE."
 }
 # winget puts python on the machine PATH, which this already-running process cannot see.
 `$env:PATH = [System.Environment]::GetEnvironmentVariable('PATH', 'Machine') + ';' + [System.Environment]::GetEnvironmentVariable('PATH', 'User')

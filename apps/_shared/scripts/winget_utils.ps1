@@ -6,9 +6,9 @@
 #
 # Functions:
 #   Install-WingetPackage -Id <package_id> [-ExtraArgs <string[]>]
-#       Install a winget package if it is not already installed.
+#       Install a winget package.
 #   Install-WingetPackages -Ids <string[]>
-#       Install multiple winget packages, each idempotently.
+#       Install multiple winget packages.
 #
 # Usage: . winget_utils.ps1
 # ---------------------------------------------------------------------
@@ -35,21 +35,33 @@ function Resolve-InstalledExe {
     return $exe
 }
 
+# No pre-check for an existing install. `winget list --id` correlates installed Add/Remove
+# Programs entries to catalog packages heuristically, so it reports unrelated installs
+# under the queried id (with Python 3.10 installed, Python.Python.3.12 matches). winget
+# signals the mismatch in the version column, but only in package-specific ways not worth
+# encoding here, and it is unfixed upstream (microsoft/winget-cli#6475, #6132). `winget
+# install` makes the same decision itself, so let it own it.
 function _Install-WingetPackage {
     param(
         [string]$Id,
         [string[]]$ExtraArgs = @()
     )
-    $list = winget list --id $Id --exact --accept-source-agreements 2>&1
-    if ($LASTEXITCODE -eq 0 -and ($list -match [regex]::Escape($Id))) {
-        Write-Host "::skip::$Id"
-    } else {
-        Write-Host "::step::Installing $Id"
-        Invoke-WithRetry -Description "winget install $Id" -Action {
-            winget install --id $Id --exact --silent --accept-package-agreements --accept-source-agreements @ExtraArgs
+    # An already-installed package exits non-zero: winget converts the install to an
+    # upgrade and finds nothing newer. Not a failure, so do not let it trip the retry.
+    $alreadyInstalled = @(
+        0x8A15002B, # UPDATE_NOT_APPLICABLE
+        0x8A150061, # PACKAGE_ALREADY_INSTALLED
+        0x8A15010D  # INSTALL_ALREADY_INSTALLED
+    )
+    Write-Host "::step::Installing $Id"
+    Invoke-WithRetry -Description "winget install $Id" -Action {
+        winget install --id $Id --exact --silent --accept-package-agreements --accept-source-agreements @ExtraArgs
+        # winget returns HRESULTs, which surface as negative ints; mask before comparing.
+        if ($alreadyInstalled -contains ($LASTEXITCODE -band 0xFFFFFFFF)) {
+            $global:LASTEXITCODE = 0
         }
-        Write-Host "::done::$Id"
     }
+    Write-Host "::done::$Id"
 }
 
 function Install-WingetPackage {
