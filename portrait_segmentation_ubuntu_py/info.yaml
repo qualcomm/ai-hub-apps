@@ -1,0 +1,25 @@
+name: Portrait Segmentation
+id: portrait_segmentation_ubuntu_py
+license_url: https://github.com/qualcomm/ai-hub-apps/blob/main/LICENSE
+license_type: bsd-3-clause
+runtime: tflite
+status: published
+domain: 'Computer Vision'
+headline: 'On-device portrait segmentation with TFLite'
+description: 'A sample app for Ubuntu integrating the SINet portrait-segmentation model via TFLite Runtime. It uses GStreamer for input video and provides a minimal web interface to stream output frames suitable for embedded applications.'
+precisions: [float]
+app_type: 'ubuntu'
+static_img_filename: 'app_screen.png'
+app_repo_relative_path: 'portrait_segmentation_ubuntu_py'
+model_file_paths:
+  - 'models/sinet.tflite'
+os:
+  name: Ubuntu
+  version: 24.04+
+languages: ['Python']
+base_docker: ubuntu.dockerfile
+use_case: 'Semantic Segmentation'
+supported_devices:
+  - name: "Dragonwing IQ-9075 EVK"
+    status: "Tested"
+related_models: ['sinet']

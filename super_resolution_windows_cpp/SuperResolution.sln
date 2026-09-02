@@ -1,0 +1,24 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.10.35122.118
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SuperResolution", "SuperResolution.vcxproj", "{9FBEC759-7D77-40FC-A26F-57D9EFAC9570}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|ARM64 = Debug|ARM64
+		Release|ARM64 = Release|ARM64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{9FBEC759-7D77-40FC-A26F-57D9EFAC9570}.Debug|ARM64.ActiveCfg = Debug|ARM64
+		{9FBEC759-7D77-40FC-A26F-57D9EFAC9570}.Debug|ARM64.Build.0 = Debug|ARM64
+		{9FBEC759-7D77-40FC-A26F-57D9EFAC9570}.Release|ARM64.ActiveCfg = Release|ARM64
+		{9FBEC759-7D77-40FC-A26F-57D9EFAC9570}.Release|ARM64.Build.0 = Release|ARM64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {61D3F9A3-0614-4037-9983-21060BB2B0E0}
+	EndGlobalSection
+EndGlobal

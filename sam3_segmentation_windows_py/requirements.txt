@@ -1,0 +1,8 @@
+onnxruntime-qnn==2.3.0
+onnxruntime-qnn
+onnxruntime==1.27.0
+numpy==2.4.4
+numpy>=2.2.6
+pillow==12.0.0
+tokenizers==0.22.2
+opencv-python-headless>=4.13.0; sys_platform != "win32" or platform_machine != "ARM64"

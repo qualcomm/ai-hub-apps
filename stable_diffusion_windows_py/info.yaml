@@ -1,0 +1,28 @@
+name: Stable Diffusion Windows
+id: stable_diffusion_windows_py
+license_url: https://github.com/qualcomm/ai-hub-apps/blob/main/LICENSE
+license_type: bsd-3-clause
+runtime: precompiled_qnn_onnx
+status: published
+domain: 'Generative AI'
+headline: 'Text-to-image generation on Snapdragon® NPUs'
+description: 'A sample CLI Windows app for image generation from text descriptions using Stable Diffusion. It leverages the ONNX execution provider to optimize processing on the Snapdragon® Neural Processing Unit (NPU), making it an excellent learning tool for AI-driven creative applications on Windows.'
+precisions: [w8a16]
+app_type: 'windows'
+static_img_filename: 'app_screen.png'
+base_docker: windows.dockerfile
+app_repo_relative_path: 'stable_diffusion_windows_py'
+qaihm_version: 0.53.1
+os:
+  name: Windows
+  version: 11+
+languages: ['Python']
+use_case: 'Image Generation'
+related_models: [stable_diffusion_v2_1]
+model_file_paths:
+  - 'model/text_encoder.onnx'
+  - 'model/unet.onnx'
+  - 'model/vae.onnx'
+supported_devices:
+  - name: "Snapdragon X Elite CRD"
+    status: "Tested"

@@ -1,0 +1,27 @@
+name: Whisper Windows
+id: whisper_windows_py
+license_url: https://github.com/qualcomm/ai-hub-apps/blob/main/LICENSE
+license_type: bsd-3-clause
+runtime: precompiled_qnn_onnx
+status: published
+domain: 'Audio'
+headline: 'Bring speech-to-text on device for Windows'
+description: "Demonstrates on-device speech-to-text inference with OpenAI's Whisper model via the ONNX Runtime execution provider, leveraging the Snapdragon® Neural Processing Unit (NPU) for efficient, low-latency transcription"
+precisions: [float]
+app_type: 'windows'
+static_img_filename: 'app_screen.png'
+base_docker: windows.dockerfile
+app_repo_relative_path: 'whisper_windows_py'
+qaihm_version: 0.53.1
+os:
+  name: Windows
+  version: 11+
+languages: ['Python']
+use_case: 'Speech Recognition'
+related_models: [whisper_base]
+model_file_paths:
+  - 'models/encoder.onnx'
+  - 'models/decoder.onnx'
+supported_devices:
+  - name: "Snapdragon X Elite CRD"
+    status: "Tested"
