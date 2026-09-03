@@ -127,6 +127,11 @@ def ensure_run_supported(app: App, device: DeviceInfo, use_docker: bool) -> None
                 f"Running '{app.id}' requires 'adb'. Install the Android "
                 "platform-tools and connect a device with USB debugging enabled."
             )
+        if sys.platform != "linux":
+            raise AppIncompatibleError(
+                f"'{app.id}' is an Android app and can only be run through native Linux or WSL "
+                "(Windows and macOS are not supported)."
+            )
     elif app.app_type == AppType.WINDOWS:
         if sys.platform != "win32":
             raise AppIncompatibleError(

@@ -46,13 +46,14 @@ if [ ! -f "$APP_DIR/Dockerfile" ]; then
 fi
 
 source ../_shared/scripts/qairt_utils.sh
+source ../_shared/scripts/sudo.sh
 
 HASH="$(printf '%s' "$APP_DIR" | sha1sum | cut -c1-12)"
 IMAGE_TAG="aiha-run-$(basename "$APP_DIR")-$HASH"
 
 if [ "$CLEAN" -eq 1 ]; then
     echo "::step::Cleaning prior docker image"
-    docker rmi "$IMAGE_TAG" >/dev/null 2>&1 || true
+    $SUDO docker rmi "$IMAGE_TAG" >/dev/null 2>&1 || true
     echo "::done::clean"
 fi
 
@@ -67,7 +68,7 @@ else
 fi
 
 echo "::step::Building Docker image"
-docker build --build-arg BUILD_TYPE=runtime -t "$IMAGE_TAG" .
+$SUDO docker build --build-arg BUILD_TYPE=runtime -t "$IMAGE_TAG" .
 echo "::done::Docker image"
 
 # Forward every QAI_HUB_APPS_* variable the CLI injected into the container
@@ -77,7 +78,7 @@ for var in "${!QAI_HUB_APPS_@}"; do
 done
 
 echo "::step::Running posenet_ubuntu_py in Docker"
-docker run --rm --privileged \
+$SUDO docker run --rm --privileged \
     -v /usr/lib/:/opt/host/lib/:ro \
     -v "$LIBCDSPRPC_SRC:/usr/lib/libcdsprpc.so:ro" \
     -v /tmp/socket/cam_server:/tmp/socket/cam_server \

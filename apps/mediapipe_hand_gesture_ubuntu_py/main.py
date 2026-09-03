@@ -27,6 +27,7 @@ from qai_hub_apps_utils.image_processing import (
     denormalize_coordinates,
     resize_pad,
 )
+from qai_hub_apps_utils.input_devices import get_default_video_device
 from qai_hub_apps_utils.platform import get_current_device
 from qai_hub_apps_utils.quantization import dequantize, quantize
 from utils.draw import draw_predictions
@@ -374,12 +375,26 @@ def main(args: argparse.Namespace) -> None:
         subprocess.call(["v4l2-ctl", "--list-devices"])
         return
 
+    if not args.hexagon_version:
+        raise SystemExit(
+            "Unknown Hexagon version for this device. "
+            "Pass it with --hexagon-version <e.g. v73>."
+        )
+
     Gst.init(None)
 
     if args.video_gstreamer_source:
         video_source = args.video_gstreamer_source
     else:
-        video_source = f"v4l2src name=camsrc device={args.video_device}"
+        try:
+            device = args.video_device or get_default_video_device()
+        except RuntimeError as error:
+            raise SystemExit(
+                f"{error} Pass a camera with --video-device <path> (see "
+                "--list-devices), or a full GStreamer source with "
+                "--video-gstreamer-source."
+            ) from error
+        video_source = f"v4l2src name=camsrc device={device}"
     pipeline = Gst.parse_launch(
         get_gstreamer_input_pipeline(
             video_source, (args.video_source_width, args.video_source_height)
@@ -481,7 +496,7 @@ def main(args: argparse.Namespace) -> None:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Hand Gesture Recognition")
-    group = parser.add_mutually_exclusive_group(required=True)
+    group = parser.add_mutually_exclusive_group()
     group.add_argument(
         "--list-devices", action="store_true", help="List options for --video-device"
     )
@@ -519,8 +534,9 @@ if __name__ == "__main__":
     parser.add_argument(
         "--hexagon-version",
         type=str,
-        default=device.htp_version if device else None,
-        help="Hexagon version of the device, e.g. v73",
+        default=device.htp_version if device and device.htp_version else None,
+        help="Hexagon version of the device, e.g. v73. Defaults to the "
+        "configured target device.",
     )
 
     args = parser.parse_args()

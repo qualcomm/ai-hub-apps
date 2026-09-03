@@ -17,6 +17,7 @@
 #include "Utilities.hpp"
 #include <opencv2/core.hpp>
 #include <opencv2/highgui.hpp>
+#include <opencv2/videoio.hpp>
 
 using App::BackendOption;
 using App::ObjectDetectionApp;
@@ -158,6 +159,16 @@ void ObjectDetectionApp::ClearInputsAndOutputs()
 
 void ObjectDetectionApp::LoadInputs(const std::string& image_path)
 {
+    CreateInputTensor(Utils::LoadImageFile(image_path, m_model_input_ht, m_model_input_wt));
+}
+
+void ObjectDetectionApp::LoadInputs(const cv::Mat& image)
+{
+    CreateInputTensor(Utils::PreprocessImage(image, m_model_input_ht, m_model_input_wt));
+}
+
+void ObjectDetectionApp::CreateInputTensor(const std::vector<float>& image_data)
+{
     if (m_session == nullptr)
     {
         std::ostringstream err_msg;
@@ -168,9 +179,6 @@ void ObjectDetectionApp::LoadInputs(const std::string& image_path)
 
     // Clear existing cached input and output
     ClearInputsAndOutputs();
-
-    size_t input_data_size = 3 * m_model_input_ht * m_model_input_wt;
-    std::vector<float> image_data = Utils::LoadImageFile(image_path, m_model_input_ht, m_model_input_wt);
 
     size_t num_input_nodes = m_session->GetInputCount();
     if (num_input_nodes != 1)
@@ -227,9 +235,7 @@ void ObjectDetectionApp::RunInference()
                                m_session->GetOutputCount());
 }
 
-void ObjectDetectionApp::ProcessOutput(const std::string& input_image_path,
-                                       const std::optional<std::string> output_image_path,
-                                       bool display_output_image)
+cv::Mat ObjectDetectionApp::AnnotateOutput(const cv::Mat& input_image, bool log_detections)
 {
     if (m_outputs.size() != 3)
     {
@@ -258,23 +264,38 @@ void ObjectDetectionApp::ProcessOutput(const std::string& input_image_path,
             std::string class_label = GetClassLabel(class_index);
             box_list.emplace_back(Utils::BoxCornerEncoding(x1, y1, x2, y2, output_prob[i], class_label));
 
-            std::cout << "\n Box: (" << x1 << "," << y1 << ") (" << x2 << "," << y2 << ") Probs: " << output_prob[i]
-                      << " Index: " << class_index << " Label: " << class_label;
+            if (log_detections)
+            {
+                std::cout << "\n Box: (" << x1 << "," << y1 << ") (" << x2 << "," << y2 << ") Probs: " << output_prob[i]
+                          << " Index: " << class_index << " Label: " << class_label;
+            }
         }
     }
 
     std::vector<Utils::BoxCornerEncoding> results = Utils::NonMaxSuppression(std::move(box_list), c_nms_threshold);
 
-    cv::Mat image = cv::imread(input_image_path);
+    cv::Mat image = input_image.clone();
 
     float ratio_h = image.rows / static_cast<float>(m_model_input_ht);
     float ratio_w = image.cols / static_cast<float>(m_model_input_wt);
 
-    std::cout << "\nNumber of objects: " << results.size();
+    if (log_detections)
+    {
+        std::cout << "\nNumber of objects: " << results.size();
+    }
     for (const auto& result : results)
     {
         Utils::AddBoundingBoxAndLabel(image, result, ratio_h, ratio_w);
     }
+
+    return image;
+}
+
+void ObjectDetectionApp::ProcessOutput(const std::string& input_image_path,
+                                       const std::optional<std::string> output_image_path,
+                                       bool display_output_image)
+{
+    cv::Mat image = AnnotateOutput(cv::imread(input_image_path));
 
     if (output_image_path.has_value())
     {
@@ -288,4 +309,49 @@ void ObjectDetectionApp::ProcessOutput(const std::string& input_image_path,
         cv::imshow("Detected objects", image);
         cv::waitKey(0);
     }
+}
+
+void ObjectDetectionApp::RunCameraLoop(int camera_index)
+{
+    cv::VideoCapture capture(camera_index);
+    if (!capture.isOpened())
+    {
+        std::ostringstream err_msg;
+        err_msg << "Could not open camera " << camera_index << ".\n";
+        err_msg << "Try another camera with --camera <index>, or run on a still image with --image <path>.";
+        throw std::runtime_error(err_msg.str());
+    }
+
+    constexpr const char* window_name = "Detected objects";
+    cv::namedWindow(window_name, cv::WINDOW_NORMAL);
+    std::cout << "\nCapturing from camera " << camera_index << ". Press any key in the window to stop.\n";
+
+    cv::Mat frame;
+    while (true)
+    {
+        if (!capture.read(frame) || frame.empty())
+        {
+            // The camera stopped producing frames; stop rather than spin on it.
+            std::cout << "\nCamera stopped producing frames. Exiting.\n";
+            break;
+        }
+
+        LoadInputs(frame);
+        RunInference();
+        // Per-frame detection logging would flood the console, so it is off here.
+        cv::imshow(window_name, AnnotateOutput(frame, false));
+
+        if (cv::waitKey(1) >= 0)
+        {
+            break;
+        }
+        // Closing the window is also a request to stop.
+        if (cv::getWindowProperty(window_name, cv::WND_PROP_VISIBLE) < 1)
+        {
+            break;
+        }
+    }
+
+    capture.release();
+    cv::destroyWindow(window_name);
 }

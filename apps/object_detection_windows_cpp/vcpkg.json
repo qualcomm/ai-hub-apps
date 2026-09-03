@@ -7,7 +7,9 @@
         "jpeg",
         "png",
         "highgui",
-        "win32ui"
+        "win32ui",
+        "msmf",
+        "dshow"
       ]
     }
   ]

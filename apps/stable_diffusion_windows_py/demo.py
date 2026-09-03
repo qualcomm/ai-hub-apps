@@ -26,7 +26,6 @@ from utils.scheduler import EulerScheduler
 if os.environ.get("ORT_LOG_LEVEL"):
     onnxruntime.set_default_logger_severity(int(os.environ["ORT_LOG_LEVEL"]))
 
-DEFAULT_PROMPT = "A girl taking a walk at sunset"
 HF_REPO = "sd2-community/stable-diffusion-2-1"
 OUT_H, OUT_W = 512, 512
 
@@ -124,8 +123,8 @@ def main() -> None:
     parser.add_argument(
         "--prompt",
         type=str,
-        default=DEFAULT_PROMPT,
-        help="Prompt for stable diffusion",
+        default=None,
+        help="Prompt for stable diffusion. Omit to be asked for one interactively.",
     )
     parser.add_argument(
         "--num-steps",
@@ -166,6 +165,19 @@ def main() -> None:
     )
     args = parser.parse_args()
 
+    # Ask for the prompt before the slow model load rather than after it.
+    prompt = args.prompt
+    if prompt is None:
+        try:
+            prompt = input("Enter a prompt for image generation: ").strip()
+        except EOFError:
+            prompt = ""
+        if not prompt:
+            raise SystemExit(
+                "No prompt entered. Pass one non-interactively with "
+                '--prompt "<your prompt>".'
+            )
+
     print("Loading models and tokenizer...")
     text_encoder = load_quantized_model(args.text_encoder)
     unet = load_quantized_model(args.unet)
@@ -178,7 +190,7 @@ def main() -> None:
         unet,
         vae_decoder,
         tokenizer,
-        args.prompt,
+        prompt,
         args.num_steps,
         args.seed,
     )

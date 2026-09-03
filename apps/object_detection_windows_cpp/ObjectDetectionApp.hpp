@@ -11,6 +11,8 @@
 #include <string>
 #include <vector>
 
+#include <opencv2/core.hpp>
+
 namespace App
 {
 
@@ -50,6 +52,16 @@ class ObjectDetectionApp
     Ort::AllocatorWithDefaultOptions m_allocator;
 
     void ClearInputsAndOutputs();
+
+    /**
+     * CreateInputTensor: Build the model input tensor from preprocessed image data.
+     *
+     * @param image_data preprocessed image data, channel-first and normalized.
+     * @throws if the model is not prepared with PrepareModelForInference before.
+     * @throws if the model does not take exactly one input.
+     * @throws if image_data does not match the model's input element count.
+     */
+    void CreateInputTensor(const std::vector<float>& image_data);
 
     /**
      * LoadLabels: Load class labels from m_labels_path (one label per line,
@@ -106,6 +118,15 @@ class ObjectDetectionApp
     void LoadInputs(const std::string& image_path);
 
     /**
+     * LoadInputs: Prepare an in-memory image for model inference
+     *   - Converts image to Ort::OrtTensor to use during model inference
+     *
+     * @param image: BGR image to load, as returned by cv::imread or cv::VideoCapture.
+     *
+     */
+    void LoadInputs(const cv::Mat& image);
+
+    /**
      * RunInference: Execute prepared model
      *   - Runs inference and cache output
      *
@@ -127,5 +148,27 @@ class ObjectDetectionApp
     void ProcessOutput(const std::string& input_image_path,
                        std::optional<std::string> output_image_path = std::nullopt,
                        bool display_output_image = true);
+
+    /**
+     * AnnotateOutput: Process cached model output into an annotated image
+     *
+     * @param input_image image to draw bounding boxes and labels onto.
+     * @param log_detections if true, prints each detection and the object count.
+     * @returns a copy of input_image with bounding boxes and labels drawn on it.
+     *
+     */
+    cv::Mat AnnotateOutput(const cv::Mat& input_image, bool log_detections = true);
+
+    /**
+     * RunCameraLoop: Run inference on a live camera feed
+     *   - Captures frames, runs inference on each and displays the annotated
+     *     frame, until a key is pressed or the window is closed.
+     *
+     * @param camera_index index of the camera to capture from.
+     * @throws if model is not prepared with PrepareModelForInference before
+     * @throws if the camera cannot be opened.
+     *
+     */
+    void RunCameraLoop(int camera_index);
 };
 } // namespace App

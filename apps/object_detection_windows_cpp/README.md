@@ -70,6 +70,12 @@ docker cp detection-container:C:\app\ARM64 .
 .\ARM64\Release\ObjectDetection.exe --model ".\assets\models\detection.onnx" --labels ".\assets\models\labels.txt" --image ".\assets\images\kitchen.jpg" --output_image detection_output.jpg
 ```
 
+To detect on a live camera feed instead of a still image, pass `--camera <index>`.
+Annotated frames are shown in a window until a key is pressed:
+```powershell
+.\ARM64\Release\ObjectDetection.exe --model ".\assets\models\detection.onnx" --labels ".\assets\models\labels.txt" --camera 0
+```
+
 Run `--help` to learn more about all available options, including `--qnn_options` ([QNN EP options](https://onnxruntime.ai/docs/execution-providers/QNN-ExecutionProvider.html#configuration-options)):
 
 ```powershell

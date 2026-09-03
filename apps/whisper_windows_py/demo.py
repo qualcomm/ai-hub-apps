@@ -6,6 +6,7 @@ import argparse
 from datetime import datetime
 
 import sounddevice as sd
+from qai_hub_apps_utils.input_devices import get_default_audio_device
 from utils.model import WhisperApp, load_model
 
 
@@ -14,17 +15,19 @@ def main() -> None:
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
         conflict_handler="error",
     )
-    parser.add_argument(
+    # With neither of these, the default input device is streamed from.
+    input_group = parser.add_mutually_exclusive_group()
+    input_group.add_argument(
         "--audio-file",
         type=str,
         default=None,
-        help="Audio file path or URL",
+        help="Audio file path or URL. Omit to stream from a microphone instead.",
     )
-    parser.add_argument(
+    input_group.add_argument(
         "--stream-audio-device",
         type=int,
         default=None,
-        help="Audio device (number) to stream from.",
+        help="Audio device (number) to stream from, defaults to the system's default input device.",
     )
     parser.add_argument(
         "--stream-audio-chunk-size",
@@ -55,6 +58,22 @@ def main() -> None:
         print(sd.query_devices())
         return
 
+    # Resolve the microphone before the slow model load so a host with no
+    # capture device fails immediately.
+    stream_device: int | None = None
+    if args.audio_file is None:
+        if args.stream_audio_device is not None:
+            stream_device = args.stream_audio_device
+        else:
+            try:
+                stream_device = get_default_audio_device()
+            except RuntimeError as error:
+                raise SystemExit(
+                    f"{error} List the available devices with --list-audio-devices "
+                    "and pass one with --stream-audio-device <n>, or transcribe a "
+                    "file with --audio-file <path>."
+                ) from error
+
     print("Loading model...")
     model = load_model(
         args.encoder_path,
@@ -63,17 +82,13 @@ def main() -> None:
 
     app = WhisperApp(model)
 
-    if args.stream_audio_device:
-        app.stream(args.stream_audio_device, args.stream_audio_chunk_size)
+    if stream_device is not None:
+        print(f"Streaming from audio device {stream_device}.")
+        app.stream(stream_device, args.stream_audio_chunk_size)
     else:
-        audio = args.audio_file
-        assert audio is not None, (
-            "No audio file selected. Pass --audio-file or stream from a microphone using --stream-audio-device"
-        )
-
         # Perform transcription
         print("Before transcription: " + str(datetime.now().astimezone()))
-        transcription = app.transcribe(audio)
+        transcription = app.transcribe(args.audio_file)
         print(f"Transcription: {transcription}")
         print("After transcription: " + str(datetime.now().astimezone()))
 

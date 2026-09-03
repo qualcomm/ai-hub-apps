@@ -140,6 +140,16 @@ def test_run_ubuntu_docker_checks_docker(monkeypatch):
     docker_check.assert_called_once()
 
 
+def test_run_android_on_windows_raises(monkeypatch):
+    monkeypatch.setattr(platform_check.shutil, "which", lambda _: "/home/bin/adb")
+    monkeypatch.setattr(platform_check.sys, "platform", "win32")
+    app = App(make_app_info(app_type=AppType.ANDROID, languages=[AppLanguage.JAVA]))
+    with pytest.raises(
+        AppIncompatibleError, match="can only be run through native Linux or WSL"
+    ):
+        ensure_run_supported(app, make_device(), use_docker=False)
+
+
 def test_ensure_device_supported_rejects_other_device():
     app = App(make_app_info(supported_devices=["Device A"]))
     with pytest.raises(AppIncompatibleError, match="does not support the configured"):

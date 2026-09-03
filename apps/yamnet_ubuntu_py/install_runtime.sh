@@ -20,6 +20,7 @@ $SUDO apt-get update -q
 
 install_apt_pkgs \
     libsndfile1 \
+    libportaudio2 \
     ffmpeg \
     qcom-libdmabufheap
 

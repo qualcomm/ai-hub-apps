@@ -13,8 +13,15 @@ if (-not (Test-Path $Exe)) {
 
 $Model = "$ScriptDir\assets\models\detection.onnx"
 $Labels = "$ScriptDir\assets\models\labels.txt"
-$Image = "$ScriptDir\assets\images\kitchen.jpg"
-$OutImage = "$env:TEMP\detection_output.jpg"
 
-& $Exe --model $Model --labels $Labels --image $Image --output_image $OutImage @args
+# Detect on a live feed from the first camera, unless the caller picked their own
+# input source (another camera with --camera <index>, or a still image with
+# --image <path>). The app takes exactly one of the two.
+$InputArgs = @()
+if (-not (($args -contains "--camera") -or ($args -contains "--image"))) {
+    $InputArgs = @("--camera", "0")
+}
+
+# Annotated frames are shown in a window; press any key in it to stop.
+& $Exe --model $Model --labels $Labels @InputArgs @args
 exit $LASTEXITCODE

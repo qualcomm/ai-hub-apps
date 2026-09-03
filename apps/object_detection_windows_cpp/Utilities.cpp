@@ -36,7 +36,13 @@ std::vector<float> LoadImageFile(const std::string& image_path, uint32_t input_i
         throw std::runtime_error(msg.str());
     }
 
-    cvtColor(image, image, cv::COLOR_BGR2RGB);
+    return PreprocessImage(image, input_image_height, input_image_width);
+}
+
+std::vector<float> PreprocessImage(const cv::Mat& input_image, uint32_t input_image_height, uint32_t input_image_width)
+{
+    cv::Mat image;
+    cvtColor(input_image, image, cv::COLOR_BGR2RGB);
     resize(image, image, cv::Size(input_image_height, input_image_width));
     image = image.reshape(1, 1);
 

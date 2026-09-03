@@ -17,6 +17,8 @@ import qai_hub_apps_utils.webui as ui
 import utils.constants as C
 from ai_edge_litert.interpreter import Delegate, Interpreter
 from qai_hub_apps_utils.fps import FpsCounter
+from qai_hub_apps_utils.input_devices import get_default_video_device
+from qai_hub_apps_utils.platform import get_current_device
 from qai_hub_apps_utils.quantization import dequantize, quantize
 from utils.input_processing import get_gstreamer_input_pipeline
 from utils.model_io_processing import (
@@ -167,6 +169,12 @@ def main(args: argparse.Namespace) -> None:
         subprocess.call(["v4l2-ctl", "--list-devices"])
         return
 
+    if not args.hexagon_version:
+        raise SystemExit(
+            "Unknown Hexagon version for this device. "
+            "Pass it with --hexagon-version <e.g. v73>."
+        )
+
     bg_image: np.ndarray | None = None
     if args.background in ("overlay", "blur"):
         bg_mode = args.background
@@ -187,7 +195,15 @@ def main(args: argparse.Namespace) -> None:
     if args.video_gstreamer_source:
         video_source = args.video_gstreamer_source
     else:
-        video_source = f"v4l2src name=camsrc device={args.video_device}"
+        try:
+            device = args.video_device or get_default_video_device()
+        except RuntimeError as error:
+            raise SystemExit(
+                f"{error} Pass a camera with --video-device <path> (see "
+                "--list-devices), or a full GStreamer source with "
+                "--video-gstreamer-source."
+            ) from error
+        video_source = f"v4l2src name=camsrc device={device}"
     pipeline = Gst.parse_launch(
         get_gstreamer_input_pipeline(
             video_source, (args.video_source_width, args.video_source_height)
@@ -281,7 +297,7 @@ def main(args: argparse.Namespace) -> None:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="SINet Portrait Segmentation")
-    group = parser.add_mutually_exclusive_group(required=True)
+    group = parser.add_mutually_exclusive_group()
     group.add_argument(
         "--list-devices", action="store_true", help="List options for --video-device"
     )
@@ -315,11 +331,13 @@ if __name__ == "__main__":
         required=True,
         help="Path to QAIRT SDK root",
     )
+    device = get_current_device()
     parser.add_argument(
         "--hexagon-version",
         type=str,
-        default="v73",
-        help="Hexagon version of the device, e.g. v73, default v73",
+        default=device.htp_version if device and device.htp_version else None,
+        help="Hexagon version of the device, e.g. v73. Defaults to the "
+        "configured target device.",
     )
     parser.add_argument(
         "--background",

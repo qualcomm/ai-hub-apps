@@ -15,5 +15,5 @@ if [ ! -f "$SCRIPT_DIR/.venv/bin/activate" ]; then
 fi
 source "$SCRIPT_DIR/.venv/bin/activate"
 
-# With no --video-device, main.py captures from the host's first camera.
+# With no --audio-file, main.py classifies live audio from the default microphone.
 exec python main.py --qairt-path "$QAIRT_PATH" "$@"

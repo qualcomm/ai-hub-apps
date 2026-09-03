@@ -22,6 +22,7 @@ constexpr const char* c_option_output_image_path = "--output_image";
 constexpr const char* c_option_qnn_options = "--qnn_options";
 constexpr const char* c_option_precision = "--precision";
 constexpr const char* c_option_image_path = "--image";
+constexpr const char* c_option_camera = "--camera";
 constexpr const char* c_option_model_path = "--model";
 constexpr const char* c_option_labels_path = "--labels";
 constexpr const char* c_option_input_image_height = "--model_input_ht";
@@ -91,12 +92,16 @@ void PrintHelp()
     std::cout << "\n::::::::Object Detection App options::::::::\n";
     std::cout << "\nRequired options:\n\n";
     std::cout << c_option_model_path << " <local_path>: [Required] Path to local ONNX model.\n";
-    std::cout << c_option_image_path
-              << " <local_path>: [Required] Path to local input "
-                 "image to run object detection on.\n";
     std::cout << c_option_labels_path
               << " <local_path>: [Required] Path to the class labels file "
                  "(one label per line, ordered by class index).\n";
+    std::cout << "\nExactly one input source is required:\n\n";
+    std::cout << c_option_image_path
+              << " <local_path>: Path to local input "
+                 "image to run object detection on.\n";
+    std::cout << c_option_camera
+              << " <index>: Run object detection on a live camera feed, "
+                 "annotating frames in a window until a key is pressed.\n";
     std::cout << "\nOptional options:\n\n";
     std::cout << "--backend <backend>: Default = npu. Set backend for inference. "
                  "Available options: cpu, npu.\n";
@@ -133,6 +138,8 @@ int main(int argc, char* argv[])
     std::string model_path;
     std::string labels_path;
     std::string image_path;
+    // Negative means no camera was requested.
+    int camera_index = -1;
     uint32_t input_image_height = c_default_image_height;
     uint32_t input_image_width = c_default_image_width;
     App::BackendOption backend_opt = c_default_backend;
@@ -171,6 +178,15 @@ int main(int argc, char* argv[])
         {
             image_path = argv[++i];
         }
+        else if (strcmp(argv[i], c_option_camera) == 0)
+        {
+            camera_index = atoi(argv[++i]);
+            if (camera_index < 0)
+            {
+                std::cout << c_option_camera << " must be a non-negative camera index.\n";
+                return 1;
+            }
+        }
         else if (strcmp(argv[i], c_option_input_image_height) == 0)
         {
             input_image_height = atoi(argv[++i]);
@@ -200,11 +216,28 @@ int main(int argc, char* argv[])
         }
     }
 
-    // model_path, labels_path and image_path must be provided
-    if (model_path.empty() || labels_path.empty() || image_path.empty())
+    // model_path and labels_path must be provided
+    if (model_path.empty() || labels_path.empty())
     {
-        std::cout << c_option_model_path << ", " << c_option_labels_path << " and " << c_option_image_path
-                  << " must be provided.\n";
+        std::cout << c_option_model_path << " and " << c_option_labels_path << " must be provided.\n";
+        PrintHelp();
+        return 1;
+    }
+
+    // Exactly one input source must be provided
+    const bool has_image = !image_path.empty();
+    const bool has_camera = camera_index >= 0;
+    if (has_image == has_camera)
+    {
+        std::cout << "Exactly one of " << c_option_image_path << " and " << c_option_camera << " must be provided.\n";
+        PrintHelp();
+        return 1;
+    }
+
+    // Camera frames are displayed as they are captured, never serialized.
+    if (has_camera && output_image_path.has_value())
+    {
+        std::cout << c_option_output_image_path << " cannot be used with " << c_option_camera << ".\n";
         PrintHelp();
         return 1;
     }
@@ -216,14 +249,21 @@ int main(int argc, char* argv[])
         // Prepare model
         app.PrepareModelForInference(backend_opt, precision, qnn_options);
 
-        // Load and cache inputs
-        app.LoadInputs(image_path);
+        if (has_camera)
+        {
+            app.RunCameraLoop(camera_index);
+        }
+        else
+        {
+            // Load and cache inputs
+            app.LoadInputs(image_path);
 
-        // Run inference
-        app.RunInference();
+            // Run inference
+            app.RunInference();
 
-        // Process output and show results
-        app.ProcessOutput(image_path, output_image_path, !output_image_path.has_value());
+            // Process output and show results
+            app.ProcessOutput(image_path, output_image_path, !output_image_path.has_value());
+        }
     }
     catch (const std::exception& e)
     {

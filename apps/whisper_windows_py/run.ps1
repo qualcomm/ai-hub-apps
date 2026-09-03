@@ -11,7 +11,7 @@ if (-not (Test-Path $VenvPython)) {
     exit 1
 }
 
-# With no --prompt, demo.py asks for one; with no --output-dir it opens the
-# generated image in the default viewer.
+# With no --audio-file, demo.py streams live from the default input device.
+Write-Host "Transcribing live from the microphone. Speak after the model loads."
 & $VenvPython "$ScriptDir\demo.py" @args
 exit $LASTEXITCODE

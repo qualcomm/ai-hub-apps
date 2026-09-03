@@ -28,6 +28,8 @@ class BoxCornerEncoding
 std::vector<float>
 LoadImageFile(const std::string& image_path, uint32_t input_image_height, uint32_t input_image_width);
 
+std::vector<float> PreprocessImage(const cv::Mat& input_image, uint32_t input_image_height, uint32_t input_image_width);
+
 float ComputeIntersectionOverUnion(const BoxCornerEncoding& box_i, const BoxCornerEncoding& box_j);
 
 std::vector<BoxCornerEncoding> NonMaxSuppression(std::vector<BoxCornerEncoding> boxes, const float iou_threshold);

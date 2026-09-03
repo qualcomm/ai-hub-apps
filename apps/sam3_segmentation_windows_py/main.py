@@ -84,9 +84,19 @@ def main(args: argparse.Namespace) -> None:
                 "which places vision_backbone.onnx + head.onnx under models/."
             )
 
-    prompts = [p.strip() for p in args.text_prompts.split(",") if p.strip()]
+    text_prompts = args.text_prompts
+    if text_prompts is None:
+        # Ask before the slow model loads rather than after them.
+        try:
+            text_prompts = input(
+                "Enter what to segment (comma-separated, e.g. cup,person): "
+            )
+        except EOFError:
+            text_prompts = ""
+
+    prompts = [p.strip() for p in text_prompts.split(",") if p.strip()]
     if not prompts:
-        sys.exit("ERROR: --text-prompts must contain at least one non-empty entry")
+        sys.exit('ERROR: no text prompt provided. Pass one with --text-prompts "cup".')
 
     print(f"image  : {args.image}")
     print(f"prompts: {prompts}")
@@ -153,8 +163,11 @@ def main(args: argparse.Namespace) -> None:
         if len(scores)
         else image
     )
-    out.save(args.output)
-    print(f"wrote {args.output}")
+    if args.output is None:
+        out.show()
+    else:
+        out.save(args.output)
+        print(f"wrote {args.output}")
 
 
 if __name__ == "__main__":
@@ -175,8 +188,9 @@ if __name__ == "__main__":
     parser.add_argument("--image", required=True, help="Input image path")
     parser.add_argument(
         "--text-prompts",
-        default="cup",
-        help="Comma-separated text prompts, e.g. 'cup,person,bowl' (default: cup)",
+        default=None,
+        help="Comma-separated text prompts, e.g. 'cup,person,bowl'. Omit to be "
+        "prompted.",
     )
     parser.add_argument(
         "--tokenizer",
@@ -201,8 +215,9 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--output",
-        default="sam3_output.png",
-        help="Output overlay image (default: sam3_output.png)",
+        default=None,
+        help="Output overlay image path. Omit to open the overlay in the "
+        "default image viewer instead of writing it.",
     )
 
     args = parser.parse_args()
