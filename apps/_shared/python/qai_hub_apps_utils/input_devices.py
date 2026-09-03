@@ -4,10 +4,10 @@
 # ---------------------------------------------------------------------
 """Helpers for selecting live capture devices on the host."""
 
-import fcntl
 import glob
 import os
 import struct
+import sys
 
 # VIDIOC_QUERYCAP and the subset of struct v4l2_capability flags needed to tell a
 # capture node from the metadata/output nodes the same camera also exposes.
@@ -69,6 +69,8 @@ def _node_capabilities(path: str) -> int:
         The node's own capabilities when the driver reports them, else the
         capabilities of the physical device as a whole.
     """
+    import fcntl
+
     # O_NONBLOCK so querying a node another process is streaming from cannot hang.
     node = os.open(path, os.O_RDONLY | os.O_NONBLOCK)
     try:
@@ -100,8 +102,12 @@ def get_default_video_device() -> str:
     Raises
     ------
     RuntimeError
-        If the host has no video capture device.
+        If called on a non-Linux platform, or if the host has no video capture device.
     """
+    if sys.platform != "linux":
+        raise RuntimeError(
+            "`get_default_video_device` is only available on linux environments"
+        )
     nodes = []
     for path in glob.glob("/dev/video*"):
         suffix = path.removeprefix("/dev/video")
