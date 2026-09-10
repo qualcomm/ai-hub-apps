@@ -7,6 +7,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 export QAIHA_APP_ROOT="$SCRIPT_DIR"
 
+source ../_shared/scripts/pip_utils.sh
 source ../_shared/scripts/qairt_utils.sh
 
 # The app is demoed on a still image hosted with the app's assets. A still
@@ -17,11 +18,7 @@ source ../_shared/scripts/qairt_utils.sh
 TEST_IMAGE_URL="https://qaihub-public-assets.s3.us-west-2.amazonaws.com/qai-hub-apps/apps/semantic_segmentation_ubuntu_py/test/demo_image.png"
 TEST_IMAGE="$SCRIPT_DIR/demo_image.png"
 
-if [ ! -f "$SCRIPT_DIR/.venv/bin/activate" ]; then
-    echo "error: virtual environment not found. Run install_runtime.sh first." >&2
-    exit 1
-fi
-source "$SCRIPT_DIR/.venv/bin/activate"
+activate_venv
 
 wget -q -O "$TEST_IMAGE" "$TEST_IMAGE_URL"
 

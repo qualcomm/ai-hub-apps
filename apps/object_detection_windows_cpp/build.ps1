@@ -66,9 +66,14 @@ if (-not (Test-Path "$AppDir\Dockerfile")) {
     exit 1
 }
 
+if (-not (Test-Path "$AppDir\scripts")) {
+    Write-Error "::error::No scripts\ directory found for object_detection_windows_cpp. Docker builds need a bundled app; use 'qai-hub-apps fetch object_detection_windows_cpp'."
+    exit 1
+}
+
 try {
     Write-Host "::step::Building Docker image"
-    docker build --build-arg BUILD_TYPE=build -t $ImageTag .
+    docker build -t $ImageTag .
     Assert-Success "docker build"
     Write-Host "::done::Docker image"
 
@@ -82,12 +87,10 @@ try {
             docker rm -f $ContainerName 2>$null | Out-Null
         }
     }
-    docker run --name $ContainerName $ImageTag `
+    docker run --name $ContainerName -v "${AppDir}:C:\app" $ImageTag `
         powershell -Command ". ./install_build.ps1; & `$env:MSBUILD_EXE $Sln /p:Configuration=Release /p:Platform=ARM64; exit `$LASTEXITCODE"
     Assert-Success "docker run (MSBuild)"
 
-    docker cp "${ContainerName}:C:\app\ARM64" .
-    Assert-Success "docker cp"
     Write-Host "::done::ARM64 binaries built into $AppDir\ARM64"
 }
 finally {

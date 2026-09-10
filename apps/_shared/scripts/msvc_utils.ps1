@@ -18,7 +18,7 @@ $_MsvcUtilsDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 
 function _Install-MSVC {
     Install-WingetPackage -Id "Microsoft.VisualStudio.2022.BuildTools" -ExtraArgs @(
-        "--source", "winget",
+        "--no-upgrade", "--source", "winget",
         "--override",
         "--quiet --wait --add Microsoft.VisualStudio.Workload.VCTools --add Microsoft.VisualStudio.Component.VC.Tools.ARM64 --includeRecommended"
     )

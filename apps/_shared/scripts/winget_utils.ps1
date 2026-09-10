@@ -35,12 +35,13 @@ function Resolve-InstalledExe {
     return $exe
 }
 
+# Note: Below failure is a QDC only failure because of winget version v1.6.10121. A winget
+# upgrade requires system restart which is currently not possible using automated jobs.
 # No pre-check for an existing install. `winget list --id` correlates installed Add/Remove
 # Programs entries to catalog packages heuristically, so it reports unrelated installs
 # under the queried id (with Python 3.10 installed, Python.Python.3.12 matches). winget
 # signals the mismatch in the version column, but only in package-specific ways not worth
-# encoding here, and it is unfixed upstream (microsoft/winget-cli#6475, #6132). `winget
-# install` makes the same decision itself, so let it own it.
+# encoding here. `winget install` makes the same decision itself, so let it own it.
 function _Install-WingetPackage {
     param(
         [string]$Id,

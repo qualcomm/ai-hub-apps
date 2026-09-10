@@ -26,4 +26,4 @@ install_apt_pkgs \
 
 install_apt_pkg unzip
 
-install_pip_deps --venv "$SCRIPT_DIR/.venv" -r "$SCRIPT_DIR/requirements.txt"
+install_pip_deps -r "$SCRIPT_DIR/requirements.txt"

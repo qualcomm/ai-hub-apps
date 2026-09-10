@@ -4,8 +4,6 @@
 # ---------------------------------------------------------------------
 FROM mcr.microsoft.com/windows/server:ltsc2025
 
-ARG BUILD_TYPE="runtime"
-
 # Install Visual C++ Redistributable (required by many native packages)
 WORKDIR C:\\Downloads
 ADD https://aka.ms/vs/16/release/vc_redist.x64.exe C:\\Downloads\\vcredist_x64.exe
@@ -27,13 +25,18 @@ WORKDIR C:\\app
 # set QAIHA_APP_ROOT for shared scripts
 ENV QAIHA_APP_ROOT=C:\\app
 
-COPY . C:\\app
+# These six files are byte-identical across all windows apps, so the layer is shared. The
+# C:\app bind mount shadows this copy at run time; it is only needed here.
+COPY scripts/msvc_utils.ps1 \
+     scripts/winget_utils.ps1 \
+     scripts/interactive.ps1 \
+     scripts/load_versions.ps1 \
+     scripts/retry.ps1 \
+     scripts/versions.env \
+     C:/app/scripts/
 
 RUN powershell -Command \
-    "if ($env:BUILD_TYPE -eq 'build' -and (Test-Path 'install_build.ps1')) { \
-        . .\\install_build.ps1 \
-    } elseif (Test-Path 'install_runtime.ps1') { \
-        . .\\install_runtime.ps1 \
-    }"
-
+    ". C:\\app\\scripts\\msvc_utils.ps1; \
+     Install-MSVC; \
+     Install-WingetPackage -Id 'Microsoft.Git' -ExtraArgs @('--source', 'winget')"
 CMD ["powershell"]

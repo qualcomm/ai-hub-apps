@@ -8,10 +8,17 @@
 # Functions:
 #   install_pip_deps [--venv <dir>] [--python <exe>] <pkg_or_req> [<pkg_or_req> ...] [-- <extra_uv_args>]
 #       Create a .venv (if needed) and install packages or requirements files via uv.
-#       --venv <dir>    : venv directory (default: $PWD/.venv)
+#       --venv <dir>    : venv directory (default: $QAIHA_APP_ROOT/.venv, else $PWD/.venv)
 #       --python <exe>  : Python executable to use for venv creation (default: python$PYTHON_VERSION)
 #       <pkg_or_req>    : package spec (e.g. numpy==1.24) or -r requirements.txt
 #       -- <args>       : extra flags passed directly to uv pip install
+#
+#   activate_venv [<dir>]
+#       Activate the venv install_pip_deps created. Resolves the same directory,
+#       so callers normally pass nothing.
+#
+# $QAIHA_VENV_OVERRIDE, when set, takes precedence over both the default and an
+# explicit --venv/<dir>.
 #
 # Usage: source pip_utils.sh
 # ---------------------------------------------------------------------
@@ -21,8 +28,33 @@ source "$_PIP_UTILS_DIR/load_versions.sh"
 # shellcheck disable=SC1091
 source "$_PIP_UTILS_DIR/interactive.sh"
 
+# Resolve the venv directory from (in order) $QAIHA_VENV_OVERRIDE, the caller's
+# request, and the app root.
+_resolve_venv_dir() {
+    if [ -n "${QAIHA_VENV_OVERRIDE:-}" ]; then
+        printf '%s' "$QAIHA_VENV_OVERRIDE"
+    elif [ -n "${1:-}" ]; then
+        printf '%s' "$1"
+    else
+        printf '%s' "${QAIHA_APP_ROOT:-$PWD}/.venv"
+    fi
+}
+
+activate_venv() {
+    local venv_dir
+    venv_dir="$(_resolve_venv_dir "${1:-}")"
+    if [ ! -f "$venv_dir/bin/activate" ]; then
+        echo "error: virtual environment not found at $venv_dir" >&2
+        return 1
+    fi
+    # Dot rather than source: the shell bundler rewrites whole-line "source"
+    # statements and warns on ones it cannot resolve to a shared script.
+    # shellcheck disable=SC1091
+    . "$venv_dir/bin/activate"
+}
+
 _install_pip_deps() {
-    local venv_dir="${PWD}/.venv"
+    local venv_dir=""
     local python_exe=""
     local -a install_args=()
     local -a extra_args=()
@@ -42,6 +74,7 @@ _install_pip_deps() {
         esac
     done
 
+    venv_dir="$(_resolve_venv_dir "$venv_dir")"
     local python_bin="${python_exe:-python${PYTHON_VERSION}}"
 
     if [ ! -x "$venv_dir/bin/python" ]; then

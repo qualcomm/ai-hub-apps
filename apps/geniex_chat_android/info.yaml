@@ -33,7 +33,7 @@ supported_devices:
     status: "Tested"
   - name: "Snapdragon 8 Elite Gen 5 QRD"
     status: "Not Tested"
-base_docker: ubuntu.dockerfile
+base_docker: android.dockerfile
 # This app downloads models at runtime via the GenieX SDK rather than bundling
 disable_cli_model_fetch: true
 os:
