@@ -7,13 +7,10 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 export QAIHA_APP_ROOT="$SCRIPT_DIR"
 
+source ../_shared/scripts/pip_utils.sh
 source ../_shared/scripts/qairt_utils.sh
 
-if [ ! -f "$SCRIPT_DIR/.venv/bin/activate" ]; then
-    echo "error: virtual environment not found. Run install_runtime.sh first." >&2
-    exit 1
-fi
-source "$SCRIPT_DIR/.venv/bin/activate"
+activate_venv
 
 # Seed a one-identity gallery from a public reference photo so the live demo has
 # someone to recognize out of the box. Override with --gallery-dir <dir> to use

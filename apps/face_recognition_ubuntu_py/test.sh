@@ -6,6 +6,7 @@
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+source ../_shared/scripts/pip_utils.sh
 source ../_shared/scripts/qairt_utils.sh
 
 # Two public reference photos of the same person. Image 1 is enrolled as a
@@ -16,11 +17,7 @@ IMAGE_2_NAME="cavaface_demo_input_2.jpg"
 IMAGE_1="$SCRIPT_DIR/$IMAGE_1_NAME"
 IMAGE_2="$SCRIPT_DIR/$IMAGE_2_NAME"
 
-if [ ! -f "$SCRIPT_DIR/.venv/bin/activate" ]; then
-    echo "error: virtual environment not found. Run install_runtime.sh first." >&2
-    exit 1
-fi
-source "$SCRIPT_DIR/.venv/bin/activate"
+activate_venv
 
 wget -q -O "$IMAGE_1" "$TEST_ASSET_BASE/$IMAGE_1_NAME"
 wget -q -O "$IMAGE_2" "$TEST_ASSET_BASE/$IMAGE_2_NAME"
