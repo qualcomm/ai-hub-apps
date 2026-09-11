@@ -1,0 +1,4 @@
+No apps match those filters.
+Available domains: Audio, Generative AI.
+See all apps:
+  qai-hub-apps list

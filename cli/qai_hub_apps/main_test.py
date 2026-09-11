@@ -8,9 +8,12 @@ from unittest.mock import MagicMock
 
 import pytest
 
+from qai_hub_apps.configs.app_yaml import AppLanguage, AppType
 from qai_hub_apps.configs.model_asset import ModelAsset
+from qai_hub_apps.conftest import make_device
 from qai_hub_apps.errors import QAIHubAppsError
 from qai_hub_apps.main import main
+from qai_hub_apps.registry import AppFilter
 
 
 def _run_main(argv: list[str], monkeypatch) -> None:
@@ -447,3 +450,132 @@ def test_run_command_rejects_chipset(monkeypatch, sample_registry_yaml):
 def test_configure_show_calls_run_configure(monkeypatch):
     mock = _run_experimental_main(["configure", "--show"], monkeypatch, "run_configure")
     mock.assert_called_once_with(None, show=True)
+
+
+def _run_list_main(argv: list[str], monkeypatch, sample_registry_yaml) -> AppFilter:
+    """Run `list ...`; return the AppFilter run_list received."""
+    mock = MagicMock()
+    monkeypatch.setattr("qai_hub_apps.main.run_list", mock)
+    _run_main(["list", "--registry", str(sample_registry_yaml), *argv], monkeypatch)
+    return mock.call_args[0][1]
+
+
+def _run_list_device_main(
+    argv: list[str], monkeypatch, sample_registry_yaml
+) -> AppFilter:
+    """Run `list --device ...` with the experimental gate open."""
+    monkeypatch.setenv("QAI_HUB_APPS_EXPERIMENTAL", "1")
+    return _run_list_main(argv, monkeypatch, sample_registry_yaml)
+
+
+def test_list_without_filters_passes_empty_filter(monkeypatch, sample_registry_yaml):
+    mock_run_list = MagicMock()
+    monkeypatch.setattr("qai_hub_apps.main.run_list", mock_run_list)
+    _run_main(["list", "--registry", str(sample_registry_yaml)], monkeypatch)
+    assert mock_run_list.call_args[0][1].is_empty()
+
+
+def test_list_device_filter_requires_experimental(monkeypatch, sample_registry_yaml):
+    with pytest.raises(SystemExit) as exc:
+        _run_main(
+            ["list", "--device", "Device A", "--registry", str(sample_registry_yaml)],
+            monkeypatch,
+        )
+    assert exc.value.code == 2
+
+
+def test_list_rejects_a_positional_argument(monkeypatch, sample_registry_yaml):
+    with pytest.raises(SystemExit) as exc:
+        _run_main(
+            ["list", "whisper", "--registry", str(sample_registry_yaml)], monkeypatch
+        )
+    assert exc.value.code == 2
+
+
+@pytest.mark.parametrize(
+    "argv",
+    [
+        ["--type", "android", "windows"],
+        ["--type", "android", "--type", "windows"],
+    ],
+)
+def test_list_type_accepts_multiple_values(argv, monkeypatch, sample_registry_yaml):
+    app_filter = _run_list_main(argv, monkeypatch, sample_registry_yaml)
+    assert app_filter.app_types == frozenset({AppType.ANDROID, AppType.WINDOWS})
+
+
+def test_list_all_filter_flags(monkeypatch, sample_registry_yaml):
+    app_filter = _run_list_main(
+        [
+            "--language",
+            "Python",
+            "--runtime",
+            "onnx",
+            "--domain",
+            "Audio",
+            "--use-case",
+            "Speech Recognition",
+            "--precision",
+            "float",
+            "--model",
+            "whisper",
+        ],
+        monkeypatch,
+        sample_registry_yaml,
+    )
+    assert app_filter.languages == frozenset({AppLanguage.PYTHON})
+    assert app_filter.runtimes == frozenset({"onnx"})
+    assert app_filter.domains == frozenset({"audio"})
+    assert app_filter.use_cases == frozenset({"speech recognition"})
+    assert app_filter.precisions == frozenset({"float"})
+    assert app_filter.models == ("whisper",)
+
+
+def test_list_invalid_type_exits_1(monkeypatch, sample_registry_yaml, caplog):
+    with pytest.raises(SystemExit) as exc:
+        _run_main(
+            ["list", "--type", "macos", "--registry", str(sample_registry_yaml)],
+            monkeypatch,
+        )
+    assert exc.value.code == 1
+    assert "Valid app types" in caplog.text
+
+
+def test_list_device_with_value_is_resolved(monkeypatch, sample_registry_yaml):
+    monkeypatch.setattr(
+        "qai_hub_apps.main.resolve_device_info",
+        MagicMock(return_value=make_device(name="Device A")),
+    )
+    app_filter = _run_list_device_main(
+        ["--device", "device a"], monkeypatch, sample_registry_yaml
+    )
+    assert app_filter.device == "Device A"
+
+
+def test_list_device_without_value_uses_configured_device(
+    monkeypatch, sample_registry_yaml
+):
+    monkeypatch.setattr(
+        "qai_hub_apps.main.get_configured_device",
+        MagicMock(return_value=make_device(name="Device A")),
+    )
+    mock_resolve = MagicMock()
+    monkeypatch.setattr("qai_hub_apps.main.resolve_device_info", mock_resolve)
+    app_filter = _run_list_device_main(["--device"], monkeypatch, sample_registry_yaml)
+    assert app_filter.device == "Device A"
+    mock_resolve.assert_not_called()
+
+
+def test_list_device_without_value_and_none_configured_exits_1(
+    monkeypatch, sample_registry_yaml, caplog
+):
+    monkeypatch.setenv("QAI_HUB_APPS_EXPERIMENTAL", "1")
+    monkeypatch.setattr(
+        "qai_hub_apps.main.get_configured_device", MagicMock(return_value=None)
+    )
+    with pytest.raises(SystemExit) as exc:
+        _run_main(
+            ["list", "--device", "--registry", str(sample_registry_yaml)], monkeypatch
+        )
+    assert exc.value.code == 1
+    assert "No target device configured" in caplog.text

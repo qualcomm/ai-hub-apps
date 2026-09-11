@@ -10,7 +10,7 @@ from unittest.mock import MagicMock
 import pytest
 from qai_hub_models_cli.proto_helpers.release_assets import AssetNotFoundError
 
-from qai_hub_apps.configs.app_yaml import AppLanguage, AppUrl
+from qai_hub_apps.configs.app_yaml import AppLanguage, AppType, AppUrl
 from qai_hub_apps.configs.model_asset import ModelAsset
 from qai_hub_apps.conftest import make_app_info
 from qai_hub_apps.errors import (
@@ -26,6 +26,7 @@ from qai_hub_apps.registry.base import (
     Registry,
     _make_app,
 )
+from qai_hub_apps.registry.filters import AppFilter
 from qai_hub_apps.registry.python_app import PythonApp
 
 
@@ -957,3 +958,21 @@ def test_fetch_unsupported_device_raises(monkeypatch, tmp_path):
         AppIncompatibleError, match="Device 'Device B' is not supported"
     ):
         app.fetch(tmp_path, model_asset=asset)
+
+
+def test_filter_returns_all_apps_for_empty_filter(sample_registry_yaml):
+    registry = Registry.load(sample_registry_yaml)
+    assert [app.id for app in registry.filter(AppFilter())] == ["test_app"]
+
+
+def test_filter_returns_only_matching_apps(sample_registry_yaml):
+    registry = Registry.load(sample_registry_yaml)
+    assert registry.filter(AppFilter(app_types=frozenset({AppType.WINDOWS}))) == []
+
+
+def test_filter_preserves_registry_order(sample_registry_yaml, tmp_path):
+    text = sample_registry_yaml.read_text()
+    two_apps = tmp_path / "two.yaml"
+    two_apps.write_text(text + text.split("apps:\n")[1].replace("test_app", "z_app"))
+    registry = Registry.load(two_apps)
+    assert [app.id for app in registry.filter(AppFilter())] == ["test_app", "z_app"]

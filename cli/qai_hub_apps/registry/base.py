@@ -13,7 +13,7 @@ import zipfile
 from collections.abc import ValuesView
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from packaging.version import Version
 from prettytable import PrettyTable
@@ -48,6 +48,9 @@ from qai_hub_apps.logging_utils import is_quiet
 from qai_hub_apps.utils.devices import device_to_chipset
 from qai_hub_apps.utils.github import make_issue_url
 from qai_hub_apps.validate import is_app_supported
+
+if TYPE_CHECKING:
+    from qai_hub_apps.registry.filters import AppFilter
 
 logger = logging.getLogger(__name__)
 
@@ -644,6 +647,21 @@ class Registry:
             logger.debug("App '%s' not found in registry", app_id)
             raise AppNotFoundError(app_id)
         return app
+
+    def filter(self, app_filter: AppFilter) -> list[App]:
+        """Return the apps matching *app_filter*, in registry order.
+
+        Parameters
+        ----------
+        app_filter
+            The criteria to match against.
+
+        Returns
+        -------
+        list[App]
+            The matching apps.
+        """
+        return [app for app in self.apps if app_filter.matches(app)]
 
     @property
     def version(self) -> str:

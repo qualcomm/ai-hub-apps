@@ -39,6 +39,45 @@ qai-hub-apps list
 Total: N apps
 ```
 
+#### Filters
+
+Different flags are ANDed, values within one flag are ORed, and matching is
+case-insensitive (`_` and `-` are treated as spaces).
+
+| Flag | Filters on | Example values |
+| --- | --- | --- |
+| `--type` | App type | `android`, `windows`, `ubuntu` |
+| `--language` | Implementation language | `Python`, `C++` (or `cpp`), `Java`, `Kotlin`, `Go` |
+| `--runtime` | Inference runtime | `tflite`, `onnx`, `genie` |
+| `--domain` | Domain | `Audio`, `Computer Vision`, `Generative AI` |
+| `--use-case` | Use case | `Object Detection`, `Speech Recognition` |
+| `--precision` | Model precision | `float`, `w8a8`, `w4a16` |
+| `--model` | A model the app supports (substring match) | `whisper`, `llama` |
+<!-- | `--device [DEVICE]` | An AI Hub device the app supports | `Snapdragon X Elite CRD` | -->
+
+```bash
+qai-hub-apps list --type windows --model whisper
+```
+```
++------------------------------------------------------------------------------------+
+|                               Qualcomm® AI Hub Apps                                |
++--------------------+-----------------+--------+-----------+---------+--------------+
+| ID                 | Name            | Domain | Languages | Type    | Models       |
++--------------------+-----------------+--------+-----------+---------+--------------+
+| whisper_windows_py | Whisper Windows | Audio  | Python    | windows | whisper_base |
++--------------------+-----------------+--------+-----------+---------+--------------+
+Total: 1 of 2 apps
+```
+
+Each flag takes one or more values, and may be repeated:
+
+```bash
+qai-hub-apps list --type android                   # only Android apps
+qai-hub-apps list --language Python C++            # Python or C++ apps
+qai-hub-apps list --type android --language kotlin # Android apps written in Kotlin
+qai-hub-apps list --model whisper --runtime onnx
+```
+
 ### info
 
 Show details for an app.

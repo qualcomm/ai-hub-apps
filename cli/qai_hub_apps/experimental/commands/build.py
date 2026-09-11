@@ -86,7 +86,8 @@ def _prepare_app(
         raise InvalidArgumentError(
             f"Building '{app.id}' requires fetching it, but no model was "
             "provided. Pass --model / --model-id / --model-path, or build an "
-            "already-fetched app with --app-path."
+            "already-fetched app with --app-path.\n"
+            f"See the models this app supports:\n  qai-hub-apps info {app.id}"
         )
     logger.debug("Fetching '%s' into %s (overwrite=%s)", app.id, output_dir, overwrite)
     app_dir = run_fetch(app.id, output_dir, registry, model_asset, overwrite=overwrite)

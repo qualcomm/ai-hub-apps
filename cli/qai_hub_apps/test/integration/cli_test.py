@@ -19,6 +19,36 @@ def test_list_output(monkeypatch, two_app_registry, capsys, snapshot):
     snapshot("list.txt", capsys.readouterr().out)
 
 
+def test_list_filtered_output(monkeypatch, two_app_registry, capsys, snapshot):
+    run_cli(
+        ["list", "--domain", "Audio", "--registry", str(two_app_registry)], monkeypatch
+    )
+    snapshot("list_filtered.txt", capsys.readouterr().out)
+
+
+def test_list_filter_columns_output(monkeypatch, two_app_registry, capsys, snapshot):
+    run_cli(
+        [
+            "list",
+            "--type",
+            "windows",
+            "--model",
+            "whisper",
+            "--registry",
+            str(two_app_registry),
+        ],
+        monkeypatch,
+    )
+    snapshot("list_filter_columns.txt", capsys.readouterr().out)
+
+
+def test_list_no_match_output(monkeypatch, two_app_registry, capsys, snapshot):
+    run_cli(
+        ["list", "--domain", "Nope", "--registry", str(two_app_registry)], monkeypatch
+    )
+    snapshot("list_no_match.txt", capsys.readouterr().out)
+
+
 def test_info_output(monkeypatch, two_app_registry, capsys, snapshot):
     run_cli(
         ["info", "whisper_windows_py", "--registry", str(two_app_registry)], monkeypatch
