@@ -49,6 +49,28 @@ apps:
   - Snapdragon X Elite CRD
   model_file_dir: genie_bundle
   deprecation_notice: LLM Chat Windows is deprecated in favour of the GenieX Chat Windows (geniex_chat_windows), which runs LLMs and VLMs on-device via the Qualcomm® GenieX SDK.
+- name: Face Recognition
+  id: face_recognition_ubuntu_py
+  status: published
+  headline: On-device live face recognition with TFLite
+  description: A sample app for Ubuntu that performs on-device face recognition with any face-embedding model via TFLite Runtime (CavaFace is the default supported model). Identities are enrolled from a directory of face images; a live camera stream is then processed frame-by-frame to detect faces, embed each one on-device, and draw a labeled bounding box naming the matched person (or "Unknown"). It leverages GStreamer for camera input and a minimal web interface to stream the annotated frames, suitable for embedded applications.
+  domain: Computer Vision
+  use_case: Face Recognition
+  app_repo_url: https://github.com/qualcomm/ai-hub-apps/tree/main/apps/face_recognition_ubuntu_py
+  app_type: ubuntu
+  runtime:
+  - tflite
+  related_models:
+  - cavaface
+  precisions:
+  - float
+  languages:
+  - Python
+  supported_devices:
+  - Arduino VENTUNO Q
+  - Dragonwing IQ-9075 EVK
+  model_file_paths:
+  - models/cavaface.tflite
 - name: GenieX Chat Android
   id: geniex_chat_android
   status: published

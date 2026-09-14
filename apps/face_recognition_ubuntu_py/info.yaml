@@ -3,7 +3,7 @@ id: face_recognition_ubuntu_py
 license_url: https://github.com/qualcomm/ai-hub-apps/blob/main/LICENSE
 license_type: bsd-3-clause
 runtime: tflite
-status: unpublished
+status: published
 domain: 'Computer Vision'
 headline: 'On-device live face recognition with TFLite'
 description: 'A sample app for Ubuntu that performs on-device face recognition with any face-embedding model via TFLite Runtime (CavaFace is the default supported model). Identities are enrolled from a directory of face images; a live camera stream is then processed frame-by-frame to detect faces, embed each one on-device, and draw a labeled bounding box naming the matched person (or "Unknown"). It leverages GStreamer for camera input and a minimal web interface to stream the annotated frames, suitable for embedded applications.'
