@@ -1,0 +1,67 @@
+{
+    "dialog": {
+        "version": 1,
+        "type": "basic",
+        "context": {
+            "version": 1,
+            "size": 2048,
+            "n-vocab": 128256,
+            "bos-token": -1,
+            "eos-token": [128001, 128009, 128008]
+        },
+        "sampler": {
+            "version": 1,
+            "seed": 42,
+            "temp": 0.8,
+            "top-k": 40,
+            "top-p": 0.95
+        },
+        "tokenizer": {
+            "version": 1,
+            "path": "<tokenizer_path>"
+        },
+        "engine": {
+            "version": 1,
+            "n-threads": 3,
+            "backend": {
+                "version": 1,
+                "type": "QnnHtp",
+                "QnnHtp": {
+                    "version": 1,
+                    "use-mmap": true,
+                    "spill-fill-bufsize": 0,
+                    "mmap-budget": 0,
+                    "poll": true,
+                    "cpu-mask": "0xe0",
+                    "kv-dim": 128,
+                    "allow-async-init": false
+                },
+                "extensions": "<htp_backend_ext_path>"
+            },
+            "model": {
+                "version": 1,
+                "type": "binary",
+                "binary": {
+                    "version": 1,
+                    "ctx-bins": [
+                        "<models_path>/llama_v3_2_3b_instruct_part_1_of_3.bin",
+                        "<models_path>/llama_v3_2_3b_instruct_part_2_of_3.bin",
+                        "<models_path>/llama_v3_2_3b_instruct_part_3_of_3.bin"
+                    ]
+                },
+                "positional-encoding": {
+                    "type": "rope",
+                    "rope-dim": 64,
+                    "rope-theta": 500000,
+                    "rope-scaling": {
+                        "rope-type": "llama3",
+                        "factor": 8.0,
+                        "low-freq-factor": 1.0,
+                        "high-freq-factor": 4.0,
+                        "original-max-position-embeddings": 8192
+                    }
+                }
+            }
+        }
+    }
+}

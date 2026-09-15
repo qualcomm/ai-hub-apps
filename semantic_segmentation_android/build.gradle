@@ -1,0 +1,61 @@
+plugins {
+    id 'com.android.application' version '8.13.0'
+}
+
+// Load shared versions and utilities — must be before android {} and dependencies {}
+if (file('_shared/android/common.gradle').exists()) {
+    apply from: '_shared/android/common.gradle'
+}
+
+android {
+    ndkVersion '27.3.13750724'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "com.quicinc.semanticsegmentation"
+        minSdk 31
+        targetSdk 34
+        versionCode 1
+        versionName "1.0"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        resValue( "string", "tfLiteModelAsset", "segmenter.tflite")
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
+    }
+
+    preBuild.doFirst {
+        if (!file("./src/main/assets/segmenter.tflite").exists()) {
+            throw new RuntimeException("segmenter.tflite is missing. Please refer to the app README for instructions on how to compile and place the model(s).")
+        }
+    }
+
+    namespace 'com.quicinc.semanticsegmentation'
+}
+
+dependencies {
+    implementation 'androidx.appcompat:appcompat:1.7.0'
+    implementation 'com.google.android.material:material:1.12.0'
+    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+    api "org.tensorflow:tensorflow-lite:2.17.0"
+    implementation "org.tensorflow:tensorflow-lite-gpu:2.17.0"
+    implementation "org.tensorflow:tensorflow-lite-gpu-api:2.17.0"
+    implementation 'org.tensorflow:tensorflow-lite-gpu-delegate-plugin:0.4.4'
+    implementation 'org.opencv:opencv:4.10.0'
+    implementation "com.qualcomm.qti:qnn-runtime:2.40.0"
+    implementation "com.qualcomm.qti:qnn-litert-delegate:2.40.0"
+    androidTestImplementation 'androidx.test:runner:1.6.2'
+    androidTestImplementation 'androidx.test:rules:1.6.1'
+    androidTestImplementation 'androidx.test.ext:junit:1.2.1'
+    androidTestImplementation 'androidx.test:core:1.6.1'
+    androidTestImplementation 'junit:junit:4.13.2'
+}

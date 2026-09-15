@@ -1,0 +1,29 @@
+name: SAM3 Segmentation Windows
+id: sam3_segmentation_windows_py
+license_url: https://github.com/qualcomm/ai-hub-apps/blob/main/LICENSE
+license_type: bsd-3-clause
+runtime: precompiled_qnn_onnx
+status: published
+domain: 'Computer Vision'
+headline: 'Text-prompted on-device segmentation with SAM3'
+description: "Demonstrates on-device text-prompted instance segmentation with SAM3 (Segment Anything Model 3) via ONNX Runtime and the QNN Execution Provider on the Snapdragon NPU. Enter a text prompt (e.g. 'cup') and the app draws a colored mask overlay over the detected object."
+precisions: [float]
+app_type: 'windows'
+static_img_filename: 'sam3_output.png'
+base_docker: windows.dockerfile
+app_repo_relative_path: 'sam3_segmentation_windows_py'
+qaihm_version: 0.58.0
+model_file_paths:
+  - 'models/vision_backbone.onnx'
+  - 'models/head.onnx'
+os:
+  name: Windows
+  version: 11+
+languages: ['Python']
+use_case: 'Semantic Segmentation'
+related_models: [sam3]
+supported_devices:
+  - name: "Snapdragon X Elite CRD"
+    status: "Tested"
+  - name: "Snapdragon X2 Elite CRD"
+    status: "Not Tested"
