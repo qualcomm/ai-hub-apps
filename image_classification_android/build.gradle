@@ -1,0 +1,74 @@
+plugins {
+    id 'com.android.application' version '8.13.0'
+}
+
+// Load shared versions and utilities — must be before android {} and dependencies {}
+if (file('_shared/android/common.gradle').exists()) {
+    apply from: '_shared/android/common.gradle'
+}
+
+android {
+    ndkVersion '27.3.13750724'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "com.quicinc.imageclassification"
+        minSdk 31
+        targetSdk 34
+        versionCode 1
+        versionName "1.0"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        resValue( "string", "tfLiteModelAsset", "classifier.tflite")
+        resValue( "string", "tfLiteLabelsAsset", "labels.txt")
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
+    }
+
+    preBuild.doFirst {
+        def modelAsset = android.defaultConfig.resValues["string/tfLiteModelAsset"]?.value
+        def labelsAsset = android.defaultConfig.resValues["string/tfLiteLabelsAsset"]?.value
+        if (!file("./src/main/assets/${modelAsset}").exists() || !file("./src/main/assets/${labelsAsset}").exists()) {
+            throw new RuntimeException("${modelAsset} and ${labelsAsset} is required. Please refer to the app README for instructions on how to obtain these model(s).")
+        }
+
+        for (int i = 1; i <= 3; ++i) {
+            String filename = "./src/main/assets/images/Sample${i}.png"
+            File fp = file(filename)
+            // If the image is too small, it is likely an ascii file with LFS information
+            if (!fp.exists() || fp.length() < 1000) {
+                throw new RuntimeException("Project assets are missing. Please make sure the git repository is cloned with LFS (https://git-lfs.com/) enabled.")
+            }
+        }
+    }
+
+    namespace 'com.quicinc.imageclassification'
+}
+
+dependencies {
+    implementation 'androidx.appcompat:appcompat:1.7.0'
+    implementation 'com.google.android.material:material:1.12.0'
+    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+    api "org.tensorflow:tensorflow-lite:2.17.0"
+    api "org.tensorflow:tensorflow-lite-support:0.5.0"
+    implementation "org.tensorflow:tensorflow-lite-gpu:2.17.0"
+    implementation "org.tensorflow:tensorflow-lite-gpu-api:2.17.0"
+    implementation 'org.tensorflow:tensorflow-lite-gpu-delegate-plugin:0.4.4'
+    implementation "com.qualcomm.qti:qnn-runtime:2.40.0"
+    implementation "com.qualcomm.qti:qnn-litert-delegate:2.40.0"
+    androidTestImplementation 'androidx.test:runner:1.6.2'
+    androidTestImplementation 'androidx.test:rules:1.6.1'
+    androidTestImplementation 'androidx.test.uiautomator:uiautomator:2.3.0'
+    androidTestImplementation 'androidx.test.ext:junit:1.2.1'
+    androidTestImplementation 'androidx.test:core:1.6.1'
+    androidTestImplementation 'junit:junit:4.13.2'
+}

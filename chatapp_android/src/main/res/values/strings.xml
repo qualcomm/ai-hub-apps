@@ -1,0 +1,6 @@
+<resources>
+    <string name="app_name">ChatApp</string>
+    <string name="chat_with_llm">Chat with Llama 3.2 3B</string>
+    <string name="user_hint_msg">What\'s on your mind?</string>
+    <string name="sends_user_message">Sends user message</string>
+</resources>

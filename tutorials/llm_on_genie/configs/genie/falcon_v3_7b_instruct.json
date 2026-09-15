@@ -1,0 +1,59 @@
+{
+    "dialog": {
+        "version": 1,
+        "type": "basic",
+        "context": {
+            "version": 1,
+            "size": 4096,
+            "n-vocab": 131072,
+            "bos-token": 11,
+            "eos-token": 11
+        },
+        "sampler": {
+            "version": 1,
+            "seed": 42,
+            "temp": 0.8,
+            "top-k": 40,
+            "top-p": 0.95
+        },
+        "tokenizer": {
+            "version": 1,
+            "path": "tokenizer.json"
+        },
+        "engine": {
+            "version": 1,
+            "n-threads": 3,
+            "backend": {
+                "version": 1,
+                "type": "QnnHtp",
+                "QnnHtp": {
+                    "version": 1,
+                    "use-mmap": true,
+                    "spill-fill-bufsize": 0,
+                    "mmap-budget": 0,
+                    "poll": true,
+                    "cpu-mask": "0xe0",
+                    "kv-dim": 256,
+                    "pos-id-dim": 128,
+                    "allow-async-init": false,
+                    "rope-theta": 1000042
+                },
+                "extensions": "htp_backend_ext_config.json"
+            },
+            "model": {
+                "version": 1,
+                "type": "binary",
+                "binary": {
+                    "version": 1,
+                    "ctx-bins": [
+                        "falcon_v3_7b_instruct_part_1_of_5.bin",
+                        "falcon_v3_7b_instruct_part_2_of_5.bin",
+                        "falcon_v3_7b_instruct_part_3_of_5.bin",
+                        "falcon_v3_7b_instruct_part_4_of_5.bin",
+                        "falcon_v3_7b_instruct_part_5_of_5.bin"
+                    ]
+                }
+            }
+        }
+    }
+}

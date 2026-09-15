@@ -1,0 +1,63 @@
+{
+    "dialog": {
+        "version": 1,
+        "type": "basic",
+        "context": {
+            "version": 1,
+            "size": 4096,
+            "n-vocab": 49155,
+            "bos-token": 0,
+            "eos-token": 0,
+            "pad-token": 0
+        },
+        "sampler": {
+            "version": 1,
+            "seed": 42,
+            "temp": 0.8,
+            "top-k": 40,
+            "top-p": 0.95
+        },
+        "tokenizer": {
+            "version": 1,
+            "path": "tokenizer.json"
+        },
+        "engine": {
+            "version": 1,
+            "n-threads": 3,
+            "backend": {
+                "version": 1,
+                "type": "QnnHtp",
+                "QnnHtp": {
+                    "version": 1,
+                    "use-mmap": true,
+                    "spill-fill-bufsize": 0,
+                    "mmap-budget": 0,
+                    "poll": true,
+                    "cpu-mask": "0xe0",
+                    "kv-dim": 128,
+                    "allow-async-init": false
+                },
+                "extensions": "htp_backend_ext_config.json"
+            },
+            "model": {
+                "version": 1,
+                "type": "binary",
+                "binary": {
+                    "version": 1,
+                    "ctx-bins": [
+                        "weight_sharing_model_1_of_5.serialized.bin",
+                        "weight_sharing_model_2_of_5.serialized.bin",
+                        "weight_sharing_model_3_of_5.serialized.bin",
+                        "weight_sharing_model_4_of_5.serialized.bin",
+                        "weight_sharing_model_5_of_5.serialized.bin"
+                    ]
+                },
+                "positional-encoding": {
+                    "type": "rope",
+                    "rope-dim": 64,
+                    "rope-theta": 10000000
+                }
+            }
+        }
+    }
+}
