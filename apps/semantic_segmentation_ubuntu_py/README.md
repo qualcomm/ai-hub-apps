@@ -71,37 +71,33 @@ sudo apt-get install qcom-camera-server
 
 After installing, reboot the device.
 
-### Using Docker
-From the app directory, build our Docker image with all required runtime dependencies, including the supported QAIRT SDK.
-```bash
-docker build --build-arg BUILD_TYPE=runtime -t aiha-semantic-segmentation .
-```
-
 ## Run
 
+`./launch.sh` builds the app's Docker image — with all required runtime
+dependencies, including the supported QAIRT SDK — on first use, installs the
+app's dependencies inside the container, then runs the app. App arguments go
+after `--`; add `--no-docker` to run natively on the host instead.
+
+Start with the app's self-test:
+
 ```bash
-./run_docker.sh --interactive
-```
-Inside the container:
-```bash
-bash test.sh
+./launch.sh --test -- --hexagon-version <HEX_VER>
 ```
 
 `test.sh` downloads the app's demo image from AI Hub assets and runs the app
 against it using the QAIRT runtime (via a GStreamer `imagefreeze` still-image
 source). It exits automatically after a bounded number of frames.
 
-
 ### List available cameras
 
 ```bash
-./run_docker.sh --list-devices
+./launch.sh -- --list-devices
 ```
 
 ### Run with a specific camera
 
 ```bash
-./run_docker.sh --hexagon-version <HEX_VER> --video-device /dev/video0
+./launch.sh -- --hexagon-version <HEX_VER> --video-device /dev/video0
 ```
 
 > [!IMPORTANT]
@@ -109,7 +105,7 @@ source). It exits automatically after a bounded number of frames.
 
 > [!NOTE]
 > To use the integrated camera of a Dragonwing RB3, the `qtiqmmfsrc` GStreamer plugin must be used.
-> `./run_docker.sh --hexagon-version v68 --video-gstreamer-source "qtiqmmfsrc name=camsrc camera=0"`.
+> `./launch.sh -- --hexagon-version v68 --video-gstreamer-source "qtiqmmfsrc name=camsrc camera=0"`.
 
 This serves the camera feed on port 8080. Open a browser and navigate to
 `http://<device-ip>:8080` to view the stream.

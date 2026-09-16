@@ -55,20 +55,17 @@ sudo apt-get install qcom-fastrpc1 qcom-fastrpc-dev
 
 After installing, reboot the device.
 
-### Using Docker
-From the app directory, build our Docker image with all required runtime dependencies, including the supported QAIRT SDK.
-```bash
-docker build --build-arg BUILD_TYPE=runtime -t aiha-yamnet .
-```
-
 ## Run
 
+`./launch.sh` builds the app's Docker image — with all required runtime
+dependencies, including the supported QAIRT SDK — on first use, installs the
+app's dependencies inside the container, then runs the app. App arguments go
+after `--`; add `--no-docker` to run natively on the host instead.
+
+Start with the app's self-test:
+
 ```bash
-./run_docker.sh --interactive
-```
-Inside the container:
-```bash
-bash test.sh
+./launch.sh --test -- --hexagon-version <HEX_VER>
 ```
 
 `test.sh` downloads a test audio clip and runs the app against it using the QAIRT runtime.
@@ -76,8 +73,11 @@ bash test.sh
 ### Classify your own audio
 
 ```bash
-./run_docker.sh --hexagon-version <HEX_VER> --audio-file /path/to/audio.wav
+./launch.sh -- --hexagon-version <HEX_VER> --audio-file ./audio.wav
 ```
+
+Only the app directory is mounted into the container, so copy the clip into it
+and pass a path relative to the app directory.
 
 The app prints the top predicted classes, e.g.:
 

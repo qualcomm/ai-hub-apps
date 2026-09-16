@@ -22,4 +22,5 @@ export GST_PLUGIN_FEATURE_RANK="v4l2h264dec:0,qtivdec:0,qtivdechw:0"
 
 python main.py \
     --video-gstreamer-source "filesrc location=$TEST_VIDEO ! decodebin" \
-    --qairt-path "$QAIRT_PATH"
+    --qairt-path "$QAIRT_PATH" \
+    "$@"

@@ -25,4 +25,5 @@ python main.py \
     --video-gstreamer-source "filesrc location=$TEST_VIDEO ! decodebin" \
     --video-source-width 1024 \
     --video-source-height 576 \
-    --qairt-path "$QAIRT_PATH"
+    --qairt-path "$QAIRT_PATH" \
+    "$@"

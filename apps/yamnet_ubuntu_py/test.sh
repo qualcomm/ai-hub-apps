@@ -31,7 +31,8 @@ for test in "${TESTS[@]}"; do
     wget -q -O "$wav_path" "$TEST_ASSET_BASE/$wav_name"
 
     echo "=== $wav_name (expecting '$expected') ==="
-    output="$(python main.py --audio-file "$wav_path" --qairt-path "$QAIRT_PATH")"
+    output="$(python main.py --audio-file "$wav_path" \
+        --qairt-path "$QAIRT_PATH" "$@")"
     echo "$output"
 
     if echo "$output" | grep -qi -- "$expected"; then

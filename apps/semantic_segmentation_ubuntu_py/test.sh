@@ -24,4 +24,5 @@ wget -q -O "$TEST_IMAGE" "$TEST_IMAGE_URL"
 
 python main.py \
     --video-gstreamer-source "filesrc location=$TEST_IMAGE ! decodebin ! imagefreeze num-buffers=120" \
-    --qairt-path "$QAIRT_PATH"
+    --qairt-path "$QAIRT_PATH" \
+    "$@"

@@ -33,7 +33,8 @@ echo "=== Recognizing $IMAGE_2_NAME against gallery (expecting $IDENTITY) ==="
 output="$(python main.py \
     --image "$IMAGE_2" \
     --gallery-dir "$GALLERY_DIR" \
-    --qairt-path "$QAIRT_PATH")"
+    --qairt-path "$QAIRT_PATH" \
+    "$@")"
 echo "$output"
 
 # The app must run face recognition on the NPU. A CPU fallback (missing/failed

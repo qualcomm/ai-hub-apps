@@ -46,6 +46,7 @@ if [ ! -f "$APP_DIR/Dockerfile" ]; then
     exit 1
 fi
 
+source ../_shared/scripts/sudo.sh
 source ../_shared/scripts/qairt_utils.sh
 
 HASH="$(printf '%s' "$APP_DIR" | sha1sum | cut -c1-12)"
@@ -58,8 +59,8 @@ CONTAINER_VENV_DIR="/opt/qaiha/venv"
 
 if [ "$CLEAN" -eq 1 ]; then
     echo "::step::Cleaning prior docker container and image"
-    docker rm -f "$CONTAINER_NAME" >/dev/null 2>&1 || true
-    docker rmi "$IMAGE_TAG" >/dev/null 2>&1 || true
+    $SUDO docker rm -f "$CONTAINER_NAME" >/dev/null 2>&1 || true
+    $SUDO docker rmi "$IMAGE_TAG" >/dev/null 2>&1 || true
     echo "::done::clean"
 fi
 
@@ -74,7 +75,7 @@ else
 fi
 
 echo "::step::Building Docker image"
-docker build -t "$IMAGE_TAG" .
+$SUDO docker build -t "$IMAGE_TAG" .
 echo "::done::Docker image"
 
 # Environment evaluated per exec, never baked into the container: the
@@ -88,23 +89,23 @@ done
 # A container is pinned to the image id it was created from, not to the tag, so
 # an existing container built from an older image would silently keep running
 # the stale one. Drop it and let the block below recreate it.
-built_image_id="$(docker image inspect -f '{{.Id}}' "$IMAGE_TAG")"
-container_image_id="$(docker container inspect -f '{{.Image}}' "$CONTAINER_NAME" 2>/dev/null || true)"
+built_image_id="$($SUDO docker image inspect -f '{{.Id}}' "$IMAGE_TAG")"
+container_image_id="$($SUDO docker container inspect -f '{{.Image}}' "$CONTAINER_NAME" 2>/dev/null || true)"
 if [ -n "$container_image_id" ] && [ "$container_image_id" != "$built_image_id" ]; then
     echo "::step::Replacing container $CONTAINER_NAME built from a stale image"
-    docker rm -f "$CONTAINER_NAME" >/dev/null 2>&1 || true
+    $SUDO docker rm -f "$CONTAINER_NAME" >/dev/null 2>&1 || true
     echo "::done::replace"
 fi
 
 # Reuse this app directory's container, or create it. The app directory is
 # bind-mounted rather than copied into the image, so app edits cost nothing.
-if ! docker start "$CONTAINER_NAME" >/dev/null 2>&1; then
+if ! $SUDO docker start "$CONTAINER_NAME" >/dev/null 2>&1; then
     # A create or install that died earlier can leave a container behind under
     # this name in a state docker start rejects; replace it.
-    docker rm -f "$CONTAINER_NAME" >/dev/null 2>&1 || true
+    $SUDO docker rm -f "$CONTAINER_NAME" >/dev/null 2>&1 || true
     echo "::step::Creating container $CONTAINER_NAME"
     # --init reaps the daemons that docker exec children reparent to PID 1.
-    docker create --name "$CONTAINER_NAME" --init --privileged \
+    $SUDO docker create --name "$CONTAINER_NAME" --init --privileged \
         -v "$APP_DIR:/app" \
         -v /usr/lib/:/opt/host/lib/:ro \
         -v "$LIBCDSPRPC_SRC:/usr/lib/libcdsprpc.so:ro" \
@@ -112,7 +113,7 @@ if ! docker start "$CONTAINER_NAME" >/dev/null 2>&1; then
         -v "$QAIRT_ROOT:$QAIRT_ROOT" \
         -p 8080:8080 \
         "$IMAGE_TAG" sleep infinity >/dev/null
-    docker start "$CONTAINER_NAME" >/dev/null
+    $SUDO docker start "$CONTAINER_NAME" >/dev/null
     echo "::done::container"
 fi
 
@@ -121,9 +122,9 @@ fi
 # next app. Also hand back anything the container wrote into the bind-mounted
 # app directory, which it wrote as root.
 cleanup_container() {
-    docker exec "$CONTAINER_NAME" chown -R "$(id -u):$(id -g)" /app >/dev/null 2>&1 ||
+    $SUDO docker exec "$CONTAINER_NAME" chown -R "$(id -u):$(id -g)" /app >/dev/null 2>&1 ||
         echo "::warning::Failed to reclaim ownership of $APP_DIR from $CONTAINER_NAME; files it wrote may still be owned by root." >&2
-    docker stop "$CONTAINER_NAME" >/dev/null 2>&1 || true
+    $SUDO docker stop "$CONTAINER_NAME" >/dev/null 2>&1 || true
 }
 trap cleanup_container EXIT
 
@@ -131,7 +132,7 @@ trap cleanup_container EXIT
 # The container persists between launches, so what it installed is still there.
 if [ -f install_runtime.sh ]; then
     echo "::step::Installing runtime in $CONTAINER_NAME"
-    docker exec "${exec_env_args[@]}" -w /app \
+    $SUDO docker exec "${exec_env_args[@]}" -w /app \
         "$CONTAINER_NAME" bash install_runtime.sh
     echo "::done::Installing runtime"
 fi
@@ -144,6 +145,6 @@ if [ -t 0 ]; then
 fi
 
 echo "::step::Running portrait_segmentation_ubuntu_py in Docker"
-docker exec "${tty_args[@]}" "${exec_env_args[@]}" -w /app "$CONTAINER_NAME" \
+$SUDO docker exec "${tty_args[@]}" "${exec_env_args[@]}" -w /app "$CONTAINER_NAME" \
     bash "$SCRIPT" "${APP_ARGS[@]}"
 echo "::done::run"

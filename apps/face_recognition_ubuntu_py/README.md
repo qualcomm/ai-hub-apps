@@ -56,7 +56,8 @@ If you cloned the release branch, the app directory is already self-contained �
 
 ## Prepare a gallery
 
-Create a directory of the people you want the app to recognize. Two layouts are
+Create a directory of the people you want the app to recognize, inside the app
+directory (only that directory is mounted into the container). Two layouts are
 supported and may be mixed:
 
 ```
@@ -98,20 +99,17 @@ sudo apt-get install qcom-camera-server
 
 After installing, reboot the device.
 
-### Using Docker
-From the app directory, build our Docker image with all required runtime dependencies, including the supported QAIRT SDK.
-```bash
-docker build --build-arg BUILD_TYPE=runtime -t aiha-face-recognition .
-```
-
 ## Run
 
+`./launch.sh` builds the app's Docker image — with all required runtime
+dependencies, including the supported QAIRT SDK — on first use, installs the
+app's dependencies inside the container, then runs the app. App arguments go
+after `--`; add `--no-docker` to run natively on the host instead.
+
+Start with the app's self-test:
+
 ```bash
-./run_docker.sh --interactive
-```
-Inside the container:
-```bash
-bash test.sh
+./launch.sh --test -- --hexagon-version <HEX_VER>
 ```
 
 `test.sh` downloads two public reference photos of the same person, enrolls the
@@ -121,26 +119,26 @@ gallery using the QAIRT runtime, expecting a `reference_person` match.
 ### List available cameras
 
 ```bash
-./run_docker.sh --list-devices
+./launch.sh -- --list-devices
 ```
 
 ### Run with a live camera
 
 ```bash
-./run_docker.sh --hexagon-version <HEX_VER> --gallery-dir /path/to/gallery --video-device /dev/video0
+./launch.sh -- --hexagon-version <HEX_VER> --gallery-dir ./gallery --video-device /dev/video0
 ```
 
-`run_docker.sh` resolves the gallery path and bind-mounts it into the container,
-so the gallery can live anywhere on the host. This serves the annotated camera
-feed on port 8080 — open a browser and navigate to `http://<device-ip>:8080` to
-view the stream.
+Only the app directory is mounted into the container, so keep the gallery inside
+it (for example `<app-dir>/gallery`) and pass a path relative to the app
+directory. This serves the annotated camera feed on port 8080 — open a browser
+and navigate to `http://<device-ip>:8080` to view the stream.
 
 > [!IMPORTANT]
 > You must provide `--hexagon-version` matching your device's Hexagon DSP version. For example, the [Dragonwing IQ-9075 EVK](https://www.qualcomm.com/developer/hardware/iq-9075-evk) uses Hexagon v73. To find the Hexagon version for your device, visit the [AI Hub device catalogue](https://workbench.aihub.qualcomm.com/devices/).
 
 > [!NOTE]
 > To use the integrated camera of a Dragonwing RB3, the `qtiqmmfsrc` GStreamer plugin must be used.
-> `./run_docker.sh --hexagon-version v68 --gallery-dir /path/to/gallery --video-gstreamer-source "qtiqmmfsrc name=camsrc camera=0"`.
+> `./launch.sh -- --hexagon-version v68 --gallery-dir ./gallery --video-gstreamer-source "qtiqmmfsrc name=camsrc camera=0"`.
 
 ### Recognize a single image (no camera)
 
@@ -148,8 +146,11 @@ To identify the faces in one image against the gallery — useful for testing or
 on machines without a camera — use `--image`:
 
 ```bash
-./run_docker.sh --hexagon-version <HEX_VER> --gallery-dir /path/to/gallery --image /path/to/photo.jpg --output /path/to/annotated.jpg
+./launch.sh -- --hexagon-version <HEX_VER> --gallery-dir ./gallery --image ./photo.jpg --output ./annotated.jpg
 ```
+
+As with the gallery, the input image and the output path must be inside the app
+directory; `--output` is written back to the host there.
 
 The app prints one `name: score` line per detected face and, with `--output`,
 writes a copy of the image with the labeled bounding boxes drawn on it.
