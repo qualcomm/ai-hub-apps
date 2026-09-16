@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:android="http://schemas.android.com/apk/res/android">
+    <style name="AppTheme.NoActionBar" parent="Theme.AppCompat.Light.DarkActionBar">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+        <item name="android:windowFullscreen">true</item>
+    </style>
+
+    <style name="spinnerTheme">
+        <item name="android:textColor">@color/white</item>
+        <item name="android:backgroundTint">@color/purple_qcom</item>
+        <item name="android:color">@color/white</item>
+    </style>
+</resources>

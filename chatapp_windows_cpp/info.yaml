@@ -1,0 +1,32 @@
+name: LLM Chat Windows
+id: chatapp_windows_cpp
+license_url: https://github.com/qualcomm/ai-hub-apps/blob/main/LICENSE
+license_type: bsd-3-clause
+models: ['llama_v3_2_1b_instruct']
+model_file_dir: 'genie_bundle'
+runtime: genie
+status: deprecated
+deprecation_notice: "LLM Chat Windows is deprecated in favour of the GenieX Chat Windows (geniex_chat_windows), which runs LLMs and VLMs on-device via the Qualcomm® GenieX SDK."
+domain: Generative AI
+headline: Deploy and run LLMs via CLI
+description: A sample CLI app demonstrating how to integrate an on-device LLM with Qualcomm® Gen AI Inference Extensions (Genie) APIs, optimized for Snapdragon® NPU acceleration.
+precisions: [w4a16]
+app_type: 'windows'
+static_img_filename: 'app_screen.png'
+base_docker: windows.dockerfile
+app_repo_relative_path: 'chatapp_windows_cpp'
+supported_devices:
+  - name: "Snapdragon X Elite CRD"
+    status: "Tested"
+os:
+  name: Windows
+  version: 11+
+languages: ['C++']
+use_case: Text Generation
+related_models: [
+      'qwen3_4b_instruct_2507',
+      'llama_v3_8b_instruct',
+      'llama_v3_1_8b_instruct',
+      'llama_v3_2_3b_instruct',
+      'llama_v3_taide_8b_chat',
+]
