@@ -131,11 +131,12 @@ if [ -f install_runtime.sh ]; then
     echo "::done::Installing runtime"
 fi
 
-# -t so Ctrl-C reaches the app inside the container rather than only the local
-# docker CLI. Only when stdin is a terminal, or docker exec refuses.
+# -i so the app can read stdin, -t so Ctrl-C reaches it inside the container
+# rather than only the local docker CLI. Only when stdin is a terminal, or
+# docker exec refuses.
 tty_args=()
 if [ -t 0 ]; then
-    tty_args=(-t)
+    tty_args=(-i -t)
 fi
 
 echo "::step::Running {{ app_id }} in Docker"

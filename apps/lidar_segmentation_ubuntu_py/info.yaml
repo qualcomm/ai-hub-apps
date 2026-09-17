@@ -1,0 +1,27 @@
+name: LiDAR Semantic Segmentation
+id: lidar_segmentation_ubuntu_py
+license_url: https://github.com/qualcomm/ai-hub-apps/blob/main/LICENSE
+license_type: bsd-3-clause
+runtime: tflite
+status: unpublished
+domain: 'Computer Vision'
+headline: 'On-device LiDAR point cloud semantic segmentation with TFLite'
+description: 'A sample app for Ubuntu demonstrating semantic segmentation of LiDAR point clouds via TFLite Runtime. It projects a scan into a range image, classifies every point on-device, and renders a color-coded bird''s-eye view and range image to a minimal web interface or an image file, suitable for embedded applications.'
+precisions: [float]
+app_type: 'ubuntu'
+static_img_filename: 'SalsaNext.png'
+app_repo_relative_path: 'lidar_segmentation_ubuntu_py'
+model_file_paths:
+  - 'models/salsanext.tflite'
+os:
+  name: Ubuntu
+  version: 24.04+
+languages: ['Python']
+base_docker: ubuntu.dockerfile
+use_case: 'Semantic Segmentation'
+supported_devices:
+  - name: "Arduino VENTUNO Q"
+    status: "Tested"
+  - name: "Dragonwing IQ-9075 EVK"
+    status: "Not Tested"
+related_models: ['salsanext']

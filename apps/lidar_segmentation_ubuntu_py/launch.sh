@@ -37,12 +37,12 @@ if [ "$USE_DOCKER" -eq 0 ]; then
         bash install_runtime.sh
         echo "::done::Installing runtime"
     fi
-    echo "::step::Running mediapipe_hand_gesture_ubuntu_py natively"
+    echo "::step::Running lidar_segmentation_ubuntu_py natively"
     exec bash "$SCRIPT" "${APP_ARGS[@]}"
 fi
 
 if [ ! -f "$APP_DIR/Dockerfile" ]; then
-    echo "::error::No Dockerfile found for mediapipe_hand_gesture_ubuntu_py. Re-run with --no-docker to run natively." >&2
+    echo "::error::No Dockerfile found for lidar_segmentation_ubuntu_py. Re-run with --no-docker to run natively." >&2
     exit 1
 fi
 
@@ -145,7 +145,7 @@ if [ -t 0 ]; then
     tty_args=(-i -t)
 fi
 
-echo "::step::Running mediapipe_hand_gesture_ubuntu_py in Docker"
+echo "::step::Running lidar_segmentation_ubuntu_py in Docker"
 $SUDO docker exec "${tty_args[@]}" "${exec_env_args[@]}" -w /app "$CONTAINER_NAME" \
     bash "$SCRIPT" "${APP_ARGS[@]}"
 echo "::done::run"
