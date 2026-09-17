@@ -1,54 +1,6 @@
 schema_version: '1.2'
 min_cli_version: 0.30.1
 apps:
-- name: LLM Chat Android
-  id: chatapp_android
-  status: deprecated
-  headline: Run an LLM on Android
-  description: A sample Android chat app showcasing how to integrate an on-device LLM with Qualcomm® Gen AI Inference Extensions (Genie) APIs, optimized for Snapdragon® NPU acceleration.
-  domain: Generative AI
-  use_case: Text Generation
-  app_repo_url: https://github.com/qualcomm/ai-hub-apps/tree/main/apps/chatapp_android
-  app_type: android
-  runtime:
-  - genie
-  related_models:
-  - qwen3_4b_instruct_2507
-  - llama_v3_2_3b_instruct
-  precisions:
-  - w4a16
-  languages:
-  - Java
-  - C++
-  supported_devices:
-  - Snapdragon 8 Elite QRD
-  model_file_dir: src/main/assets/models/llm
-  deprecation_notice: LLM Chat Android is deprecated in favour of the GenieX Chat Android app (geniex_chat_android), which runs LLMs and VLMs on-device via the Qualcomm® GenieX SDK.
-- name: LLM Chat Windows
-  id: chatapp_windows_cpp
-  status: deprecated
-  headline: Deploy and run LLMs via CLI
-  description: A sample CLI app demonstrating how to integrate an on-device LLM with Qualcomm® Gen AI Inference Extensions (Genie) APIs, optimized for Snapdragon® NPU acceleration.
-  domain: Generative AI
-  use_case: Text Generation
-  app_repo_url: https://github.com/qualcomm/ai-hub-apps/tree/main/apps/chatapp_windows_cpp
-  app_type: windows
-  runtime:
-  - genie
-  related_models:
-  - qwen3_4b_instruct_2507
-  - llama_v3_8b_instruct
-  - llama_v3_1_8b_instruct
-  - llama_v3_2_3b_instruct
-  - llama_v3_taide_8b_chat
-  precisions:
-  - w4a16
-  languages:
-  - C++
-  supported_devices:
-  - Snapdragon X Elite CRD
-  model_file_dir: genie_bundle
-  deprecation_notice: LLM Chat Windows is deprecated in favour of the GenieX Chat Windows (geniex_chat_windows), which runs LLMs and VLMs on-device via the Qualcomm® GenieX SDK.
 - name: Face Recognition
   id: face_recognition_ubuntu_py
   status: published

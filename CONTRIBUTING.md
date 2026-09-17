@@ -615,7 +615,7 @@ invoke it — `launch.*` owns install-runtime and docker/native execution.
 
 - **Build:** the generated `build.sh` runs a Docker build (`BUILD_TYPE=build`, which runs `install_build.sh` to install the Android SDK) then `gradle assembleDebug assembleAndroidTest` inside the container; APKs are copied back via `docker cp`. Note the instrumented test only compiles under `assembleAndroidTest` — a green `assembleDebug` does **not** mean the test compiles, so always build both locally.
 - **Tests:** UI Automator instrumented tests in `src/androidTest/java/`. On QDC, `run_android.py` installs the CLI and runs `qai-hub-apps test --app-path`; the Android `launch.sh --test` `adb install`s the debug + androidTest APKs and runs the instrumentation via `am instrument`.
-- **Test content:** Tests should wake the device, dismiss the keyguard, exercise the main inference flow, and assert on results. See `apps/chatapp_android/src/androidTest/java/com/quicinc/chatapp/ChatAppTest.java` for a concrete reference (it also asserts on TTFT / tokens-per-sec performance metrics).
+- **Test content:** Tests should wake the device, dismiss the keyguard, exercise the main inference flow, and assert on results. See `apps/image_classification_android/src/androidTest/java/com/quicinc/imageclassification/ImageClassificationTest.java` for a concrete reference (it also asserts on TTFT / tokens-per-sec performance metrics).
 
 #### Ubuntu Python apps
 
@@ -733,7 +733,7 @@ install_android_sdk
 
 ### 5. Add instrumented tests (Android)
 
-Create `src/androidTest/java/com/quicinc/<app>/<App>Test.java`. See `apps/chatapp_android/src/androidTest/java/com/quicinc/chatapp/ChatAppTest.java` as the reference. Note the test only compiles under `gradle assembleAndroidTest` (not `assembleDebug`). Tests should:
+Create `src/androidTest/java/com/quicinc/<app>/<App>Test.java`. See `apps/image_classification_android/src/androidTest/java/com/quicinc/imageclassification/ImageClassificationTest.java` as the reference. Note the test only compiles under `gradle assembleAndroidTest` (not `assembleDebug`). Tests should:
 - Wake the device and dismiss the keyguard
 - Launch the app via `Intent`
 - Interact with the UI (select image, tap Run)

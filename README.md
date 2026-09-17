@@ -53,7 +53,6 @@ __NOTE: Some of these apps will run without NPU acceleration on non-Snapdragon®
 
 | Task | Language | Inference API | Special Tags |
 | -- | -- | -- | -- |
-| [ChatApp](apps/chatapp_android) | Java/C++ | Genie SDK | LLM, GenAI |
 | [Image Classification](apps/image_classification_android) | Java | TensorFlow Lite |
 | [Object Detection](apps/object_detection_android) | Java | TensorFlow Lite | OpenCV, Live Camera Feed |
 | [Semantic Segmentation](apps/semantic_segmentation_android) |  Java | TensorFlow Lite | OpenCV, Live Camera Feed |
@@ -67,7 +66,6 @@ __NOTE: Some of these apps will run without NPU acceleration on non-Snapdragon®
 
 | Task | Language | Inference API | Special Tags |
 | -- | -- | -- | -- |
-| [ChatApp](apps/chatapp_windows_cpp) | C++ | Genie SDK | LLM, GenAI |
 | [Image Classification](apps/image_classification_windows_cpp) | C++ | ONNX | OpenCV |
 | [Object Detection](apps/object_detection_windows_cpp) | C++ | ONNX | OpenCV |
 | [Super Resolution](apps/super_resolution_windows_cpp) | C++ | ONNX | OpenCV |
