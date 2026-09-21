@@ -1,0 +1,12 @@
+name: Empty Workflow
+
+on:
+  workflow_dispatch:
+
+jobs:
+  noop:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Do nothing
+        run: echo "Hello from GitHub Actions"
