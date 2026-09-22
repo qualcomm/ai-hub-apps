@@ -1,0 +1,9 @@
+{{ header | trim }}
+# The toolchain lives in the prebuilt base image, published by
+# .github/workflows/publish_base_images.yaml. Pull it instead of building it: see
+# ANDROID/UBUNTU/WINDOWS_BASE_IMAGE_TAG in apps/_shared/scripts/versions.env.
+#
+# build.sh/launch.sh overrides BASE_IMAGE to point at a locally built base via
+# $QAIHA_BASE_IMAGE.
+ARG BASE_IMAGE={{ base_image }}:{{ base_image_tag }}
+FROM ${BASE_IMAGE}

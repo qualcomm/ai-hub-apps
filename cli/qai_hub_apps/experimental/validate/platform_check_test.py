@@ -61,13 +61,13 @@ def test_windows_cpp_docker_on_arm64_raises(monkeypatch):
         ensure_build_supported(app, use_docker=True)
 
 
-def test_android_on_windows_raises(monkeypatch):
+def test_android_on_windows_checks_docker(monkeypatch):
     monkeypatch.setattr(platform_check.sys, "platform", "win32")
+    docker_check = MagicMock()
+    monkeypatch.setattr(platform_check, "ensure_docker_available", docker_check)
     app = App(make_app_info(app_type=AppType.ANDROID, languages=[AppLanguage.JAVA]))
-    with pytest.raises(
-        AppIncompatibleError, match="can only be built on Linux or under WSL"
-    ):
-        ensure_build_supported(app, use_docker=True)
+    ensure_build_supported(app, use_docker=True)
+    docker_check.assert_called_once()
 
 
 def test_windows_cpp_docker_on_x86_checks_docker(monkeypatch):
@@ -140,12 +140,19 @@ def test_run_ubuntu_docker_checks_docker(monkeypatch):
     docker_check.assert_called_once()
 
 
-def test_run_android_on_windows_raises(monkeypatch):
-    monkeypatch.setattr(platform_check.shutil, "which", lambda _: "/home/bin/adb")
+def test_run_android_on_windows_allowed(monkeypatch):
+    monkeypatch.setattr(platform_check.shutil, "which", lambda _: "C:\\adb.exe")
     monkeypatch.setattr(platform_check.sys, "platform", "win32")
     app = App(make_app_info(app_type=AppType.ANDROID, languages=[AppLanguage.JAVA]))
+    ensure_run_supported(app, make_device(), use_docker=False)  # no raise
+
+
+def test_run_android_on_macos_raises(monkeypatch):
+    monkeypatch.setattr(platform_check.shutil, "which", lambda _: "/usr/bin/adb")
+    monkeypatch.setattr(platform_check.sys, "platform", "darwin")
+    app = App(make_app_info(app_type=AppType.ANDROID, languages=[AppLanguage.JAVA]))
     with pytest.raises(
-        AppIncompatibleError, match="can only be run through native Linux or WSL"
+        AppIncompatibleError, match="can only be run from Linux, WSL, or Windows"
     ):
         ensure_run_supported(app, make_device(), use_docker=False)
 

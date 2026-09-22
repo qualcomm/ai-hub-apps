@@ -17,6 +17,16 @@ $_PythonUtilsDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 . "$_PythonUtilsDir\winget_utils.ps1"
 . "$_PythonUtilsDir\interactive.ps1"
 
+# uv is the last thing _Install-Python does, so its presence for this interpreter
+# means the whole install completed.
+function Test-PythonInstalled {
+    $py = Resolve-InstalledExe -Name "py.exe"
+    if (-not $py) { return $false }
+    $majorMinor = ($PYTHON_VERSION -split "\.")[ 0..1] -join "."
+    try { & $py -$majorMinor -m uv --version 2>$null | Out-Null } catch { return $false }
+    return $LASTEXITCODE -eq 0
+}
+
 function _Install-Python {
     $ver = $PYTHON_VERSION
     $majorMinor = ($ver -split "\.")[ 0..1] -join "."
@@ -36,6 +46,10 @@ function _Install-Python {
 }
 
 function Install-Python {
+    if (Test-PythonInstalled) {
+        Write-Host "::skip::Python $PYTHON_VERSION already installed"
+        return
+    }
     Invoke-WithConsent -Description "Install Python $PYTHON_VERSION via winget" -Action {
         _Install-Python
     }

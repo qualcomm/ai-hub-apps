@@ -37,6 +37,10 @@ COPY scripts/msvc_utils.ps1 \
 
 RUN powershell -Command \
     ". C:\\app\\scripts\\msvc_utils.ps1; \
-     Install-MSVC; \
+     Install-MSVC"
+
+RUN powershell -Command \
+    ". C:\\app\\scripts\\winget_utils.ps1; \
      Install-WingetPackage -Id 'Microsoft.Git' -ExtraArgs @('--source', 'winget')"
+
 CMD ["powershell"]

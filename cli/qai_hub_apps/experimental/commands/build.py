@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import logging
 import subprocess
+import sys
 from pathlib import Path
 
 import yaml
@@ -96,8 +97,10 @@ def _prepare_app(
 
 def _build_command(app: App, app_dir: Path, use_docker: bool, clean: bool) -> list[str]:
     """Return the command that runs the app's generated build script."""
-    # Windows apps ship a PowerShell build.ps1; everything else a bash build.sh.
-    if app.app_type == AppType.WINDOWS:
+    # Windows apps only ship build.ps1; Android apps ship both;
+    if app.app_type == AppType.WINDOWS or (
+        app.app_type == AppType.ANDROID and sys.platform == "win32"
+    ):
         script = app_dir / "build.ps1"
         command = ["powershell", "-File", str(script)]
         no_docker_flag, clean_flag = "-NoDocker", "-Clean"

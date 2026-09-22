@@ -41,8 +41,6 @@ on:
     secrets:
       QDC_API_TOKEN:
         required: false
-      DOCKER_QC_REGISTRY_TOKEN:
-        required: false
       HUB_USER_TOKEN_PROD:
         required: false
       QAIHA_CI_AWS_ROLE_ARN:
@@ -111,6 +109,7 @@ jobs:
     permissions:
       id-token: write
       contents: read
+      packages: read
 
     steps:
       - uses: actions/checkout@v7
@@ -183,11 +182,17 @@ jobs:
           ${{ env.ACTIVATE_VENV }}
           qai-hub configure --api_token ${{ secrets.HUB_USER_TOKEN_PROD }}
 
-      - name: Log in to Qualcomm Docker registry
-        if: ${{ inputs.test_stage != 'fetch'  && inputs.app_type != 'windows'}}
-        uses: ./.github/actions/docker-login-qc-registry
-        with:
-          token: ${{ secrets.DOCKER_QC_REGISTRY_TOKEN }}
+      - name: Log in to GHCR (Linux)
+        if: ${{ inputs.test_stage != 'fetch' && inputs.app_type != 'windows' }}
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: echo "$GHCR_TOKEN" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+
+      - name: Log in to GHCR (Windows)
+        if: ${{ inputs.test_stage != 'fetch' && inputs.app_type == 'windows' }}
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: $env:GHCR_TOKEN | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
 
       - name: Create short build root (Windows)
         if: ${{ inputs.app_type == 'windows' }}

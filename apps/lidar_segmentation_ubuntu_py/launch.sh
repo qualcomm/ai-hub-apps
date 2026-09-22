@@ -74,8 +74,19 @@ else
     exit 1
 fi
 
-echo "::step::Building Docker image"
-$SUDO docker build -t "$IMAGE_TAG" .
+# The base image is prebuilt and published, so this build is just a pull.
+# QAIHA_BASE_IMAGE overrides it, e.g. to point at a locally built base.
+if [ -n "${QAIHA_BASE_IMAGE:-}" ]; then
+    BASE_IMAGE="$QAIHA_BASE_IMAGE"
+else
+    BASE_IMAGE="ghcr.io/qcom-ai-hub/qai-hub-apps-ubuntu-base:sha-f3ce55a28d93"
+fi
+
+echo "::step::Building Docker image from $BASE_IMAGE"
+if ! $SUDO docker build --build-arg "BASE_IMAGE=$BASE_IMAGE" -t "$IMAGE_TAG" .; then
+    echo "::error::Failed to build the image for lidar_segmentation_ubuntu_py. If '$BASE_IMAGE' could not be pulled, check network access to it, or set QAIHA_BASE_IMAGE to a base image you built locally from tools/docker/ubuntu.dockerfile. Alternatively re-run with --no-docker to run natively." >&2
+    exit 1
+fi
 echo "::done::Docker image"
 
 # Environment evaluated per exec, never baked into the container: the
@@ -127,6 +138,24 @@ cleanup_container() {
     $SUDO docker stop "$CONTAINER_NAME" >/dev/null 2>&1 || true
 }
 trap cleanup_container EXIT
+
+if [ "${QC_INTERNAL_HOST:-}" = "1" ]; then
+    echo "::step::Installing Qualcomm CA certificates in $CONTAINER_NAME"
+    $SUDO docker exec "$CONTAINER_NAME" bash -c '
+        set -euo pipefail
+        cert_dir=/usr/local/share/ca-certificates/qualcomm.com
+        if [ ! -f "$cert_dir/nscacert.crt" ]; then
+            mkdir -p "$cert_dir"
+            wget --no-check-certificate -P "$cert_dir" \
+                https://pki.qualcomm.com/qc_root_g2_cert.crt \
+                https://pki.qualcomm.com/ssl_v2_cert.crt \
+                https://pki.qualcomm.com/ssl_v4_cert.crt
+            wget --no-check-certificate -O "$cert_dir/nscacert.crt" \
+                https://github.qualcomm.com/raw/netskope-ssl/download/main/nscacert.cer
+            update-ca-certificates
+        fi'
+    echo "::done::Qualcomm CA certificates"
+fi
 
 # Runs on every launch and is expected to skip whatever is already installed.
 # The container persists between launches, so what it installed is still there.

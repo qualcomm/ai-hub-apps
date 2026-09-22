@@ -202,23 +202,18 @@ def test_bundle_app_includes_dockerfile(
     dummy_python_app_path: Path,
     dummy_python_utils_path: Path,
     tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     make_sample_app_info(id="my_dummy_app", base_docker="ubuntu.dockerfile").to_yaml(
         dummy_python_app_path / "info.yaml", write_if_empty=True
     )
-
-    fake_docker_root = tmp_path / "fakerepo" / "tools" / "docker"
-    fake_docker_root.mkdir(parents=True)
-    (fake_docker_root / "ubuntu.dockerfile").write_text("FROM ubuntu:24.04\n")
-    monkeypatch.setattr(bundlers_mod, "DOCKER_ROOT", fake_docker_root)
+    (dummy_python_app_path / "Dockerfile").write_text("FROM some/base:tag\n")
 
     out_dir = tmp_path / "out"
     bundle_app(dummy_python_app_path, out_dir, utils_parent=dummy_python_utils_path)
 
     dockerfile = out_dir / "my_dummy_app" / "Dockerfile"
     assert dockerfile.is_file()
-    assert "FROM ubuntu:24.04" in dockerfile.read_text()
+    assert "FROM some/base:tag" in dockerfile.read_text()
 
 
 def test_bundle_app_no_dockerfile_when_base_docker_unset(
@@ -235,17 +230,13 @@ def test_bundle_app_missing_dockerfile_raises(
     dummy_python_app_path: Path,
     dummy_python_utils_path: Path,
     tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    make_sample_app_info(
-        id="my_dummy_app", base_docker="nonexistent.dockerfile"
-    ).to_yaml(dummy_python_app_path / "info.yaml", write_if_empty=True)
+    """An app that sets base_docker but was never passed through generate_app_scripts."""
+    make_sample_app_info(id="my_dummy_app", base_docker="ubuntu.dockerfile").to_yaml(
+        dummy_python_app_path / "info.yaml", write_if_empty=True
+    )
 
-    fake_docker_root = tmp_path / "fakerepo" / "tools" / "docker"
-    fake_docker_root.mkdir(parents=True)
-    monkeypatch.setattr(bundlers_mod, "DOCKER_ROOT", fake_docker_root)
-
-    with pytest.raises(FileNotFoundError, match=r"nonexistent.dockerfile"):
+    with pytest.raises(FileNotFoundError, match=r"generate_app_scripts"):
         bundle_app(
             dummy_python_app_path,
             tmp_path / "out",

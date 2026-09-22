@@ -22,14 +22,11 @@ $QAIRT_PATH = "$QAIRT_ROOT\$QAIRT_SDK_FULL_VERSION"
 $env:QAIRT_ROOT = $QAIRT_ROOT
 $env:QAIRT_PATH = $QAIRT_PATH
 
+function Test-QairtInstalled {
+    return (Test-Path $QAIRT_PATH) -and [bool](Get-ChildItem $QAIRT_PATH -Force | Select-Object -First 1)
+}
+
 function _Install-Qairt {
-    param([switch]$Force)
-
-    if ((Test-Path $QAIRT_PATH) -and (Get-ChildItem $QAIRT_PATH -Force | Select-Object -First 1) -and -not $Force) {
-        Write-Host "::skip::QAIRT SDK already installed at $QAIRT_PATH"
-        return
-    }
-
     $url = "https://softwarecenter.qualcomm.com/api/download/software/sdks/Qualcomm_AI_Runtime_Community/All/${QAIRT_SDK_FULL_VERSION}/v${QAIRT_SDK_FULL_VERSION}.zip"
     $tmpZip = Join-Path $env:TEMP "qairt_$([System.IO.Path]::GetRandomFileName()).zip"
 
@@ -65,7 +62,12 @@ function Install-Qairt {
         return
     }
 
+    if (-not $Force -and (Test-QairtInstalled)) {
+        Write-Host "::skip::QAIRT SDK already installed at $QAIRT_PATH"
+        return
+    }
+
     Invoke-WithConsent -Description "Download & install QAIRT SDK $QAIRT_SDK_FULL_VERSION to $QAIRT_PATH" -Action {
-        _Install-Qairt -Force:$Force
+        _Install-Qairt
     }
 }

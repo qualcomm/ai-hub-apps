@@ -16,7 +16,11 @@ from qai_hub_apps.configs.model_asset import ModelAsset
 from qai_hub_apps.conftest import make_app_info, make_device
 from qai_hub_apps.errors import QAIHubAppsError
 from qai_hub_apps.experimental.commands import run as run_mod
-from qai_hub_apps.experimental.commands.run import _run_command, run_run
+from qai_hub_apps.experimental.commands.run import (
+    BUILD_REQUIRED_EXIT_CODE,
+    _run_command,
+    run_run,
+)
 from qai_hub_apps.registry.base import App
 
 DEVICE = make_device(name="Device A")
@@ -44,7 +48,7 @@ def stub_run_run(monkeypatch) -> SimpleNamespace:
         ensure_run_supported=MagicMock(),
         device_env=MagicMock(return_value={"DEV": "A"}),
         run_command=MagicMock(return_value=["bash", "x"]),
-        subprocess_run=MagicMock(),
+        subprocess_run=MagicMock(return_value=subprocess.CompletedProcess([], 0)),
         run_build=MagicMock(return_value=Path("built")),
         get_configured_device=MagicMock(return_value=DEVICE),
     )
@@ -165,13 +169,24 @@ def test_run_run_raises_when_device_still_unset(tmp_path, stub_run_run, monkeypa
         run_run("test_app", None, tmp_path, registry, None)
 
 
-def test_run_run_subprocess_failure_raises(tmp_path, stub_run_run, monkeypatch):
-    monkeypatch.setattr(
-        run_mod.subprocess,
-        "run",
-        MagicMock(side_effect=subprocess.CalledProcessError(3, "bash")),
-    )
+def test_run_run_subprocess_failure_raises(tmp_path, stub_run_run):
+    stub_run_run.subprocess_run.return_value = subprocess.CompletedProcess([], 3)
     registry = MagicMock()
     registry.find_by_id.return_value = _make_app()
     with pytest.raises(QAIHubAppsError, match="exit code 3"):
         run_run("test_app", None, tmp_path, registry, None)
+
+
+def test_run_run_from_path_builds_when_launch_reports_build_required(
+    tmp_path, stub_run_run, monkeypatch, caplog
+):
+    monkeypatch.setattr(
+        run_mod, "_resolve_app_from_dir", MagicMock(return_value=_make_app())
+    )
+    stub_run_run.subprocess_run.side_effect = [
+        subprocess.CompletedProcess([], code) for code in [BUILD_REQUIRED_EXIT_CODE, 0]
+    ]
+    run_run(None, tmp_path, tmp_path, MagicMock(), None)
+    assert "has not been built yet" in caplog.text
+    assert stub_run_run.run_build.call_args.args[1] == tmp_path.resolve()
+    assert stub_run_run.subprocess_run.call_count == 2

@@ -23,18 +23,22 @@ source "$_APT_UTILS_DIR/interactive.sh"
 # shellcheck disable=SC1091
 source "$_APT_UTILS_DIR/retry.sh"
 
+_apt_pkg_installed() {
+    dpkg-query -W -f='${Status}' "$1" 2>/dev/null | grep -q 'install ok installed'
+}
+
 _install_apt_pkg() {
     local pkg="$1"; shift
-    if dpkg-query -W -f='${Status}' "$pkg" 2>/dev/null | grep -q 'install ok installed'; then
-        echo "::skip::${pkg}"
-    else
-        echo "::step::Installing ${pkg}"
-        with_retry "apt-get install ${pkg}" -- $SUDO apt-get install -y "$pkg" "$@"
-        echo "::done::${pkg}"
-    fi
+    echo "::step::Installing ${pkg}"
+    with_retry "apt-get install ${pkg}" -- $SUDO apt-get install -y "$pkg" "$@"
+    echo "::done::${pkg}"
 }
 
 install_apt_pkg() {
+    if _apt_pkg_installed "$1"; then
+        echo "::skip::$1"
+        return 0
+    fi
     require_consent "Install apt package '$1' (uses sudo)" -- _install_apt_pkg "$@"
 }
 
@@ -45,5 +49,14 @@ _install_apt_pkgs() {
 }
 
 install_apt_pkgs() {
-    require_consent "Install apt packages: $* (uses sudo)" -- _install_apt_pkgs "$@"
+    local -a missing=()
+    for pkg in "$@"; do
+        if _apt_pkg_installed "$pkg"; then
+            echo "::skip::${pkg}"
+        else
+            missing+=("$pkg")
+        fi
+    done
+    [ ${#missing[@]} -gt 0 ] || return 0
+    require_consent "Install apt packages: ${missing[*]} (uses sudo)" -- _install_apt_pkgs "${missing[@]}"
 }

@@ -32,8 +32,8 @@ if [ ! -f "$APP_DIR/Dockerfile" ]; then
     exit 1
 fi
 
-# The image bakes the Android toolchain from the bundled shared scripts, which
-# only exist in a fetched/bundled app. Fail with a clear message rather than a COPY error.
+# install_build.sh and the gradle step source /app/scripts/*, which only exists in
+# a fetched/bundled app.
 if [ ! -d "$APP_DIR/scripts" ]; then
     echo "::error::No scripts/ directory found for super_resolution_android. Docker builds need a bundled app; use 'qai-hub-apps fetch super_resolution_android'." >&2
     exit 1
@@ -45,19 +45,18 @@ HASH="$(printf '%s' "$APP_DIR" | sha1sum | cut -c1-12)"
 IMAGE_TAG="aiha-build-$(basename "$APP_DIR")-$HASH"
 CONTAINER_NAME="$IMAGE_TAG-container"
 
-build_args=()
-# The internal registry mirror and Qualcomm CA certs are only reachable from the
-# Qualcomm internal network (CI runners or a corp-network machine). Set
-# QC_INTERNAL_HOST=1 there. Otherwise the Dockerfile defaults apply: the public
-# base image and no CA injection.
-if [ "${QC_INTERNAL_HOST:-}" = "1" ]; then
-    build_args+=(
-        --build-arg REGISTRY_PREFIX=docker-registry.qualcomm.com/library/
-        --build-arg INSTALL_QUALCOMM_CA=true
-    )
+# The Android toolchain lives in a prebuilt base image, so this build is just a
+# pull. QAIHA_BASE_IMAGE overrides it, e.g. to point at a locally built base.
+if [ -n "${QAIHA_BASE_IMAGE:-}" ]; then
+    BASE_IMAGE="$QAIHA_BASE_IMAGE"
+else
+    BASE_IMAGE="ghcr.io/qcom-ai-hub/qai-hub-apps-android-base:sha-f3ce55a28d93"
 fi
-# --clean tears down prior build state (image, container, host-side outputs) and
-# rebuilds the image from scratch.
+build_args=(--build-arg "BASE_IMAGE=$BASE_IMAGE")
+
+# --clean tears down prior build state (image, container, host-side outputs).
+# --no-cache only invalidates this app's trivial FROM layer, not the base image;
+# to force a fresh base, 'docker rmi' it or bump the tag in versions.env.
 if [ "$CLEAN" -eq 1 ]; then
     echo "::step::Cleaning prior build outputs, docker image and container"
     build_args+=(--no-cache)
@@ -67,8 +66,11 @@ if [ "$CLEAN" -eq 1 ]; then
     echo "::done::clean"
 fi
 
-echo "::step::Building Docker image"
-docker build "${build_args[@]}" -t "$IMAGE_TAG" .
+echo "::step::Building Docker image from $BASE_IMAGE"
+if ! docker build "${build_args[@]}" -t "$IMAGE_TAG" .; then
+    echo "::error::Failed to build the image for super_resolution_android. If '$BASE_IMAGE' could not be pulled, check network access to it, or set QAIHA_BASE_IMAGE to a base image you built locally." >&2
+    exit 1
+fi
 echo "::done::Docker image"
 
 # Reuse this app directory's container, or create it.
@@ -94,6 +96,34 @@ cleanup_container() {
     docker stop "$CONTAINER_NAME" >/dev/null 2>&1 || true
 }
 trap cleanup_container EXIT
+
+if [ "${QC_INTERNAL_HOST:-}" = "1" ]; then
+    echo "::step::Installing Qualcomm CA certificates in $CONTAINER_NAME"
+    docker exec "$CONTAINER_NAME" bash -c '
+        set -euo pipefail
+        cert_dir=/usr/local/share/ca-certificates/qualcomm.com
+        if [ ! -f "$cert_dir/nscacert.crt" ]; then
+            mkdir -p "$cert_dir"
+            wget --no-check-certificate -P "$cert_dir" \
+                https://pki.qualcomm.com/qc_root_g2_cert.crt \
+                https://pki.qualcomm.com/ssl_v2_cert.crt \
+                https://pki.qualcomm.com/ssl_v4_cert.crt
+            wget --no-check-certificate -O "$cert_dir/nscacert.crt" \
+                https://github.qualcomm.com/raw/netskope-ssl/download/main/nscacert.cer
+            update-ca-certificates
+        fi'
+
+    docker exec "$CONTAINER_NAME" bash -c '
+        set -euo pipefail
+        . /app/scripts/android_utils.sh
+        keystore="$JAVA_HOME/lib/security/cacerts"
+        if ! keytool -list -alias qualcommroot -keystore "$keystore" -storepass changeit >/dev/null 2>&1; then
+            keytool -import -noprompt -trustcacerts -alias qualcommroot \
+                -file /usr/local/share/ca-certificates/qualcomm.com/nscacert.crt \
+                -keystore "$keystore" -storepass changeit
+        fi'
+    echo "::done::Qualcomm CA certificates"
+fi
 
 if [ -f install_build.sh ]; then
     echo "::step::Installing build dependencies in $CONTAINER_NAME"

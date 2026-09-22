@@ -1,12 +1,140 @@
-name: Empty Workflow
+##
+## Build the docker base images and push them to GHCR.
+##
+## After a run, pin the tag in apps/_shared/scripts/versions.env, re-run
+## `python -m qai_hub_apps_test.scripts.generate_app_scripts --scope test`
+## and commit.
+##
+
+name: Publish Docker Base Images
 
 on:
   workflow_dispatch:
+    inputs:
+      platform:
+        description: Which base image(s) to build
+        required: true
+        type: choice
+        options: [all, android, ubuntu, windows]
+        default: all
+      push:
+        description: Push to GHCR
+        required: false
+        type: boolean
+        default: false
 
 jobs:
-  noop:
-    runs-on: ubuntu-latest
-
+  ## Android (arm64 + amd64) and Ubuntu (arm64)
+  linux:
+    name: "${{ matrix.platform }} (${{ matrix.arch }})"
+    if: ${{ contains(fromJSON('["all", "android", "ubuntu"]'), inputs.platform) }}
+    runs-on: ${{ matrix.arch == 'arm64' && 'ubuntu-24.04-arm' || 'ubuntu-24.04' }}
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [android, ubuntu]
+        arch: [arm64, amd64]
+        exclude:
+          - platform: ubuntu
+            arch: amd64
     steps:
-      - name: Do nothing
-        run: echo "Hello from GitHub Actions"
+      - uses: actions/checkout@v7
+
+      - name: Skip unselected platform
+        id: guard
+        run: |
+          if [[ "${{ inputs.platform }}" == "all" || "${{ inputs.platform }}" == "${{ matrix.platform }}" ]]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      # The android base holds the NDK (~2.3GB compressed) on top of the JDK,
+      # Gradle and the SDK; hosted runners start with ~14GB free.
+      - name: Reclaim disk
+        if: ${{ steps.guard.outputs.run == 'true' && matrix.platform == 'android' }}
+        run: |
+          df -h /
+          sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc /usr/local/.ghcup
+          docker system prune -af
+          df -h /
+
+      - name: Log in to GHCR
+        if: ${{ steps.guard.outputs.run == 'true' && inputs.push }}
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" |
+            docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+
+      # Each arch pushes its own tag; the manifest job below joins the android
+      # pair under the clean tag that versions.env pins.
+      - name: Build and push
+        if: ${{ steps.guard.outputs.run == 'true' }}
+        run: |
+          args=(--tag "sha-${GITHUB_SHA::12}-${{ matrix.arch }}")
+          if [[ "${{ inputs.push }}" == "true" ]]; then
+            args+=(--push)
+          fi
+          bash tools/build_base_images.sh "${args[@]}" "${{ matrix.platform }}"
+
+      # Ubuntu is single-arch, so it never reaches the join step and needs the
+      # pinned tag here.
+      - name: Tag ubuntu as the pinned tag
+        if: ${{ steps.guard.outputs.run == 'true' && matrix.platform == 'ubuntu' && inputs.push }}
+        run: |
+          image="ghcr.io/qcom-ai-hub/qai-hub-apps-ubuntu-base"
+          docker buildx imagetools create \
+            -t "$image:sha-${GITHUB_SHA::12}" \
+            "$image:sha-${GITHUB_SHA::12}-${{ matrix.arch }}"
+
+  ##
+  ## Join the two android per-arch pushes into one manifest list, so a single
+  ## pinned ref in versions.env serves both architectures.
+  ##
+  android-manifest:
+    name: "android manifest"
+    needs: linux
+    if: ${{ !cancelled() && needs.linux.result == 'success' && inputs.push && contains(fromJSON('["all", "android"]'), inputs.platform) }}
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Log in to GHCR
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" |
+            docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+
+      - name: Create multi-arch manifest
+        run: |
+          image="ghcr.io/qcom-ai-hub/qai-hub-apps-android-base"
+          tag="sha-${GITHUB_SHA::12}"
+          docker buildx imagetools create -t "$image:$tag" \
+            "$image:$tag-arm64" "$image:$tag-amd64"
+          docker buildx imagetools inspect "$image:$tag"
+
+  ## Windows containers need a windows host and exist for amd64 only; MSVC
+  ## cross-compiles to ARM64 from there.
+  windows:
+    name: "windows (amd64)"
+    if: ${{ contains(fromJSON('["all", "windows"]'), inputs.platform) }}
+    runs-on: ${{ fromJSON('["self-hosted", "Windows", "X64", "windows-docker"]') }}
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Log in to GHCR
+        if: ${{ inputs.push }}
+        run: |
+          "${{ secrets.GITHUB_TOKEN }}" |
+            docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+
+      - name: Build and push
+        run: |
+          $params = @{ Tag = "sha-$($env:GITHUB_SHA.Substring(0, 12))" }
+          if ("${{ inputs.push }}" -eq "true") { $params.Push = $true }
+          .\tools\build_base_images.ps1 windows @params

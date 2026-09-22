@@ -5,10 +5,12 @@
 $ErrorActionPreference = "Stop"
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 
+. ..\_shared\scripts\exit_codes.ps1
+
 $Exe = "$ScriptDir\ARM64\Release\SuperResolution.exe"
 if (-not (Test-Path $Exe)) {
-    Write-Error "SuperResolution.exe not found at $Exe. Run install_build.ps1 first."
-    exit 1
+    Write-Host "::error::SuperResolution.exe not found at $Exe. Run install_build.ps1 first."
+    exit $QaihaExitBuildRequired
 }
 
 $Model = "$ScriptDir\assets\models\super_resolution.onnx"

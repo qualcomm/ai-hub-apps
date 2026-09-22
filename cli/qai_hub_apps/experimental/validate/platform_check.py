@@ -58,7 +58,7 @@ def ensure_build_supported(app: App, use_docker: bool) -> None:
 
     Validates the host/mode combination before the build script runs:
 
-    - Android apps can only be built on Linux or under WSL.
+    - Android apps build in a Linux container, so any Docker host works.
     - Windows apps can only be built on a Windows host.
     - Windows C++ Docker builds use Windows container images, which cannot be
       built on an ARM64 Docker daemon; build natively (``--no-docker``) or use an
@@ -80,11 +80,6 @@ def ensure_build_supported(app: App, use_docker: bool) -> None:
         sys.platform,
         machine,
     )
-    if app.app_type == AppType.ANDROID and sys.platform == "win32":
-        raise AppIncompatibleError(
-            f"'{app.id}' is an Android app and can only be built on Linux or under "
-            "WSL (https://learn.microsoft.com/windows/wsl/install)."
-        )
     if app.app_type == AppType.WINDOWS and sys.platform != "win32":
         raise AppIncompatibleError(
             f"'{app.id}' is a Windows app and can only be built on Windows "
@@ -127,10 +122,10 @@ def ensure_run_supported(app: App, device: DeviceInfo, use_docker: bool) -> None
                 f"Running '{app.id}' requires 'adb'. Install the Android "
                 "platform-tools and connect a device with USB debugging enabled."
             )
-        if sys.platform != "linux":
+        if sys.platform not in ("linux", "win32"):
             raise AppIncompatibleError(
-                f"'{app.id}' is an Android app and can only be run through native Linux or WSL "
-                "(Windows and macOS are not supported)."
+                f"'{app.id}' is an Android app and can only be run from Linux, WSL, "
+                f"or Windows (detected platform: {sys.platform})."
             )
     elif app.app_type == AppType.WINDOWS:
         if sys.platform != "win32":

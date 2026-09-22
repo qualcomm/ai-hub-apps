@@ -66,15 +66,28 @@ if (-not (Test-Path "$AppDir\Dockerfile")) {
     exit 1
 }
 
+# install_build.ps1 sources C:\app\scripts\*, which only exists in a fetched/bundled
+# app. The image build itself needs nothing from the context.
 if (-not (Test-Path "$AppDir\scripts")) {
     Write-Error "::error::No scripts\ directory found for image_classification_windows_cpp. Docker builds need a bundled app; use 'qai-hub-apps fetch image_classification_windows_cpp'."
     exit 1
 }
 
 try {
-    Write-Host "::step::Building Docker image"
-    docker build -t $ImageTag .
-    Assert-Success "docker build"
+    # The MSVC toolchain lives in a prebuilt base image, so this build is just a
+    # pull. QAIHA_BASE_IMAGE overrides it, e.g. to point at a locally built base.
+    if ($env:QAIHA_BASE_IMAGE) {
+        $BaseImage = $env:QAIHA_BASE_IMAGE
+    } else {
+        $BaseImage = "ghcr.io/qcom-ai-hub/qai-hub-apps-windows-base:sha-72a927d1095e"
+    }
+
+    Write-Host "::step::Building Docker image from $BaseImage"
+    docker build --build-arg "BASE_IMAGE=$BaseImage" -t $ImageTag .
+    if ($LASTEXITCODE -ne 0) {
+        Write-Error "::error::Failed to build the image for image_classification_windows_cpp. If '$BaseImage' could not be pulled, check network access to it, or set QAIHA_BASE_IMAGE to a base image you built locally from tools/docker/windows.dockerfile. Alternatively re-run with -NoDocker to build natively."
+        exit 1
+    }
     Write-Host "::done::Docker image"
 
     Write-Host "::step::Building ARM64 binaries (MSBuild in container)"

@@ -11,6 +11,8 @@ set -euo pipefail
 APP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$APP_DIR"
 
+source ../_shared/scripts/exit_codes.sh
+
 PACKAGE="com.quicinc.imageclassification"
 APK="build/outputs/apk/debug/app-debug.apk"
 TEST_APK="build/outputs/apk/androidTest/debug/app-debug-androidTest.apk"
@@ -34,11 +36,11 @@ fi
 
 if [ ! -f "$APK" ]; then
     echo "::error::APK not found at $APK for image_classification_android. Build it first." >&2
-    exit 1
+    exit "$QAIHA_EXIT_BUILD_REQUIRED"
 fi
 if [ "$RUN_TEST" -eq 1 ] && [ ! -f "$TEST_APK" ]; then
     echo "::error::Test APK not found at $TEST_APK for image_classification_android. Build it first." >&2
-    exit 1
+    exit "$QAIHA_EXIT_BUILD_REQUIRED"
 fi
 
 DEVICES=()

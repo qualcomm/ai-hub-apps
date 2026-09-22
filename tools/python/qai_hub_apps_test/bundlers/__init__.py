@@ -19,7 +19,7 @@ from qai_hub_apps_test.bundlers.windows.bundle import (
     bundle_source as _bundle_windows_cpp_source,
 )
 from qai_hub_apps_test.configs.info_yaml import AppLanguage, AppType, QAIHAAppInfo
-from qai_hub_apps_test.utils.paths import DOCKER_ROOT, find_app_dir
+from qai_hub_apps_test.utils.paths import find_app_dir
 
 
 def bundle_app(
@@ -85,14 +85,11 @@ def bundle_app(
                 "is not supported for bundling."
             )
 
-        if app_info.base_docker is not None:
-            src_dockerfile = DOCKER_ROOT / app_info.base_docker
-            if not src_dockerfile.is_file():
-                raise FileNotFoundError(
-                    f"Dockerfile '{app_info.base_docker}' not found at '{src_dockerfile}'. "
-                    "Check the base_docker field in info.yaml."
-                )
-            shutil.copy2(src_dockerfile, tmp_dir / "Dockerfile")
+        if app_info.base_docker is not None and not (tmp_dir / "Dockerfile").is_file():
+            raise FileNotFoundError(
+                f"App '{app_info.id}' sets base_docker but has no Dockerfile. "
+                "Run 'python -m qai_hub_apps_test.scripts.generate_app_scripts'."
+            )
 
         if make_zip:
             zip_path = output_dir / f"{app_info.id}.zip"

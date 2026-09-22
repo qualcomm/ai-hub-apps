@@ -18,7 +18,10 @@ Bundling is driven by `bundle_app()` in `__init__.py`. It:
      [Running Apps](../../../../CONTRIBUTING.md#running-apps)), rewrites their
      source lines, transitively copies referenced shared scripts to `scripts/`,
      and copies `versions.env` (shell bundler's job).
-   - **Finalize** — copies or zips the temp dir to the final output location.
+   - **Finalize** — checks that an app whose `info.yaml` sets `base_docker` has a
+     generated `Dockerfile` (raising `FileNotFoundError` pointing at
+     `generate_app_scripts` if not), then copies or zips the temp dir to the final
+     output location.
 
 ```
 bundle_app(app_id, output_dir)
@@ -38,6 +41,7 @@ bundle_app(app_id, output_dir)
   run.sh / run.ps1         # hand-written env-agnostic launch; also rewritten
   build.sh / build.ps1     # generated (generate_app_scripts); also rewritten
   launch.sh / launch.ps1   # generated (generate_app_scripts); also rewritten
+  Dockerfile               # generated; only if info.yaml sets base_docker
   scripts/
     versions.env           # copied from apps/_shared/scripts/versions.env
     load_versions.sh       # copied (if transitively referenced)

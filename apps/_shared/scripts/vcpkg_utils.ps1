@@ -25,15 +25,15 @@ $DEFAULT_VCPKG_ROOT = "C:\vcpkg"
 
 
 function Install-Vcpkg {
-    Invoke-WithConsent -Description "Install vcpkg (clone + bootstrap; installs Git via winget if missing)" -Action {
-        # Prefer a vcpkg already on PATH; only clone to the default location if none is found.
-        $vcpkgExe = Resolve-InstalledExe -Name "vcpkg.exe"
-        if ($vcpkgExe) {
-            $vcpkgRoot = Split-Path -Parent $vcpkgExe
-            Write-Host "::skip::vcpkg already installed at $vcpkgRoot"
-        } else {
-            $vcpkgRoot = $DEFAULT_VCPKG_ROOT
-            $vcpkgExe = "$vcpkgRoot\vcpkg.exe"
+    # Prefer a vcpkg already on PATH; only clone to the default location if none is found.
+    $vcpkgExe = Resolve-InstalledExe -Name "vcpkg.exe"
+    if ($vcpkgExe) {
+        $vcpkgRoot = Split-Path -Parent $vcpkgExe
+        Write-Host "::skip::vcpkg already installed at $vcpkgRoot"
+    } else {
+        $vcpkgRoot = $DEFAULT_VCPKG_ROOT
+        $vcpkgExe = "$vcpkgRoot\vcpkg.exe"
+        Invoke-WithConsent -Description "Install vcpkg (clone + bootstrap; installs Git via winget if missing)" -Action {
             Write-Host "::step::Installing vcpkg"
             if (-not (Test-Path $vcpkgRoot)) {
                 # vcpkg is fetched via git clone, so ensure Git is available first.
@@ -56,21 +56,28 @@ function Install-Vcpkg {
                 & "$vcpkgRoot\bootstrap-vcpkg.bat" -disableMetrics
             }
         }
-        $env:VCPKG_ROOT = $vcpkgRoot
-        & $vcpkgExe integrate install
-        Write-Host "::done::vcpkg at $vcpkgRoot"
     }
+    # Integrate and export whether or not we installed anything.
+    $env:VCPKG_ROOT = $vcpkgRoot
+    & $vcpkgExe integrate install
+    Write-Host "::done::vcpkg at $vcpkgRoot"
 }
 
 function Install-NuGet {
-    Invoke-WithConsent -Description "Install the NuGet CLI via winget" -Action {
-        Install-WingetPackage -Id "Microsoft.NuGet" -ExtraArgs @("--source", "winget")
+    $nuget = Resolve-InstalledExe -Name "nuget.exe"
+    if ($nuget) {
+        Write-Host "::skip::NuGet CLI already installed"
+    } else {
+        Invoke-WithConsent -Description "Install the NuGet CLI via winget" -Action {
+            Install-WingetPackage -Id "Microsoft.NuGet" -ExtraArgs @("--source", "winget")
+        }
         $nuget = Resolve-InstalledExe -Name "nuget.exe"
         if (-not $nuget) {
             Write-Error "nuget.exe not found after install."
             exit 1
         }
-        $env:NUGET_EXE = $nuget
-        Write-Host "::done::NuGet at $env:NUGET_EXE"
     }
+    # Export for callers whether or not we installed anything.
+    $env:NUGET_EXE = $nuget
+    Write-Host "::done::NuGet at $env:NUGET_EXE"
 }

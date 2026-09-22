@@ -74,7 +74,7 @@ pre-commit run --all-files
 pre-commit run --config .pre-commit-line-ending-check.yaml --all-files
 ```
 
-The Java/Kotlin hooks (`google-java-format`, `ktlint`) need a JVM toolchain.
+The Java/Kotlin hooks (`google-java-format`, `checkstyle`, `ktlint`) need a JVM toolchain.
 Bootstrapping with the `precommit` extra provisions it automatically into
 `.lint-tools/` (git-ignored):
 
@@ -329,7 +329,11 @@ JAVA_SDK_VERSION, GRADLE_VERSION
 ANDROID_NDK_VERSION, ANDROID_COMPILE_API, ANDROID_TARGET_API, ANDROID_MIN_API
 QAIRT_SDK_VERSION, QAIRT_SDK_FULL_VERSION
 PYTHON_VERSION, ONNX_RUNTIME_VERSION, ONNX_RUNTIME_QNN_EP_VERSION
+{ANDROID,UBUNTU,WINDOWS}_BASE_IMAGE, _BASE_IMAGE_TAG
 ```
+
+The `*_BASE_IMAGE*` pins are read by the generated per-app `Dockerfile`s — see
+[Prebuilt Docker base images](#prebuilt-docker-base-images).
 
 Android `build.gradle` reads these at build time via `common.gradle`. Shell scripts source them via `load_versions.sh`.
 
@@ -349,22 +353,37 @@ global `versions.env`. Example: `apps/whisper_windows_py/versions.override.env` 
 |--------|-----------|-------------|
 | `android_utils.sh` | `install_android_sdk [--force]` | Installs SDKMAN → Java → Gradle → Android SDK + NDK. Also exports `ANDROID_HOME`, `JAVA_HOME`, `GRADLE_HOME`. |
 | `qairt_utils.sh` | `install_qairt [--force]` | Downloads and extracts QAIRT SDK. Exports `QAIRT_ROOT`, `QAIRT_PATH`. |
-| `apt_utils.sh` | `install_apt_pkg <pkg>`, `install_apt_pkgs <pkg>...` | Idempotent apt installation |
-| `python_utils.sh` | `install_python` | Installs Python + venv + uv |
-| `pip_utils.sh` | `install_pip_deps [--venv <dir>] <req>...` | Creates `.venv` and installs via uv |
+| `apt_utils.sh` | `install_apt_pkg <pkg> [apt_args...]`, `install_apt_pkgs <pkg>...` | Idempotent apt installation — each package is skipped (`::skip::`) if `dpkg-query` already reports it installed. `install_apt_pkgs` batches the consent prompt over only the missing ones. |
+| `python_utils.sh` | `install_python` | Installs `python$PYTHON_VERSION` (via the deadsnakes PPA) + venv + dev + uv. Skips when that interpreter can already run `uv`. |
+| `pip_utils.sh` | `install_pip_deps [--venv <dir>] <req>...`, `activate_venv [<dir>]` | Creates the venv and installs via uv; `activate_venv` resolves the *same* directory, so callers pass nothing. Default `$QAIHA_APP_ROOT/.venv`, else `$PWD/.venv`; `$QAIHA_VENV_OVERRIDE` wins over both (the docker path sets it to a location outside `/app`, which the app bind mount would otherwise shadow). |
+| `sudo.sh` | sets `$SUDO` | `""` when already root or `sudo` is absent, else `"sudo"`. Source before privileged commands — it is what lets the same scripts run as root in a container and unprivileged on a host. |
+| `interactive.sh` | `require_consent [--skip-on-decline] <desc> -- <cmd>...` | y/N gate for system-mutating commands. Auto-passes when `NON_INTERACTIVE=true` or `INTERACTIVE_GRANTED=1`; on approval it exports `INTERACTIVE_GRANTED=1` for that subtree so one approval covers nested calls. Declining aborts, or with `--skip-on-decline` emits `::skip::` and returns non-zero. |
+| `retry.sh` | `with_retry [--attempts N] [--backoff S] <desc> -- <cmd>...` | Retries a flaky command (default 3 attempts, 5s base backoff), returning the final exit code so callers under `set -e` still abort. |
+| `exit_codes.sh` | sets `$QAIHA_EXIT_BUILD_REQUIRED` | Exit code (86) a launch/run script uses to tell the CLI the app is not built yet; `run` then builds and retries once. Kept in sync with `BUILD_REQUIRED_EXIT_CODE` in `qai_hub_apps.experimental.commands.run` and with `exit_codes.ps1`. |
 
 ### PowerShell utilities (`.ps1`)
 
 | Script | Functions |
 |--------|-----------|
 | `qairt_utils.ps1` | `Install-Qairt [-Force]` — exports `$env:QAIRT_ROOT`, `$env:QAIRT_PATH` |
-| `winget_utils.ps1` | `Install-WingetPackage` |
+| `winget_utils.ps1` | `Install-WingetPackage -Id <id> [-ExtraArgs <string[]>]`, `Install-WingetPackages -Ids <string[]>` |
+| `msvc_utils.ps1` | `Install-MSVC` — installs VS 2022 Build Tools with the C++ ARM64 toolchain via winget, then exports `$env:MSBUILD_EXE` |
+| `vcpkg_utils.ps1` | `Install-Vcpkg` — clones + bootstraps vcpkg, runs `vcpkg integrate install`, exports `$env:VCPKG_ROOT` (manifest-mode `vcpkg.json` deps then restore during MSBuild); `Install-NuGet` — installs the NuGet CLI via winget and exports `$env:NUGET_EXE` |
 | `python_utils.ps1` | `Install-Python` |
-| `pip_utils.ps1` | `Install-PipDeps` |
+| `pip_utils.ps1` | `Install-PipDeps [-VenvDir <path>] [-Python <exe>] [-Packages <string[]>] [-ExtraArgs <string[]>]`, `Activate-Venv [-VenvDir <path>]` |
+| `interactive.ps1` | `Invoke-WithConsent -Description <str> [-SkipOnDecline] -Action { … }` — PowerShell equivalent of `require_consent` |
+| `retry.ps1` | `Invoke-WithRetry -Description <str> [-Attempts N] [-Backoff S] -Action { … }` |
+| `exit_codes.ps1` | sets `$QAIHA_EXIT_BUILD_REQUIRED` — the `exit_codes.sh` counterpart |
 
 ### `NON_INTERACTIVE` environment variable
 
-Set `NON_INTERACTIVE=true` (done automatically in Docker/CI) to auto-accept SDK licenses without prompting. Leave unset for interactive developer use.
+Set `NON_INTERACTIVE=true` to auto-accept every `require_consent` /
+`Invoke-WithConsent` prompt *and* the Android SDK licenses, without asking. Leave unset
+for interactive developer use.
+
+It is set automatically wherever there is no TTY: the base dockerfiles (`ENV
+NON_INTERACTIVE=true`, which is also what lets them install the toolchain by sourcing
+these same utils at build time) and the QDC device scripts.
 
 ---
 
@@ -458,8 +477,10 @@ rather than silently skip it.
 - **Args:** `--no-docker` / `--docker` (docker is the default) and `--clean`. The
   PowerShell equivalents are `-NoDocker` and `-Clean`.
 - **`--clean`** tears down prior build state — host-side outputs, the Docker image,
-  and any leftover container — then rebuilds the image from scratch (`--no-cache`).
-  Without it the image is left in place so the next build reuses its cache.
+  and any leftover container — then rebuilds with `--no-cache`. Note that only
+  invalidates the app's own trivial `FROM` layer, not the base image; to force a fresh
+  base, `docker rmi` it or rebuild it with `--no-cache`. Without `--clean` the image is
+  left in place so the next build reuses its cache.
 - **Container lifetime:** the transient build container is removed on exit (bash
   `trap`, PowerShell `finally`); the *image* is kept for cache reuse. Image/container
   names are derived from a hash of the app directory so two copies of the same app in
@@ -473,14 +494,60 @@ rather than silently skip it.
   each native command (because `Stop` does not abort on a non-zero native exit code,
   only on cmdlet errors).
 
-### CI-only Docker build args (`QC_INTERNAL_HOST`)
+### Prebuilt Docker base images
 
-The Android Docker build passes `REGISTRY_PREFIX` (an internal registry mirror) and
-`INSTALL_QUALCOMM_CA` (Qualcomm CA certs) **only** when `QC_INTERNAL_HOST=1`. Those
-resources are reachable only from the Qualcomm internal network — CI runners or a
-corp-network machine. The workflow (`test-app.yaml`) sets `QC_INTERNAL_HOST: '1'`;
-off the internal network the Dockerfile defaults apply (public base image, no CA
-injection), so external contributors can build unchanged.
+An app's Docker build is `FROM` a prebuilt base image that already holds the whole
+toolchain (Android SDK/NDK, MSVC, the Ubuntu Python + GStreamer prerequisites), so a
+first-time `build`/`run` costs a pull instead of tens of minutes of installs. The
+per-app `Dockerfile` is generated and committed alongside `build.*` / `launch.*`, and
+is just `ARG BASE_IMAGE=<pinned ref>` / `FROM ${BASE_IMAGE}`. An app gets one only if
+its `info.yaml` sets `base_docker`, whose filename also selects the pin
+(`android.dockerfile` → `ANDROID_BASE_IMAGE`/`_TAG` in
+`apps/_shared/scripts/versions.env`).
+
+The bases live in `tools/docker/{android,ubuntu,windows}.dockerfile` and are published
+to GHCR by the `publish_base_images.yaml` workflow (`workflow_dispatch` only, on
+GitHub-hosted runners). They install their toolchain by sourcing the *same* shared
+scripts the app path uses (`RUN source /app/scripts/python_utils.sh && install_python`),
+so `install_runtime.sh`'s skip predicates match what was baked by construction rather
+than by a hand-maintained list.
+
+To build a base locally and bypass the pin entirely, export `QAIHA_BASE_IMAGE` — it
+takes precedence over `versions.env` in every generated `build.*` / `launch.*`:
+
+```bash
+bash tools/build_base_images.sh android          # or: ubuntu, all
+export QAIHA_BASE_IMAGE=qai-hub-apps-android-base:local
+```
+
+`tools/build_base_images.ps1` builds `android` or `windows` on a Windows host (a docker
+daemon serves linux *or* windows containers, not both, so the platform is explicit).
+Both scripts take `--push`/`-Push` plus `--registry`/`-Registry`, which is how the
+workflow publishes; note the Windows script builds and pushes in two steps because
+buildx is not available for windows containers.
+
+**To upgrade an image:** dispatch `publish_base_images.yaml`, bump the matching
+`*_BASE_IMAGE_TAG` in `apps/_shared/scripts/versions.env` to the `sha-<12-char sha>` it
+pushed, re-run `generate_app_scripts --scope test`, and commit. Bumping the Ubuntu tag
+replaces every user's container (`launch.sh` drops a container whose image id no longer
+matches), forcing a full `install_runtime.sh` re-run, so bump it sparingly.
+
+### Qualcomm-network-only setup (`QC_INTERNAL_HOST`)
+
+TLS is intercepted on the Qualcomm network, so a container cannot reach anything until
+the Qualcomm CA roots are installed. When `QC_INTERNAL_HOST=1` the generated
+`launch.sh` (Ubuntu) and `build.sh` / `build.ps1` (Android) `docker exec` the roots
+into the **container** after starting it — Android additionally imports them into the
+JVM truststore with `keytool`, because Gradle ignores the OS trust store. Off the
+internal network the block is skipped entirely, so external contributors build
+unchanged.
+
+`tools/docker/{android,ubuntu}.dockerfile` still accept a
+`REGISTRY_PREFIX` build arg to pull `ubuntu:24.04` from an internal mirror, but
+nothing in CI passes it — the base images cannot be built on the Qualcomm network at
+all (SDKMAN's own `curl` and the JVM truststore are out of reach of any `wget` flag).
+
+The workflow (`test-app.yaml`) sets `QC_INTERNAL_HOST: '1'`.
 
 ### CI keeps generated scripts in sync
 
@@ -520,7 +587,7 @@ own with `bash launch.sh` (no CLI needed).
 
 | App type | Template | Output | What it does |
 |----------|----------|--------|--------------|
-| Ubuntu Python | `ubuntu/launch_sh.j2` | `launch.sh` | Native (`install_runtime.sh` → `run.sh`) or Docker (build the runtime image, run `run.sh` inside with the device env forwarded) |
+| Ubuntu Python | `ubuntu/launch_sh.j2` | `launch.sh` | Native (`install_runtime.sh` → `run.sh`) or Docker (build the runtime image, run `run.sh` inside with the device env forwarded). The container **persists** between launches and is reused, so `install_runtime.sh` runs every launch and is expected to skip what is already installed. It is replaced only when the image id changes. |
 | Android | `android/launch_sh.j2` | `launch.sh` | `adb`: pick a connected device (auto if one, prompt if many), `adb install` the APK, launch it via `monkey` |
 | Windows (C++ / Python) | `windows/launch_ps1.j2` | `launch.ps1` | **Native only** — Windows has no runtime container; runs `install_runtime.ps1` if present (Python apps), then `run.ps1` |
 

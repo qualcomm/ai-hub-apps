@@ -13,7 +13,8 @@ from tap import Tap
 
 from qai_hub_apps_test.configs.info_yaml import AppLanguage, AppType, QAIHAAppInfo
 from qai_hub_apps_test.scripts.generate_registry import RegistryScope
-from qai_hub_apps_test.utils.paths import get_all_apps
+from qai_hub_apps_test.utils.paths import DOCKER_ROOT, get_all_apps
+from qai_hub_apps_test.utils.versions import load_versions
 
 HEADER = """
 # ---------------------------------------------------------------------
@@ -33,11 +34,14 @@ _environment = Environment(
     comment_end_string="##}",
 )
 
-_KIND_TEMPLATE = {
-    "android": ("android/build_sh.j2", "build.sh"),
-    "noop": ("noop_build_sh.j2", "build.sh"),
-    "noop_windows": ("noop_build_ps1.j2", "build.ps1"),
-    "windows_cpp": ("windows/build_ps1.j2", "build.ps1"),
+_KIND_TEMPLATES: dict[str, list[tuple[str, str]]] = {
+    "android": [
+        ("android/build_sh.j2", "build.sh"),
+        ("android/build_ps1.j2", "build.ps1"),
+    ],
+    "noop": [("noop_build_sh.j2", "build.sh")],
+    "noop_windows": [("noop_build_ps1.j2", "build.ps1")],
+    "windows_cpp": [("windows/build_ps1.j2", "build.ps1")],
 }
 
 
@@ -61,19 +65,64 @@ def _android_instrumentation_runner(app_dir: Path) -> str:
     return f"{_android_package(app_dir)}.test/{match.group(1)}"
 
 
+def _base_image_context(info: QAIHAAppInfo) -> dict[str, object]:
+    """Return the prebuilt base image and tag for an app's docker build.
+
+    Empty for apps with no ``base_docker``. Otherwise the ``base_docker`` name
+    without its extension selects the pin in ``versions.env``:
+    ``android.dockerfile`` -> ``ANDROID_BASE_IMAGE`` / ``ANDROID_BASE_IMAGE_TAG``.
+
+    Parameters
+    ----------
+    info:
+        The app's parsed ``info.yaml``.
+
+    Returns
+    -------
+    dict[str, object]
+        ``base_image`` and ``base_image_tag``, or empty.
+
+    Raises
+    ------
+    SystemExit
+        If ``base_docker`` names a missing file, or has no pin in ``versions.env``.
+    """
+    if info.base_docker is None:
+        return {}
+    if not (DOCKER_ROOT / info.base_docker).is_file():
+        raise SystemExit(
+            f"Error: base_docker '{info.base_docker}' for '{info.id}' not found at "
+            f"'{DOCKER_ROOT / info.base_docker}'."
+        )
+    image_key = f"{Path(info.base_docker).stem.upper()}_BASE_IMAGE"
+    tag_key = f"{image_key}_TAG"
+    versions = load_versions()
+    if image_key not in versions or tag_key not in versions:
+        raise SystemExit(
+            f"Error: no {image_key}/{tag_key} in versions.env for base_docker "
+            f"'{info.base_docker}' ('{info.id}')."
+        )
+    return {"base_image": versions[image_key], "base_image_tag": versions[tag_key]}
+
+
 def _launch_plan(
     info: QAIHAAppInfo, app_dir: Path
-) -> tuple[str, str, dict[str, object]]:
-    """Return ``(template, out_filename, context)`` for an app's launch script."""
+) -> list[tuple[str, str, dict[str, object]]]:
+    """Return one ``(template, out_filename, context)`` per launch script."""
     context: dict[str, object] = {"header": HEADER, "app_id": info.id}
     if info.app_type == AppType.UBUNTU:
-        return "ubuntu/launch_sh.j2", "launch.sh", context
+        # Ubuntu apps build their image at launch time, not via build.sh.
+        context.update(_base_image_context(info))
+        return [("ubuntu/launch_sh.j2", "launch.sh", context)]
     if info.app_type == AppType.ANDROID:
         context["package"] = _android_package(app_dir)
         context["runner"] = _android_instrumentation_runner(app_dir)
-        return "android/launch_sh.j2", "launch.sh", context
+        return [
+            ("android/launch_sh.j2", "launch.sh", context),
+            ("android/launch_ps1.j2", "launch.ps1", context),
+        ]
     if info.app_type == AppType.WINDOWS:
-        return "windows/launch_ps1.j2", "launch.ps1", context
+        return [("windows/launch_ps1.j2", "launch.ps1", context)]
     raise SystemExit(
         f"Error: no launch script for '{info.id}' (type={info.app_type.value})."
     )
@@ -81,8 +130,8 @@ def _launch_plan(
 
 def _build_plan(
     info: QAIHAAppInfo, app_dir: Path
-) -> tuple[str, str, dict[str, object]]:
-    """Return ``(template, out_filename, context)`` for an app's build script.
+) -> list[tuple[str, str, dict[str, object]]]:
+    """Return one ``(template, out_filename, context)`` per build script.
 
     Raises ``SystemExit`` if the app's type/language has no build script.
     """
@@ -105,6 +154,7 @@ def _build_plan(
         "header": HEADER,
         "app_id": info.id,
     }
+    context.update(_base_image_context(info))
     if kind == "windows_cpp":
         sln_files = sorted(p.name for p in app_dir.glob("*.sln"))
         if len(sln_files) != 1:
@@ -114,8 +164,32 @@ def _build_plan(
             )
         context["sln"] = sln_files[0]
 
-    template, out_filename = _KIND_TEMPLATE[kind]
-    return template, out_filename, context
+    return [
+        (template, out_filename, context)
+        for template, out_filename in _KIND_TEMPLATES[kind]
+    ]
+
+
+def _dockerfile_plan(info: QAIHAAppInfo) -> list[tuple[str, str, dict[str, object]]]:
+    """Return ``[(template, out_filename, context)]`` for an app's Dockerfile.
+
+    Empty for apps that never run ``docker build``.
+
+    Parameters
+    ----------
+    info:
+        The app's parsed ``info.yaml``.
+
+    Returns
+    -------
+    list[tuple[str, str, dict[str, object]]]
+        A single-element plan, or empty if the app has no Dockerfile.
+    """
+    base_image = _base_image_context(info)
+    if not base_image:
+        return []
+    context: dict[str, object] = {"header": HEADER, **base_image}
+    return [("dockerfile.j2", "Dockerfile", context)]
 
 
 def _write_executable(path: Path, content: str) -> None:
@@ -153,14 +227,24 @@ def generate_app_scripts(
     for info, app_dir in all_apps:
         print(f"\n{f' {info.id} ':─^60}")
         for template_name, out_filename, context in (
-            _build_plan(info, app_dir),
-            _launch_plan(info, app_dir),
+            *_build_plan(info, app_dir),
+            *_launch_plan(info, app_dir),
         ):
             print(f"Template:  {template_name}")
             for key, value in context.items():
                 print(f"  {key}: {value}")
             content = _environment.get_template(template_name).render(context)
             _write_executable(app_dir / out_filename, content)
+            print(f"Generated {app_dir / out_filename}")
+            generated += 1
+
+        # A Dockerfile is not executable, so it is written separately.
+        for template_name, out_filename, context in _dockerfile_plan(info):
+            print(f"Template:  {template_name}")
+            for key, value in context.items():
+                print(f"  {key}: {value}")
+            content = _environment.get_template(template_name).render(context)
+            (app_dir / out_filename).write_text(content, encoding="utf-8")
             print(f"Generated {app_dir / out_filename}")
             generated += 1
 

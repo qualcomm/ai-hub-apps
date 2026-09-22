@@ -33,8 +33,6 @@ on:
     secrets:
       QDC_API_TOKEN:
         required: false
-      DOCKER_QC_REGISTRY_TOKEN:
-        required: false
       HUB_USER_TOKEN_PROD:
         required: false
       QAIHA_CI_AWS_ROLE_ARN:
@@ -149,12 +147,13 @@ jobs:
       app_type: ubuntu
       model_selection: ${{ inputs.model_selection }}
       test_stage: ${{ inputs.test_stage }}
-      use_docker: true
+      # TODO: restore once the base images are public. The docker build happens on
+      # the QDC device, which cannot authenticate to the private GHCR package.
+      use_docker: false
       version: ${{ inputs.version }}
       install_source: ${{ inputs.install_source }}
     secrets:
       QDC_API_TOKEN: ${{ secrets.QDC_API_TOKEN }}
-      DOCKER_QC_REGISTRY_TOKEN: ${{ secrets.DOCKER_QC_REGISTRY_TOKEN }}
       QAIHA_CI_AWS_ROLE_ARN: ${{ secrets.QAIHA_CI_AWS_ROLE_ARN }}
 
 
@@ -178,7 +177,6 @@ jobs:
       install_source: ${{ inputs.install_source }}
     secrets:
       QDC_API_TOKEN: ${{ secrets.QDC_API_TOKEN }}
-      DOCKER_QC_REGISTRY_TOKEN: ${{ secrets.DOCKER_QC_REGISTRY_TOKEN }}
       QAIHA_CI_AWS_ROLE_ARN: ${{ secrets.QAIHA_CI_AWS_ROLE_ARN }}
 
 
@@ -202,7 +200,6 @@ jobs:
       install_source: ${{ inputs.install_source }}
     secrets:
       QDC_API_TOKEN: ${{ secrets.QDC_API_TOKEN }}
-      DOCKER_QC_REGISTRY_TOKEN: ${{ secrets.DOCKER_QC_REGISTRY_TOKEN }}
       HUB_USER_TOKEN_PROD: ${{ secrets.HUB_USER_TOKEN_PROD }}
       QAIHA_CI_AWS_ROLE_ARN: ${{ secrets.QAIHA_CI_AWS_ROLE_ARN }}
 

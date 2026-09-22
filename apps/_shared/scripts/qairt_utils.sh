@@ -27,15 +27,11 @@ QAIRT_ROOT="/opt/qcom/aistack/qairt"
 QAIRT_PATH="${QAIRT_ROOT}/${QAIRT_SDK_FULL_VERSION}"
 export QAIRT_ROOT QAIRT_PATH
 
+_qairt_installed() {
+    [ -d "$QAIRT_PATH" ] && [ -n "$(ls -A "$QAIRT_PATH" 2>/dev/null)" ]
+}
+
 _install_qairt() {
-    local force=0
-    if [ "${1:-}" = "--force" ]; then force=1; fi
-
-    if [ -d "$QAIRT_PATH" ] && [ -n "$(ls -A "$QAIRT_PATH" 2>/dev/null)" ] && [ "$force" -eq 0 ]; then
-        echo "::skip::QAIRT SDK already installed at $QAIRT_PATH"
-        return 0
-    fi
-
     with_retry "apt-get update" -- $SUDO apt-get update -q
     install_apt_pkg unzip
 
@@ -66,6 +62,10 @@ install_qairt() {
         echo "::skip::QAIRT SDK install deferred (QAIRT_INSTALL_SKIP=true)"
         return 0
     fi
+    if [ "${1:-}" != "--force" ] && _qairt_installed; then
+        echo "::skip::QAIRT SDK already installed at $QAIRT_PATH"
+        return 0
+    fi
     require_consent "Download & install QAIRT SDK ${QAIRT_SDK_FULL_VERSION} to ${QAIRT_PATH} (uses sudo)" \
-        -- _install_qairt "$@"
+        -- _install_qairt
 }

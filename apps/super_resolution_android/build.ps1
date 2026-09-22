@@ -1,0 +1,144 @@
+
+# ---------------------------------------------------------------------
+# Copyright (c) 2025 Qualcomm Technologies, Inc. and/or its subsidiaries.
+# SPDX-License-Identifier: BSD-3-Clause
+# ---------------------------------------------------------------------
+# THIS FILE WAS AUTO-GENERATED. DO NOT EDIT MANUALLY.
+
+param([switch]$NoDocker, [switch]$Clean)
+$ErrorActionPreference = "Stop"
+
+function Assert-Success {
+    param([string]$What)
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "::error::$What failed (exit $LASTEXITCODE)"
+        exit $LASTEXITCODE
+    }
+}
+
+$AppDir = $PSScriptRoot
+Set-Location $AppDir
+
+if ($NoDocker) {
+    Write-Host "::error::Android apps require Docker to build (no native build)."
+    exit 1
+}
+
+if (-not (Test-Path "$AppDir\Dockerfile")) {
+    Write-Host "::error::No Dockerfile found for super_resolution_android; it cannot be built."
+    exit 1
+}
+
+# install_build.sh and the gradle step source /app/scripts/*, which only exists in
+# a fetched/bundled app.
+if (-not (Test-Path "$AppDir\scripts")) {
+    Write-Host "::error::No scripts\ directory found for super_resolution_android. Docker builds need a bundled app; use 'qai-hub-apps fetch super_resolution_android'."
+    exit 1
+}
+
+# Derive unique image/container names from the app directory so two copies of
+# the same app in different directories never collide.
+$Sha1 = [System.Security.Cryptography.SHA1]::Create()
+$Bytes = [System.Text.Encoding]::UTF8.GetBytes($AppDir)
+$Hash = ([System.BitConverter]::ToString($Sha1.ComputeHash($Bytes)) -replace '-', '').ToLower().Substring(0, 12)
+$ImageTag = "aiha-build-$(Split-Path $AppDir -Leaf)-$Hash"
+$ContainerName = "$ImageTag-container"
+
+# The Android toolchain lives in a prebuilt base image, so this build is just a
+# pull. QAIHA_BASE_IMAGE overrides it, e.g. to point at a locally built base.
+if ($env:QAIHA_BASE_IMAGE) {
+    $BaseImage = $env:QAIHA_BASE_IMAGE
+} else {
+    $BaseImage = "ghcr.io/qcom-ai-hub/qai-hub-apps-android-base:sha-f3ce55a28d93"
+}
+$BuildArgs = @("--build-arg", "BASE_IMAGE=$BaseImage")
+
+# -Clean tears down prior build state (image, container, host-side outputs).
+# --no-cache only invalidates this app's trivial FROM layer, not the base image;
+# to force a fresh base, 'docker rmi' it or bump the tag in versions.env.
+if ($Clean) {
+    Write-Host "::step::Cleaning prior build outputs, docker image and container"
+    $BuildArgs += "--no-cache"
+    if (Test-Path ".\build\outputs") { Remove-Item -Recurse -Force ".\build\outputs" }
+    try { docker rm -f $ContainerName 2>$null | Out-Null } catch {}
+    try { docker rmi $ImageTag 2>$null | Out-Null } catch {}
+    Write-Host "::done::clean"
+}
+
+Write-Host "::step::Building Docker image from $BaseImage"
+docker build @BuildArgs -t $ImageTag .
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "::error::Failed to build the image for super_resolution_android. If '$BaseImage' could not be pulled, check network access to it, or set QAIHA_BASE_IMAGE to a base image you built locally."
+    exit 1
+}
+Write-Host "::done::Docker image"
+
+# Reuse this app directory's container, or create it.
+try { docker start $ContainerName 2>$null | Out-Null } catch {}
+if ($LASTEXITCODE -ne 0) {
+    # A create or install that died earlier can leave a container behind under
+    # this name in a state docker start rejects; replace it.
+    try { docker rm -f $ContainerName 2>$null | Out-Null } catch {}
+    Write-Host "::step::Creating container $ContainerName"
+    # --init reaps the daemons that docker exec children reparent to PID 1.
+    docker create --name $ContainerName --init -v "${AppDir}:/app" $ImageTag sleep infinity | Out-Null
+    Assert-Success "docker create"
+    docker start $ContainerName | Out-Null
+    Assert-Success "docker start"
+    Write-Host "::done::container"
+}
+
+try {
+    if ($env:QC_INTERNAL_HOST -eq "1") {
+        Write-Host "::step::Installing Qualcomm CA certificates in $ContainerName"
+        docker exec $ContainerName bash -c '
+        set -euo pipefail
+        cert_dir=/usr/local/share/ca-certificates/qualcomm.com
+        if [ ! -f "$cert_dir/nscacert.crt" ]; then
+            mkdir -p "$cert_dir"
+            wget --no-check-certificate -P "$cert_dir" \
+                https://pki.qualcomm.com/qc_root_g2_cert.crt \
+                https://pki.qualcomm.com/ssl_v2_cert.crt \
+                https://pki.qualcomm.com/ssl_v4_cert.crt
+            wget --no-check-certificate -O "$cert_dir/nscacert.crt" \
+                https://github.qualcomm.com/raw/netskope-ssl/download/main/nscacert.cer
+            update-ca-certificates
+        fi'
+        Assert-Success "Qualcomm CA certificates"
+        docker exec $ContainerName bash -c '
+        set -euo pipefail
+        source /app/scripts/android_utils.sh
+        keystore="$JAVA_HOME/lib/security/cacerts"
+        if ! keytool -list -alias qualcommroot -keystore "$keystore" -storepass changeit >/dev/null 2>&1; then
+            keytool -import -noprompt -trustcacerts -alias qualcommroot \
+                -file /usr/local/share/ca-certificates/qualcomm.com/nscacert.crt \
+                -keystore "$keystore" -storepass changeit
+        fi'
+        Assert-Success "JDK truststore import"
+        Write-Host "::done::Qualcomm CA certificates"
+    }
+
+    if (Test-Path "$AppDir\install_build.sh") {
+        Write-Host "::step::Installing build dependencies in $ContainerName"
+        docker exec -w /app $ContainerName bash install_build.sh
+        Assert-Success "install_build.sh"
+        Write-Host "::done::Installing build dependencies"
+    }
+
+    Write-Host "::step::Building APKs (gradle assembleDebug assembleAndroidTest)"
+    # 'source' rather than '.' so the bundler's PowerShell dot-source pattern
+    # does not try to rewrite these container-side paths.
+    docker exec -w /app $ContainerName bash -c '
+    set -euo pipefail
+    source /app/scripts/android_utils.sh
+    if [ -f /app/scripts/qairt_utils.sh ]; then
+        source /app/scripts/qairt_utils.sh
+    fi
+    gradle assembleDebug assembleAndroidTest'
+    Assert-Success "gradle"
+    Write-Host "::done::APKs built into $AppDir\build\outputs"
+}
+finally {
+    # Stop the container after the build so it holds no resources between builds.
+    try { docker stop $ContainerName 2>$null | Out-Null } catch {}
+}

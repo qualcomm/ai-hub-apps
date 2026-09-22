@@ -7,6 +7,7 @@ from __future__ import annotations
 import logging
 import os
 import subprocess
+import sys
 from pathlib import Path
 
 from qai_hub_apps import _is_dev
@@ -29,6 +30,10 @@ from qai_hub_apps.utils.devices import (
 
 logger = logging.getLogger(__name__)
 
+# Exit code an app's launch/run script uses to report that it has no build
+# output yet. Mirrored in apps/_shared/scripts/exit_codes.{sh,ps1}.
+BUILD_REQUIRED_EXIT_CODE = 86
+
 
 def _run_command(
     app: App,
@@ -39,7 +44,10 @@ def _run_command(
     test: bool,
 ) -> list[str]:
     """Return the command that runs the app's generated launch script."""
-    if app.app_type == AppType.WINDOWS:
+    # Windows apps only ship launch.ps1; Android apps ship both;
+    if app.app_type == AppType.WINDOWS or (
+        app.app_type == AppType.ANDROID and sys.platform == "win32"
+    ):
         script = app_dir / "launch.ps1"
         command = ["powershell", "-File", str(script)]
         no_docker_flag, clean_flag = "-NoDocker", "-Clean"
@@ -69,6 +77,12 @@ def _run_command(
         command += ["--", *app_args]
     logger.debug("Run command: %s", command)
     return command
+
+
+def _launch(command: list[str], app_dir: Path, env: dict[str, str]) -> int:
+    """Run the app's launch script, returning its exit code."""
+    logger.debug("Running %s (cwd=%s)", command, app_dir)
+    return subprocess.run(command, check=False, cwd=app_dir, env=env).returncode
 
 
 def run_run(
@@ -187,13 +201,21 @@ def run_run(
         "docker" if run_docker else "native",
         device.name,
     )
-    logger.debug("Running %s (cwd=%s)", command, app_dir)
     logger.debug("Using device environment: %s", device_vars)
-    try:
-        subprocess.run(command, cwd=app_dir, check=True, env=env)
-    except subprocess.CalledProcessError as e:
-        raise QAIHubAppsError(
-            f"Run failed for '{app.id}' (exit code {e.returncode})."
-        ) from e
-    logger.debug("Run subprocess for '%s' exited 0", app.id)
+    returncode = _launch(command, app_dir, env)
+    if returncode == BUILD_REQUIRED_EXIT_CODE and not require_build:
+        logger.info("'%s' has not been built yet; building it first...", app.id)
+        run_build(
+            None,
+            app_dir,
+            output_dir,
+            registry,
+            None,
+            use_docker=use_docker,
+            clean=clean,
+        )
+
+        returncode = _launch(command, app_dir, env)
+    if returncode != 0:
+        raise QAIHubAppsError(f"Run failed for '{app.id}' (exit code {returncode}).")
     logger.info("Run complete for '%s'.", app.id)
