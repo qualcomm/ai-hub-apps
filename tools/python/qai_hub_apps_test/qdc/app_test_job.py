@@ -400,7 +400,7 @@ class AppTestAndroidArtifactHandler(AppTestArtifactHandler):
 
         # The CLI resolves the app from info.yaml and execs launch.sh (which installs
         # the APKs from build/outputs); keep only those to keep the upload small.
-        keep = {"info.yaml", "launch.sh", "build"}
+        keep = {"info.yaml", "launch.sh", "build", "scripts"}
         for item in os.listdir(copied_app_dir):
             item_path = os.path.join(copied_app_dir, item)
             if item in keep:
