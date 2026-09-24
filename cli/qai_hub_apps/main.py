@@ -376,6 +376,14 @@ def main() -> None:
             action="store_true",
             help="Cleanup prior build artifacts before building",
         )
+        p.add_argument(
+            "-y",
+            "--yes",
+            dest="assume_yes",
+            action="store_true",
+            help="Assume yes for the app scripts' install prompts (installs "
+            "system packages and SDKs without asking)",
+        )
 
     list_parser = subparsers.add_parser(
         "list",
@@ -523,6 +531,7 @@ def main() -> None:
                 use_docker=not args.no_docker,
                 clean=args.clean,
                 overwrite=args.overwrite,
+                assume_yes=args.assume_yes,
             )
         elif args.command in ("run", "test"):
             model_asset = _resolve_model_asset(
@@ -542,6 +551,7 @@ def main() -> None:
                 overwrite=args.overwrite,
                 app_args=app_args,
                 test=args.command == "test",
+                assume_yes=args.assume_yes,
             )
         elif args.command == "switch":
             model_asset = _resolve_model_asset(

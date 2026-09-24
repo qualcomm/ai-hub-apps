@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import logging
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -20,6 +21,15 @@ from qai_hub_apps.experimental.validate import ensure_build_supported
 from qai_hub_apps.registry import App, Registry
 
 logger = logging.getLogger(__name__)
+
+# Environment variable the app scripts read to skip their consent prompts.
+# See require_consent in apps/_shared/scripts/interactive.{sh,ps1}.
+NON_INTERACTIVE_ENV_VAR = "NON_INTERACTIVE"
+
+
+def script_env(assume_yes: bool) -> dict[str, str]:
+    """Return the environment overrides for an app's generated script."""
+    return {NON_INTERACTIVE_ENV_VAR: "true"} if assume_yes else {}
 
 
 def _resolve_app_from_dir(app_dir: Path, registry: Registry) -> App:
@@ -139,14 +149,16 @@ def run_build(
     use_docker: bool = True,
     clean: bool = False,
     overwrite: bool = False,
+    assume_yes: bool = False,
 ) -> Path:
     """Resolve the build target, fetch it if needed, and run its build script."""
     logger.debug(
-        "run_build: app_id=%s, app_path=%s, use_docker=%s, clean=%s",
+        "run_build: app_id=%s, app_path=%s, use_docker=%s, clean=%s, assume_yes=%s",
         app_id,
         app_path,
         use_docker,
         clean,
+        assume_yes,
     )
     app, app_dir = _prepare_app(
         app_id, app_path, output_dir, registry, model_asset, overwrite=overwrite
@@ -157,7 +169,12 @@ def run_build(
     logger.info("Building '%s' (%s)...", app.id, "docker" if use_docker else "native")
     logger.debug("Running %s (cwd=%s)", command, app_dir)
     try:
-        subprocess.run(command, cwd=app_dir, check=True)
+        subprocess.run(
+            command,
+            cwd=app_dir,
+            check=True,
+            env={**os.environ, **script_env(assume_yes)},
+        )
     except subprocess.CalledProcessError as e:
         raise QAIHubAppsError(
             f"Build failed for '{app.id}' (exit code {e.returncode})."

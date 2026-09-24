@@ -14,7 +14,11 @@ from qai_hub_apps import _is_dev
 from qai_hub_apps.configs.app_yaml import AppType
 from qai_hub_apps.configs.model_asset import ModelAsset
 from qai_hub_apps.errors import QAIHubAppsError
-from qai_hub_apps.experimental.commands.build import _resolve_app_from_dir, run_build
+from qai_hub_apps.experimental.commands.build import (
+    _resolve_app_from_dir,
+    run_build,
+    script_env,
+)
 from qai_hub_apps.experimental.commands.configure import (
     prompt_for_device,
     run_configure,
@@ -96,6 +100,7 @@ def run_run(
     overwrite: bool = False,
     app_args: list[str] | None = None,
     test: bool = False,
+    assume_yes: bool = False,
 ) -> None:
     """Resolve the run target, validate it, build it if needed, and run it."""
     if app_id is not None and app_path is not None:
@@ -103,7 +108,7 @@ def run_run(
 
     logger.debug(
         "run_run: app_id=%s, app_path=%s, use_docker=%s, clean=%s, overwrite=%s, "
-        "app_args=%s, test=%s",
+        "app_args=%s, test=%s, assume_yes=%s",
         app_id,
         app_path,
         use_docker,
@@ -111,6 +116,7 @@ def run_run(
         overwrite,
         app_args,
         test,
+        assume_yes,
     )
 
     require_build = app_id is not None
@@ -187,6 +193,7 @@ def run_run(
             use_docker=use_docker,
             clean=clean,
             overwrite=overwrite,
+            assume_yes=assume_yes,
         )
     elif clean:
         logger.debug(
@@ -203,13 +210,14 @@ def run_run(
             use_docker=use_docker,
             clean=True,
             overwrite=overwrite,
+            assume_yes=assume_yes,
         )
     else:
         assert app_path is not None
         app_dir = app_path
 
     device_vars = device_env(device)
-    env = {**os.environ, **device_vars}
+    env = {**os.environ, **device_vars, **script_env(assume_yes)}
 
     command = _run_command(app, app_dir, run_docker, clean, app_args or [], test)
     logger.info(
@@ -230,6 +238,7 @@ def run_run(
             None,
             use_docker=use_docker,
             clean=clean,
+            assume_yes=assume_yes,
         )
 
         returncode = _launch(command, app_dir, env)
