@@ -447,6 +447,26 @@ def test_run_command_rejects_chipset(monkeypatch, sample_registry_yaml):
     assert exc.value.code == 2
 
 
+def test_switch_command_passes_app_path_and_model(
+    monkeypatch, sample_registry_yaml, tmp_path
+):
+    mock = _run_experimental_main(
+        [
+            "switch",
+            str(tmp_path),
+            "--registry",
+            str(sample_registry_yaml),
+            "--model",
+            "test_model",
+        ],
+        monkeypatch,
+        "run_switch",
+    )
+    app_path, _registry, model_asset = mock.call_args.args
+    assert app_path == tmp_path
+    assert model_asset.model_id == "test_model"
+
+
 def test_configure_show_calls_run_configure(monkeypatch):
     mock = _run_experimental_main(["configure", "--show"], monkeypatch, "run_configure")
     mock.assert_called_once_with(None, show=True)
@@ -476,6 +496,7 @@ def test_list_without_filters_passes_empty_filter(monkeypatch, sample_registry_y
 
 
 def test_list_device_filter_requires_experimental(monkeypatch, sample_registry_yaml):
+    monkeypatch.setenv("QAI_HUB_APPS_EXPERIMENTAL", "0")
     with pytest.raises(SystemExit) as exc:
         _run_main(
             ["list", "--device", "Device A", "--registry", str(sample_registry_yaml)],

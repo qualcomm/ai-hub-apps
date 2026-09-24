@@ -22,6 +22,7 @@ from qai_hub_apps.experimental import add_experimental_parser, is_enabled
 from qai_hub_apps.experimental.commands.build import run_build
 from qai_hub_apps.experimental.commands.configure import run_configure
 from qai_hub_apps.experimental.commands.run import run_run
+from qai_hub_apps.experimental.commands.switch import run_switch
 from qai_hub_apps.logging_utils import configure_logging
 from qai_hub_apps.registry import AppFilter, Registry, build_app_filter
 from qai_hub_apps.user_config import get_configured_device
@@ -272,15 +273,8 @@ def main() -> None:
             help="App ID (from 'qai-hub-apps list')",
         )
 
-    def add_fetch_args(p: argparse.ArgumentParser) -> None:
-        p.add_argument(
-            "-o",
-            "--output-dir",
-            dest="output_dir",
-            type=Path,
-            default=Path.cwd(),
-            help="Output directory (default: current directory)",
-        )
+    def add_model_args(p: argparse.ArgumentParser) -> None:
+        """Add the model-selection and download-target flags."""
         model_group = p.add_mutually_exclusive_group()
         model_group.add_argument(
             "--model",
@@ -321,6 +315,17 @@ def main() -> None:
             metavar="DEVICE",
             help="Device to target when downloading model (must be supported by the app)",
         )
+
+    def add_fetch_args(p: argparse.ArgumentParser) -> None:
+        p.add_argument(
+            "-o",
+            "--output-dir",
+            dest="output_dir",
+            type=Path,
+            default=Path.cwd(),
+            help="Output directory (default: current directory)",
+        )
+        add_model_args(p)
         p.add_argument(
             "--overwrite",
             dest="overwrite",
@@ -403,6 +408,21 @@ def main() -> None:
     )
     add_app_action_args(test_parser, "test")
 
+    switch_parser = add_experimental_parser(
+        subparsers,
+        "switch",
+        help="Switch the model bundled in a fetched app",
+        description="Replace the model bundled in an already-fetched app directory.",
+    )
+    switch_parser.add_argument(
+        "app_path",
+        type=Path,
+        metavar="APP_PATH",
+        help="Path to an already-fetched app directory",
+    )
+    add_registry_arg(switch_parser)
+    add_model_args(switch_parser)
+
     configure_parser = add_experimental_parser(
         subparsers, "configure", help="Configure the target device"
     )
@@ -425,7 +445,7 @@ def main() -> None:
 
     configure_logging(args.log_level)
 
-    if args.command in ("fetch", "build", "run", "test") and (
+    if args.command in ("fetch", "build", "run", "test", "switch") and (
         args.chipset or args.device
     ):
         cmd_parser = {
@@ -433,6 +453,7 @@ def main() -> None:
             "build": build_parser,
             "run": run_parser,
             "test": test_parser,
+            "switch": switch_parser,
         }[args.command]
         flag = "--chipset" if args.chipset else "--device"
         if args.model_path is not None:
@@ -459,6 +480,7 @@ def main() -> None:
         "build",
         "run",
         "test",
+        "switch",
         "configure",
     ):
         parser.print_help()
@@ -521,6 +543,11 @@ def main() -> None:
                 app_args=app_args,
                 test=args.command == "test",
             )
+        elif args.command == "switch":
+            model_asset = _resolve_model_asset(
+                args.model, args.model_id, args.model_path, args.chipset, args.device
+            )
+            run_switch(args.app_path, registry, model_asset)
         elif args.command == "configure":
             run_configure(args.device, show=args.show)
     except QAIHubAppsError as e:

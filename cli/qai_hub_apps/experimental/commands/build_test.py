@@ -5,8 +5,6 @@
 from __future__ import annotations
 
 import subprocess
-from collections.abc import Callable
-from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
@@ -23,21 +21,6 @@ from qai_hub_apps.experimental.commands.build import (
     run_build,
 )
 from qai_hub_apps.registry.base import App, Registry
-
-
-@pytest.fixture
-def sample_app_dir(tmp_path) -> Callable[[App], Path]:
-    """Factory: create a fetched-app dir (info.yaml + build.sh + build.ps1) for an App."""
-
-    def _make(app: App) -> Path:
-        app_dir = tmp_path / app.id
-        app_dir.mkdir(parents=True, exist_ok=True)
-        (app_dir / "info.yaml").write_text(f"id: {app.id}\n", encoding="utf-8")
-        (app_dir / "build.sh").write_text("#!/usr/bin/env bash\n", encoding="utf-8")
-        (app_dir / "build.ps1").write_text("", encoding="utf-8")
-        return app_dir
-
-    return _make
 
 
 def test_resolve_app_from_dir_reads_id(sample_app_dir, sample_registry_yaml):

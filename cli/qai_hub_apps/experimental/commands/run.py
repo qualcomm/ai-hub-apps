@@ -124,8 +124,10 @@ def run_run(
         if model_asset is not None:
             logger.warning(
                 "Running an already-fetched app; --model/--model-id are not "
-                "used. Using device '%s' as the run target.",
+                "used. Using device '%s' as the run target. To change the model, "
+                "use 'qai-hub-apps switch %s --model <model_id>'.",
                 model_asset.device or "<configured>",
+                app_path,
             )
 
     # Windows apps can be built in a Windows container, but always run natively.
@@ -163,7 +165,6 @@ def run_run(
             )
 
     ensure_run_supported(app, device, run_docker)
-
     if require_build:
         if (
             model_asset is None
@@ -185,6 +186,22 @@ def run_run(
             model_asset,
             use_docker=use_docker,
             clean=clean,
+            overwrite=overwrite,
+        )
+    elif clean:
+        logger.debug(
+            "Clean run requested; building %s with --clean",
+            app_path,
+        )
+        assert app_path is not None
+        app_dir = run_build(
+            None,
+            app_path,
+            output_dir,
+            registry,
+            None,
+            use_docker=use_docker,
+            clean=True,
             overwrite=overwrite,
         )
     else:

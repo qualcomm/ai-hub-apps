@@ -190,3 +190,12 @@ def test_run_run_from_path_builds_when_launch_reports_build_required(
     assert "has not been built yet" in caplog.text
     assert stub_run_run.run_build.call_args.args[1] == tmp_path.resolve()
     assert stub_run_run.subprocess_run.call_count == 2
+
+
+def test_run_run_from_path_with_clean_builds_first(tmp_path, stub_run_run, monkeypatch):
+    monkeypatch.setattr(
+        run_mod, "_resolve_app_from_dir", MagicMock(return_value=_make_app())
+    )
+    run_run(None, tmp_path, tmp_path, MagicMock(), None, clean=True)
+    assert stub_run_run.run_build.call_args.kwargs["clean"] is True
+    assert stub_run_run.run_build.call_args.args[1] == tmp_path.resolve()

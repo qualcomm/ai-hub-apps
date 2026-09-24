@@ -61,7 +61,9 @@ def _prepare_app(
     if app_path is not None:
         if model_asset is not None:
             logger.warning(
-                "Model options are ignored when building from a path (no fetch)."
+                "Model options are ignored when building from a path (no fetch). "
+                "To change the model, use 'qai-hub-apps switch %s --model <model_id>'.",
+                app_path,
             )
         app_dir = app_path.resolve()
         logger.debug("Building in place from path %s", app_dir)
@@ -79,7 +81,9 @@ def _prepare_app(
         if model_asset is not None:
             logger.warning(
                 "Model options are ignored when reusing an existing app "
-                "directory (no fetch)."
+                "directory (no fetch). To change the model, use "
+                "'qai-hub-apps switch %s --model <model_id>'.",
+                candidate,
             )
         return app, candidate
 

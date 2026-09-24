@@ -4,6 +4,7 @@
 # ---------------------------------------------------------------------
 from __future__ import annotations
 
+import json
 from pathlib import Path
 from unittest.mock import MagicMock
 
@@ -11,6 +12,7 @@ import pytest
 from qai_hub_models_cli.proto_helpers.release_assets import AssetNotFoundError
 
 from qai_hub_apps.configs.app_yaml import AppLanguage, AppType, AppUrl
+from qai_hub_apps.configs.manifest import MANIFEST_FILENAME, Manifest, ModelProvenance
 from qai_hub_apps.configs.model_asset import ModelAsset
 from qai_hub_apps.conftest import make_app_info
 from qai_hub_apps.errors import (
@@ -958,6 +960,123 @@ def test_fetch_unsupported_device_raises(monkeypatch, tmp_path):
         AppIncompatibleError, match="Device 'Device B' is not supported"
     ):
         app.fetch(tmp_path, model_asset=asset)
+
+
+def test_switch_model_replaces_bundled_model(monkeypatch, tmp_path):
+    monkeypatch.setattr("qai_hub_apps.registry.base.download", fake_download)
+    monkeypatch.setattr(
+        "qai_hub_apps.registry.base.get_asset_url",
+        MagicMock(return_value="https://example.com/model.zip"),
+    )
+
+    info = make_app_info(
+        related_models=["test_model"],
+        model_file_paths=[],
+        model_file_dir="models",
+    )
+    app = App(info)
+    app_dir = tmp_path / "test_app"
+    (app_dir / "models").mkdir(parents=True)
+    (app_dir / "models" / "stale.onnx").touch()
+
+    model_id = app.switch_model(app_dir, ModelAsset(model_id="test_model"))
+
+    assert model_id == "test_model"
+    assert (app_dir / "models" / "model1.onnx").exists()
+    assert (app_dir / "models" / "metadata.json").exists()
+    # Unrecorded files predate the manifest, so they are left alone.
+    assert (app_dir / "models" / "stale.onnx").exists()
+
+
+def test_switch_model_removes_previous_model_files(monkeypatch, tmp_path):
+    """Files placed by an earlier model - listed or not - do not survive a switch."""
+    monkeypatch.setattr("qai_hub_apps.registry.base._is_dev", lambda: False)
+    monkeypatch.setattr(
+        "qai_hub_apps.registry.base.get_asset_url",
+        MagicMock(return_value="https://example.com/model.zip"),
+    )
+    monkeypatch.setattr(
+        "qai_hub_apps.registry.base.download",
+        _make_fake_download(model_files=["a.onnx"], extra_files=["a.onnx.data"]),
+    )
+
+    info = make_app_info(
+        url=AppUrl(source="https://example.com/app.zip"),
+        related_models=["test_model"],
+        model_file_paths=["models/m.onnx"],
+    )
+    app = App(info)
+    app_dir = app.fetch(tmp_path / "out", model_asset=ModelAsset(model_id="test_model"))
+    assert (app_dir / "models" / "a.onnx.data").exists()
+    app_file = app_dir / "models" / "app_owned.txt"
+    app_file.touch()
+
+    monkeypatch.setattr(
+        "qai_hub_apps.registry.base.download",
+        _make_fake_download(model_files=["b.onnx"], extra_files=["b.onnx.data"]),
+    )
+    app.switch_model(app_dir, ModelAsset(model_id="test_model"))
+
+    assert (app_dir / "models" / "m.onnx").exists()
+    assert (app_dir / "models" / "b.onnx.data").exists()
+    # The previous model's unlisted sidecar is gone; app-owned files are kept.
+    assert not (app_dir / "models" / "a.onnx.data").exists()
+    assert app_file.exists()
+
+
+def test_switch_model_removes_previous_model_directory(monkeypatch, tmp_path):
+    """A recorded entry that is a directory is removed wholesale."""
+    monkeypatch.setattr("qai_hub_apps.registry.base.download", fake_download)
+    monkeypatch.setattr(
+        "qai_hub_apps.registry.base.get_asset_url",
+        MagicMock(return_value="https://example.com/model.zip"),
+    )
+
+    info = make_app_info(
+        related_models=["test_model"],
+        model_file_paths=[],
+        model_file_dir="models",
+    )
+    app = App(info)
+    app_dir = tmp_path / "test_app"
+    (app_dir / "models" / "model1.onnx").mkdir(parents=True)
+    (app_dir / "models" / "model1.onnx" / "weights.bin").touch()
+    Manifest(
+        model=ModelProvenance(model_id="test_model", files=["models/model1.onnx"])
+    ).write(app_dir)
+
+    app.switch_model(app_dir, ModelAsset(model_id="test_model"))
+
+    assert (app_dir / "models" / "model1.onnx").is_file()
+
+
+def test_switch_model_ignores_unreadable_manifest(monkeypatch, tmp_path):
+    """A corrupt manifest is rewritten rather than failing the switch."""
+    monkeypatch.setattr("qai_hub_apps.registry.base.download", fake_download)
+    monkeypatch.setattr(
+        "qai_hub_apps.registry.base.get_asset_url",
+        MagicMock(return_value="https://example.com/model.zip"),
+    )
+
+    info = make_app_info(
+        related_models=["test_model"],
+        model_file_paths=[],
+        model_file_dir="models",
+    )
+    app = App(info)
+    app_dir = tmp_path / "test_app"
+    (app_dir / "models").mkdir(parents=True)
+    (app_dir / MANIFEST_FILENAME).write_text("{not json")
+
+    app.switch_model(app_dir, ModelAsset(model_id="test_model"))
+
+    manifest = json.loads((app_dir / MANIFEST_FILENAME).read_text())
+    assert sorted(manifest["model"]["files"]) == [
+        "models/LICENSE",
+        "models/metadata.json",
+        "models/model1.onnx",
+        "models/model2.onnx",
+    ]
 
 
 def test_filter_returns_all_apps_for_empty_filter(sample_registry_yaml):

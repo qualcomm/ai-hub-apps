@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import Callable
 from pathlib import Path
 
 import pytest
@@ -15,7 +16,7 @@ from qai_hub_models_cli.proto.platform_pb2 import (
 )
 
 from qai_hub_apps.configs.app_yaml import AppInfo, AppLanguage, AppType
-from qai_hub_apps.registry.base import Registry
+from qai_hub_apps.registry.base import App, Registry
 
 
 def pytest_configure(config: pytest.Config) -> None:
@@ -80,8 +81,18 @@ def configure_test_logging():
 
 
 @pytest.fixture
-def sample_app_info() -> AppInfo:
-    return make_app_info()
+def sample_app_dir(tmp_path) -> Callable[[App], Path]:
+    """Factory: create a fetched-app dir (info.yaml + build.sh + build.ps1) for an App."""
+
+    def _make(app: App) -> Path:
+        app_dir = tmp_path / app.id
+        app_dir.mkdir(parents=True, exist_ok=True)
+        (app_dir / "info.yaml").write_text(f"id: {app.id}\n", encoding="utf-8")
+        (app_dir / "build.sh").write_text("#!/usr/bin/env bash\n", encoding="utf-8")
+        (app_dir / "build.ps1").write_text("", encoding="utf-8")
+        return app_dir
+
+    return _make
 
 
 @pytest.fixture
