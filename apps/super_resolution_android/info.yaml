@@ -22,5 +22,5 @@ languages: ['Java']
 use_case: 'Super Resolution'
 related_models: ['xlsr']
 supported_devices:
-  - name: "Snapdragon 8 Elite QRD"
+  - name: "Samsung Galaxy S25"
     status: "Tested"

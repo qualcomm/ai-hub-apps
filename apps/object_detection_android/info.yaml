@@ -30,5 +30,5 @@ related_models: [
       'yolov11_det'
 ]
 supported_devices:
-  - name: "Snapdragon 8 Elite QRD"
+  - name: "Samsung Galaxy S25"
     status: "Tested"

@@ -22,5 +22,5 @@ languages: ['Java']
 use_case: 'Semantic Segmentation'
 related_models: ['ffnet_40s', 'ffnet_54s', 'ffnet_78s', 'ffnet_78s_lowres', 'ffnet_122ns_lowres']
 supported_devices:
-  - name: "Snapdragon 8 Elite QRD"
+  - name: "Samsung Galaxy S25"
     status: "Tested"

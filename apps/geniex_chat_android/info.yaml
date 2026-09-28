@@ -29,9 +29,9 @@ precisions: []
 static_img_filename: 'app_screen.png'
 app_repo_relative_path: 'geniex_chat_android'
 supported_devices:
-  - name: "Snapdragon 8 Elite QRD"
+  - name: "Samsung Galaxy S25"
     status: "Tested"
-  - name: "Snapdragon 8 Elite Gen 5 QRD"
+  - name: "Samsung Galaxy S26"
     status: "Not Tested"
 base_docker: android.dockerfile
 # This app downloads models at runtime via the GenieX SDK rather than bundling

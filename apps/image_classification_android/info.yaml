@@ -42,5 +42,5 @@ related_models: [
       'wideresnet50',
 ]
 supported_devices:
-  - name: "Snapdragon 8 Elite QRD"
+  - name: "Samsung Galaxy S25"
     status: "Tested"
