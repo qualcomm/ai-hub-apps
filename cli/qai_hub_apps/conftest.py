@@ -17,6 +17,7 @@ from qai_hub_models_cli.proto.platform_pb2 import (
 
 from qai_hub_apps.configs.app_yaml import AppInfo, AppLanguage, AppType
 from qai_hub_apps.registry.base import App, Registry
+from qai_hub_apps.utils import scripts
 
 
 def pytest_configure(config: pytest.Config) -> None:
@@ -68,6 +69,12 @@ def reset_registry_singleton():
     Registry._instance = None
     yield
     Registry._instance = None
+
+
+@pytest.fixture(autouse=True)
+def reset_non_interactive(monkeypatch):
+    """Keep --yes from leaving prompts auto-approved for the rest of the session."""
+    monkeypatch.setattr(scripts, "NON_INTERACTIVE", False)
 
 
 @pytest.fixture(autouse=True)

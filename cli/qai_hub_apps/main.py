@@ -22,11 +22,11 @@ from qai_hub_apps.experimental import add_experimental_parser, is_enabled
 from qai_hub_apps.experimental.commands.build import run_build
 from qai_hub_apps.experimental.commands.configure import run_configure
 from qai_hub_apps.experimental.commands.run import run_run
-from qai_hub_apps.experimental.commands.switch import run_switch
 from qai_hub_apps.logging_utils import configure_logging
 from qai_hub_apps.registry import AppFilter, Registry, build_app_filter
 from qai_hub_apps.user_config import get_configured_device
 from qai_hub_apps.utils.devices import resolve_device_info
+from qai_hub_apps.utils.scripts import set_non_interactive
 from qai_hub_apps.utils.updates import check_for_update
 
 logger = logging.getLogger(__name__)
@@ -333,6 +333,14 @@ def main() -> None:
             help="Overwrite the app in place if it already exists in the output "
             "directory (default: save a separate numbered copy)",
         )
+        p.add_argument(
+            "-y",
+            "--yes",
+            dest="assume_yes",
+            action="store_true",
+            help="Assume yes for all prompts, including the app scripts' install "
+            "prompts (installs system packages and SDKs without asking)",
+        )
 
     def add_app_action_args(p: argparse.ArgumentParser, verb: str) -> None:
         """Add the shared app-target + fetch + docker/clean args to build/run."""
@@ -376,14 +384,6 @@ def main() -> None:
             action="store_true",
             help="Cleanup prior build artifacts before building",
         )
-        p.add_argument(
-            "-y",
-            "--yes",
-            dest="assume_yes",
-            action="store_true",
-            help="Assume yes for the app scripts' install prompts (installs "
-            "system packages and SDKs without asking)",
-        )
 
     list_parser = subparsers.add_parser(
         "list",
@@ -416,21 +416,6 @@ def main() -> None:
     )
     add_app_action_args(test_parser, "test")
 
-    switch_parser = add_experimental_parser(
-        subparsers,
-        "switch",
-        help="Switch the model bundled in a fetched app",
-        description="Replace the model bundled in an already-fetched app directory.",
-    )
-    switch_parser.add_argument(
-        "app_path",
-        type=Path,
-        metavar="APP_PATH",
-        help="Path to an already-fetched app directory",
-    )
-    add_registry_arg(switch_parser)
-    add_model_args(switch_parser)
-
     configure_parser = add_experimental_parser(
         subparsers, "configure", help="Configure the target device"
     )
@@ -453,7 +438,10 @@ def main() -> None:
 
     configure_logging(args.log_level)
 
-    if args.command in ("fetch", "build", "run", "test", "switch") and (
+    if getattr(args, "assume_yes", False):
+        set_non_interactive()
+
+    if args.command in ("fetch", "build", "run", "test") and (
         args.chipset or args.device
     ):
         cmd_parser = {
@@ -461,7 +449,6 @@ def main() -> None:
             "build": build_parser,
             "run": run_parser,
             "test": test_parser,
-            "switch": switch_parser,
         }[args.command]
         flag = "--chipset" if args.chipset else "--device"
         if args.model_path is not None:
@@ -488,7 +475,6 @@ def main() -> None:
         "build",
         "run",
         "test",
-        "switch",
         "configure",
     ):
         parser.print_help()
@@ -531,7 +517,6 @@ def main() -> None:
                 use_docker=not args.no_docker,
                 clean=args.clean,
                 overwrite=args.overwrite,
-                assume_yes=args.assume_yes,
             )
         elif args.command in ("run", "test"):
             model_asset = _resolve_model_asset(
@@ -551,13 +536,7 @@ def main() -> None:
                 overwrite=args.overwrite,
                 app_args=app_args,
                 test=args.command == "test",
-                assume_yes=args.assume_yes,
             )
-        elif args.command == "switch":
-            model_asset = _resolve_model_asset(
-                args.model, args.model_id, args.model_path, args.chipset, args.device
-            )
-            run_switch(args.app_path, registry, model_asset)
         elif args.command == "configure":
             run_configure(args.device, show=args.show)
     except QAIHubAppsError as e:

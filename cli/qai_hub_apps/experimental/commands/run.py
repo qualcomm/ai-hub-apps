@@ -8,17 +8,14 @@ import logging
 import os
 import subprocess
 import sys
+from dataclasses import replace
 from pathlib import Path
 
 from qai_hub_apps import _is_dev
 from qai_hub_apps.configs.app_yaml import AppType
 from qai_hub_apps.configs.model_asset import ModelAsset
 from qai_hub_apps.errors import QAIHubAppsError
-from qai_hub_apps.experimental.commands.build import (
-    _resolve_app_from_dir,
-    run_build,
-    script_env,
-)
+from qai_hub_apps.experimental.commands.build import _resolve_app_from_dir, run_build
 from qai_hub_apps.experimental.commands.configure import (
     prompt_for_device,
     run_configure,
@@ -31,6 +28,7 @@ from qai_hub_apps.utils.devices import (
     list_android_devices,
     resolve_device_info,
 )
+from qai_hub_apps.utils.scripts import script_env
 
 logger = logging.getLogger(__name__)
 
@@ -100,7 +98,6 @@ def run_run(
     overwrite: bool = False,
     app_args: list[str] | None = None,
     test: bool = False,
-    assume_yes: bool = False,
 ) -> None:
     """Resolve the run target, validate it, build it if needed, and run it."""
     if app_id is not None and app_path is not None:
@@ -108,7 +105,7 @@ def run_run(
 
     logger.debug(
         "run_run: app_id=%s, app_path=%s, use_docker=%s, clean=%s, overwrite=%s, "
-        "app_args=%s, test=%s, assume_yes=%s",
+        "app_args=%s, test=%s",
         app_id,
         app_path,
         use_docker,
@@ -116,7 +113,6 @@ def run_run(
         overwrite,
         app_args,
         test,
-        assume_yes,
     )
 
     require_build = app_id is not None
@@ -127,14 +123,6 @@ def run_run(
         assert app_path is not None
         app_path = app_path.resolve()
         app = _resolve_app_from_dir(app_path, registry)
-        if model_asset is not None:
-            logger.warning(
-                "Running an already-fetched app; --model/--model-id are not "
-                "used. Using device '%s' as the run target. To change the model, "
-                "use 'qai-hub-apps switch %s --model <model_id>'.",
-                model_asset.device or "<configured>",
-                app_path,
-            )
 
     # Windows apps can be built in a Windows container, but always run natively.
     run_docker = use_docker
@@ -171,53 +159,50 @@ def run_run(
             )
 
     ensure_run_supported(app, device, run_docker)
-    if require_build:
-        if (
-            model_asset is None
-            and app.related_models
-            and not app.disable_cli_model_fetch
-        ):
-            default_model = app.related_models[0]
-            logger.info(
-                "No model specified; using '%s' for device '%s'.",
-                default_model,
-                device.name,
-            )
-            model_asset = ModelAsset(model_id=default_model, device=device.name)
+    if (
+        require_build
+        and model_asset is None
+        and app.related_models
+        and not app.disable_cli_model_fetch
+    ):
+        default_model = app.related_models[0]
+        logger.info(
+            "No model specified; using '%s' for device '%s'.",
+            default_model,
+            device.name,
+        )
+        model_asset = ModelAsset(model_id=default_model, device=device.name)
+
+    if (
+        model_asset is not None
+        and model_asset.device is None
+        and model_asset.chipset is None
+    ):
+        model_asset = replace(model_asset, device=device.name)
+
+    need_model_switch = (
+        model_asset is not None
+        and app_path is not None
+        and not app.bundles(app_path, model_asset)
+    )
+
+    if require_build or clean or need_model_switch:
         app_dir = run_build(
             app_id,
-            None,
+            app_path,
             output_dir,
             registry,
             model_asset,
             use_docker=use_docker,
             clean=clean,
             overwrite=overwrite,
-            assume_yes=assume_yes,
-        )
-    elif clean:
-        logger.debug(
-            "Clean run requested; building %s with --clean",
-            app_path,
-        )
-        assert app_path is not None
-        app_dir = run_build(
-            None,
-            app_path,
-            output_dir,
-            registry,
-            None,
-            use_docker=use_docker,
-            clean=True,
-            overwrite=overwrite,
-            assume_yes=assume_yes,
         )
     else:
         assert app_path is not None
         app_dir = app_path
 
     device_vars = device_env(device)
-    env = {**os.environ, **device_vars, **script_env(assume_yes)}
+    env = {**os.environ, **device_vars, **script_env()}
 
     command = _run_command(app, app_dir, run_docker, clean, app_args or [], test)
     logger.info(
@@ -238,7 +223,6 @@ def run_run(
             None,
             use_docker=use_docker,
             clean=clean,
-            assume_yes=assume_yes,
         )
 
         returncode = _launch(command, app_dir, env)

@@ -49,18 +49,23 @@ def test_prepare_app_path_builds_in_place(
 ):
     registry = Registry.load(sample_registry_yaml)
     app_dir = sample_app_dir(registry.find_by_id("test_app"))
-    app, resolved = _prepare_app(None, app_dir, tmp_path, registry, None)
+    app, resolved, did_fetch = _prepare_app(None, app_dir, tmp_path, registry, None)
     assert resolved == app_dir.resolve()
     assert app.id == "test_app"
+    assert did_fetch is False
 
 
-def test_prepare_app_path_warns_on_model(
-    tmp_path, sample_app_dir, sample_registry_yaml, caplog
+def test_prepare_app_path_switches_model(
+    tmp_path, sample_app_dir, sample_registry_yaml, monkeypatch
 ):
     registry = Registry.load(sample_registry_yaml)
     app_dir = sample_app_dir(registry.find_by_id("test_app"))
-    _prepare_app(None, app_dir, tmp_path, registry, ModelAsset(model_id="m"))
-    assert "ignored when building from a path" in caplog.text
+    switch_model = MagicMock(return_value=True)
+    monkeypatch.setattr(App, "switch_model", switch_model)
+    model_asset = ModelAsset(model_id="m")
+    _, _, did_fetch = _prepare_app(None, app_dir, tmp_path, registry, model_asset)
+    switch_model.assert_called_once_with(app_dir.resolve(), model_asset)
+    assert did_fetch is True
 
 
 def test_prepare_app_id_reuses_existing_dir(
@@ -70,19 +75,27 @@ def test_prepare_app_id_reuses_existing_dir(
     app_dir = sample_app_dir(registry.find_by_id("test_app"))
     run_fetch = MagicMock()
     monkeypatch.setattr(build_mod, "run_fetch", run_fetch)
-    _, resolved = _prepare_app("test_app", None, tmp_path, registry, None)
+    _, resolved, did_fetch = _prepare_app("test_app", None, tmp_path, registry, None)
     run_fetch.assert_not_called()
     assert resolved == app_dir
+    assert did_fetch is False
 
 
-def test_prepare_app_id_reuse_warns_on_model(
-    tmp_path, sample_app_dir, sample_registry_yaml, caplog, monkeypatch
+def test_prepare_app_id_reuse_switches_model(
+    tmp_path, sample_app_dir, sample_registry_yaml, monkeypatch
 ):
     registry = Registry.load(sample_registry_yaml)
-    sample_app_dir(registry.find_by_id("test_app"))
+    app_dir = sample_app_dir(registry.find_by_id("test_app"))
     monkeypatch.setattr(build_mod, "run_fetch", MagicMock())
-    _prepare_app("test_app", None, tmp_path, registry, ModelAsset(model_id="m"))
-    assert "reusing an existing app" in caplog.text
+    switch_model = MagicMock(return_value=True)
+    monkeypatch.setattr(App, "switch_model", switch_model)
+    model_asset = ModelAsset(model_id="m")
+    _, resolved, did_fetch = _prepare_app(
+        "test_app", None, tmp_path, registry, model_asset
+    )
+    switch_model.assert_called_once_with(app_dir, model_asset)
+    assert resolved == app_dir
+    assert did_fetch is True
 
 
 def test_prepare_app_id_fetches_when_absent(
@@ -91,7 +104,7 @@ def test_prepare_app_id_fetches_when_absent(
     fetched = tmp_path / "test_app"
     run_fetch = MagicMock(return_value=fetched)
     monkeypatch.setattr(build_mod, "run_fetch", run_fetch)
-    _, app_dir = _prepare_app(
+    _, app_dir, did_fetch = _prepare_app(
         "test_app",
         None,
         tmp_path,
@@ -100,6 +113,7 @@ def test_prepare_app_id_fetches_when_absent(
     )
     run_fetch.assert_called_once()
     assert app_dir == fetched
+    assert did_fetch is True
 
 
 def test_prepare_app_fetch_without_model_raises(
@@ -117,7 +131,7 @@ def test_prepare_app_disable_model_fetch_no_model_ok(tmp_path, monkeypatch):
     registry.find_by_id.return_value = App(make_app_info(disable_cli_model_fetch=True))
     fetched = tmp_path / "test_app"
     monkeypatch.setattr(build_mod, "run_fetch", MagicMock(return_value=fetched))
-    _, app_dir = _prepare_app("test_app", None, tmp_path, registry, None)
+    _, app_dir, _ = _prepare_app("test_app", None, tmp_path, registry, None)
     assert app_dir == fetched
 
 
@@ -178,16 +192,32 @@ def test_run_build_happy_path(tmp_path, sample_registry_yaml, monkeypatch):
     app = Registry.load(sample_registry_yaml).find_by_id("test_app")
     command = ["bash", str(tmp_path / "build.sh"), "--no-docker"]
     monkeypatch.setattr(
-        build_mod, "_prepare_app", MagicMock(return_value=(app, tmp_path))
+        build_mod, "_prepare_app", MagicMock(return_value=(app, tmp_path, False))
     )
     monkeypatch.setattr(build_mod, "ensure_build_supported", MagicMock())
-    monkeypatch.setattr(build_mod, "_build_command", MagicMock(return_value=command))
+    build_command = MagicMock(return_value=command)
+    monkeypatch.setattr(build_mod, "_build_command", build_command)
     run = MagicMock()
     monkeypatch.setattr(build_mod.subprocess, "run", run)
     run_build("test_app", None, tmp_path, MagicMock(), None, use_docker=False)
     run.assert_called_once()
     assert run.call_args.args[0] == command
     assert run.call_args.kwargs["cwd"] == tmp_path
+    assert build_command.call_args.args[3] is False
+
+
+def test_run_build_fetch_forces_clean(tmp_path, sample_registry_yaml, monkeypatch):
+    """A fresh fetch or a model switch invalidates any earlier build output."""
+    app = Registry.load(sample_registry_yaml).find_by_id("test_app")
+    monkeypatch.setattr(
+        build_mod, "_prepare_app", MagicMock(return_value=(app, tmp_path, True))
+    )
+    monkeypatch.setattr(build_mod, "ensure_build_supported", MagicMock())
+    build_command = MagicMock(return_value=["bash", "build.sh"])
+    monkeypatch.setattr(build_mod, "_build_command", build_command)
+    monkeypatch.setattr(build_mod.subprocess, "run", MagicMock())
+    run_build("test_app", None, tmp_path, MagicMock(), None, clean=False)
+    assert build_command.call_args.args[3] is True
 
 
 def test_run_build_subprocess_failure_raises(
@@ -195,7 +225,7 @@ def test_run_build_subprocess_failure_raises(
 ):
     app = Registry.load(sample_registry_yaml).find_by_id("test_app")
     monkeypatch.setattr(
-        build_mod, "_prepare_app", MagicMock(return_value=(app, tmp_path))
+        build_mod, "_prepare_app", MagicMock(return_value=(app, tmp_path, False))
     )
     monkeypatch.setattr(build_mod, "ensure_build_supported", MagicMock())
     monkeypatch.setattr(

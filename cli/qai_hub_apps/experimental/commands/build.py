@@ -19,17 +19,9 @@ from qai_hub_apps.configs.model_asset import ModelAsset
 from qai_hub_apps.errors import InvalidArgumentError, QAIHubAppsError
 from qai_hub_apps.experimental.validate import ensure_build_supported
 from qai_hub_apps.registry import App, Registry
+from qai_hub_apps.utils.scripts import script_env
 
 logger = logging.getLogger(__name__)
-
-# Environment variable the app scripts read to skip their consent prompts.
-# See require_consent in apps/_shared/scripts/interactive.{sh,ps1}.
-NON_INTERACTIVE_ENV_VAR = "NON_INTERACTIVE"
-
-
-def script_env(assume_yes: bool) -> dict[str, str]:
-    """Return the environment overrides for an app's generated script."""
-    return {NON_INTERACTIVE_ENV_VAR: "true"} if assume_yes else {}
 
 
 def _resolve_app_from_dir(app_dir: Path, registry: Registry) -> App:
@@ -58,8 +50,8 @@ def _prepare_app(
     registry: Registry,
     model_asset: ModelAsset | None,
     overwrite: bool = False,
-) -> tuple[App, Path]:
-    """Return the ``(App, app_dir)`` to build, fetching it if needed."""
+) -> tuple[App, Path, bool]:
+    """Return the ``(App, app_dir, did_fetch)`` to build, fetching it if needed."""
     assert app_id is None or app_path is None
     logger.debug(
         "prepare_app: app_id=%s, app_path=%s, output_dir=%s, overwrite=%s",
@@ -69,15 +61,13 @@ def _prepare_app(
         overwrite,
     )
     if app_path is not None:
-        if model_asset is not None:
-            logger.warning(
-                "Model options are ignored when building from a path (no fetch). "
-                "To change the model, use 'qai-hub-apps switch %s --model <model_id>'.",
-                app_path,
-            )
         app_dir = app_path.resolve()
         logger.debug("Building in place from path %s", app_dir)
-        return _resolve_app_from_dir(app_dir, registry), app_dir
+        app = _resolve_app_from_dir(app_dir, registry)
+        did_fetch = False
+        if model_asset is not None:
+            did_fetch = app.switch_model(app_dir, model_asset)
+        return app, app_dir, did_fetch
 
     assert app_id is not None
     app = registry.find_by_id(app_id)
@@ -88,14 +78,10 @@ def _prepare_app(
             "Found app at %s, reusing as-is (use --overwrite to re-fetch).",
             candidate.as_posix(),
         )
+        did_fetch = False
         if model_asset is not None:
-            logger.warning(
-                "Model options are ignored when reusing an existing app "
-                "directory (no fetch). To change the model, use "
-                "'qai-hub-apps switch %s --model <model_id>'.",
-                candidate,
-            )
-        return app, candidate
+            did_fetch = app.switch_model(candidate, model_asset)
+        return app, candidate, did_fetch
 
     if model_asset is None and not app.disable_cli_model_fetch:
         raise InvalidArgumentError(
@@ -106,7 +92,7 @@ def _prepare_app(
         )
     logger.debug("Fetching '%s' into %s (overwrite=%s)", app.id, output_dir, overwrite)
     app_dir = run_fetch(app.id, output_dir, registry, model_asset, overwrite=overwrite)
-    return app, app_dir
+    return app, app_dir, True
 
 
 def _build_command(app: App, app_dir: Path, use_docker: bool, clean: bool) -> list[str]:
@@ -149,23 +135,21 @@ def run_build(
     use_docker: bool = True,
     clean: bool = False,
     overwrite: bool = False,
-    assume_yes: bool = False,
 ) -> Path:
     """Resolve the build target, fetch it if needed, and run its build script."""
     logger.debug(
-        "run_build: app_id=%s, app_path=%s, use_docker=%s, clean=%s, assume_yes=%s",
+        "run_build: app_id=%s, app_path=%s, use_docker=%s, clean=%s",
         app_id,
         app_path,
         use_docker,
         clean,
-        assume_yes,
     )
-    app, app_dir = _prepare_app(
+    app, app_dir, did_fetch = _prepare_app(
         app_id, app_path, output_dir, registry, model_asset, overwrite=overwrite
     )
     ensure_build_supported(app, use_docker)
 
-    command = _build_command(app, app_dir, use_docker, clean)
+    command = _build_command(app, app_dir, use_docker, clean or did_fetch)
     logger.info("Building '%s' (%s)...", app.id, "docker" if use_docker else "native")
     logger.debug("Running %s (cwd=%s)", command, app_dir)
     try:
@@ -173,7 +157,7 @@ def run_build(
             command,
             cwd=app_dir,
             check=True,
-            env={**os.environ, **script_env(assume_yes)},
+            env={**os.environ, **script_env()},
         )
     except subprocess.CalledProcessError as e:
         raise QAIHubAppsError(

@@ -13,6 +13,7 @@ from qai_hub_models_cli.proto_helpers.platform import (
     get_platform,
     resolve_chipset,
     resolve_device,
+    resolve_runtime,
 )
 from qai_hub_models_cli.proto_helpers.platform_enums import os_proto_to_str
 
@@ -41,6 +42,28 @@ def device_to_chipset(device: str) -> str:  # pragma: no cover
     return resolve_chipset(
         chipsets=platform.chipsets, devices=platform.devices, device=device
     ).name
+
+
+def is_aot_runtime(runtime: str) -> bool:  # pragma: no cover
+    """Whether *runtime* compiles its assets ahead of time, per chipset.
+
+    Parameters
+    ----------
+    runtime
+        A runtime name (e.g. ``"tflite"``).
+
+    Returns
+    -------
+    bool
+        True when assets for *runtime* are chipset-specific, so the requested
+        chipset/device is part of what identifies one.
+
+    Raises
+    ------
+    KeyError
+        If *runtime* is not a known AI Hub runtime.
+    """
+    return resolve_runtime(get_platform().runtimes, runtime).is_aot_compiled
 
 
 def list_supported_devices() -> list[DeviceInfo]:  # pragma: no cover

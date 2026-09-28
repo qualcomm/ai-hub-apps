@@ -99,15 +99,28 @@ def test_run_run_rejects_id_and_path(tmp_path):
         run_run("test_app", tmp_path, tmp_path, MagicMock(), None)
 
 
-def test_run_run_from_path_warns_about_model(
-    tmp_path, stub_run_run, monkeypatch, caplog
+def test_run_run_from_path_builds_to_switch_model(tmp_path, stub_run_run, monkeypatch):
+    """A model the app does not already bundle has to go through the build path."""
+    monkeypatch.setattr(
+        run_mod, "_resolve_app_from_dir", MagicMock(return_value=_make_app())
+    )
+    monkeypatch.setattr(run_mod, "resolve_device_info", MagicMock(return_value=DEVICE))
+    monkeypatch.setattr(App, "bundles", MagicMock(return_value=False))
+    run_run(None, tmp_path, tmp_path, MagicMock(), ModelAsset(model_id="m"))
+    assert stub_run_run.run_build.call_args.args[4] == ModelAsset(
+        model_id="m", device=DEVICE.name
+    )
+
+
+def test_run_run_from_path_skips_build_when_model_bundled(
+    tmp_path, stub_run_run, monkeypatch
 ):
     monkeypatch.setattr(
         run_mod, "_resolve_app_from_dir", MagicMock(return_value=_make_app())
     )
     monkeypatch.setattr(run_mod, "resolve_device_info", MagicMock(return_value=DEVICE))
+    monkeypatch.setattr(App, "bundles", MagicMock(return_value=True))
     run_run(None, tmp_path, tmp_path, MagicMock(), ModelAsset(model_id="m"))
-    assert "--model/--model-id are not" in caplog.text
     stub_run_run.run_build.assert_not_called()
     assert stub_run_run.subprocess_run.call_args.kwargs["cwd"] == tmp_path.resolve()
 

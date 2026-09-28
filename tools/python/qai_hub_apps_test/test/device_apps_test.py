@@ -229,8 +229,8 @@ def test_1_fetch_app(
         fetch_cmd += [
             "--model",
             model_id,
-            "--chipset",
-            device.chipset,
+            "--device",
+            device.reference_device_name,
         ]
     _run_fetch(fetch_cmd)
     fetched_dirs[(app_info.id, model_id)] = out_parent / app_info.id

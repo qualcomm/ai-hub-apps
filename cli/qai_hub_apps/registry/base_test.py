@@ -962,7 +962,99 @@ def test_fetch_unsupported_device_raises(monkeypatch, tmp_path):
         app.fetch(tmp_path, model_asset=asset)
 
 
-def test_switch_model_replaces_bundled_model(monkeypatch, tmp_path):
+@pytest.fixture
+def confirm_switch(monkeypatch) -> MagicMock:
+    """Approve switch_model's replace prompt."""
+    confirm = MagicMock(return_value=True)
+    monkeypatch.setattr("qai_hub_apps.registry.base.confirm", confirm)
+    return confirm
+
+
+def test_bundles_matches_recorded_request(monkeypatch, tmp_path):
+    monkeypatch.setattr("qai_hub_apps.registry.base.download", fake_download)
+    monkeypatch.setattr(
+        "qai_hub_apps.registry.base.get_asset_url",
+        MagicMock(return_value="https://example.com/model.zip"),
+    )
+    info = make_app_info(
+        url=AppUrl(source="https://example.com/app.zip"),
+        related_models=["test_model"],
+        model_file_paths=[],
+        model_file_dir="models",
+    )
+    asset = ModelAsset(model_id="test_model")
+    app = App(info)
+    app_dir = app.fetch(tmp_path / "out", model_asset=asset)
+
+    assert app.bundles(app_dir, asset) is True
+    assert app.bundles(app_dir, ModelAsset(model_id="other")) is False
+    # onnx is not AOT-compiled, so the target does not select the asset.
+    assert app.bundles(app_dir, ModelAsset(model_id="test_model", device="X")) is True
+    # Nothing recorded at all does not count as bundling the requested model.
+    assert app.bundles(tmp_path / "missing", asset) is False
+
+
+def test_bundles_compares_resolved_chipset_for_aot_runtime(monkeypatch, tmp_path):
+    """An AOT runtime's assets are chipset-specific, however the target was named."""
+    monkeypatch.setattr(
+        "qai_hub_apps.configs.model_asset.device_to_chipset", lambda d: f"chip-of-{d}"
+    )
+    app = App(make_app_info(runtime="precompiled_qnn_onnx"))
+    app_dir = tmp_path / "test_app"
+    app_dir.mkdir()
+    Manifest(
+        model=ModelProvenance(
+            model_id="test_model",
+            requested=ModelAsset(model_id="test_model", chipset="chip-of-Device A"),
+        )
+    ).write(app_dir)
+
+    same = ModelAsset(model_id="test_model", device="Device A")
+    assert app.bundles(app_dir, same) is True
+    other = ModelAsset(model_id="test_model", device="Device B")
+    assert app.bundles(app_dir, other) is False
+    # Neither side names a target, so there is nothing to disagree about.
+    Manifest(
+        model=ModelProvenance(
+            model_id="test_model", requested=ModelAsset(model_id="test_model")
+        )
+    ).write(app_dir)
+    assert app.bundles(app_dir, ModelAsset(model_id="test_model")) is True
+
+
+def test_switch_model_noop_when_app_absent(tmp_path):
+    app = App(make_app_info(related_models=["test_model"]))
+    assert app.switch_model(tmp_path / "missing", ModelAsset(model_id="m")) is False
+
+
+def test_switch_model_noop_when_already_bundled(monkeypatch, tmp_path):
+    app = App(make_app_info(related_models=["test_model"]))
+    app_dir = tmp_path / "test_app"
+    app_dir.mkdir()
+    monkeypatch.setattr(App, "bundles", MagicMock(return_value=True))
+    assert app.switch_model(app_dir, ModelAsset(model_id="test_model")) is False
+
+
+def test_switch_model_declined_raises(monkeypatch, tmp_path):
+    monkeypatch.setattr(
+        "qai_hub_apps.registry.base.confirm", MagicMock(return_value=False)
+    )
+    info = make_app_info(
+        related_models=["test_model"],
+        model_file_paths=[],
+        model_file_dir="models",
+    )
+    app_dir = tmp_path / "test_app"
+    app_dir.mkdir()
+    Manifest(
+        model=ModelProvenance(model_id="old_model", files=["models/old.onnx"])
+    ).write(app_dir)
+
+    with pytest.raises(InvalidArgumentError, match=r"declined.*\(old_model\)"):
+        App(info).switch_model(app_dir, ModelAsset(model_id="test_model"))
+
+
+def test_switch_model_replaces_bundled_model(monkeypatch, tmp_path, confirm_switch):
     monkeypatch.setattr("qai_hub_apps.registry.base.download", fake_download)
     monkeypatch.setattr(
         "qai_hub_apps.registry.base.get_asset_url",
@@ -979,16 +1071,18 @@ def test_switch_model_replaces_bundled_model(monkeypatch, tmp_path):
     (app_dir / "models").mkdir(parents=True)
     (app_dir / "models" / "stale.onnx").touch()
 
-    model_id = app.switch_model(app_dir, ModelAsset(model_id="test_model"))
+    assert app.switch_model(app_dir, ModelAsset(model_id="test_model")) is True
 
-    assert model_id == "test_model"
+    confirm_switch.assert_called_once()
     assert (app_dir / "models" / "model1.onnx").exists()
     assert (app_dir / "models" / "metadata.json").exists()
     # Unrecorded files predate the manifest, so they are left alone.
     assert (app_dir / "models" / "stale.onnx").exists()
 
 
-def test_switch_model_removes_previous_model_files(monkeypatch, tmp_path):
+def test_switch_model_removes_previous_model_files(
+    monkeypatch, tmp_path, confirm_switch
+):
     """Files placed by an earlier model - listed or not - do not survive a switch."""
     monkeypatch.setattr("qai_hub_apps.registry.base._is_dev", lambda: False)
     monkeypatch.setattr(
@@ -1002,7 +1096,7 @@ def test_switch_model_removes_previous_model_files(monkeypatch, tmp_path):
 
     info = make_app_info(
         url=AppUrl(source="https://example.com/app.zip"),
-        related_models=["test_model"],
+        related_models=["test_model", "other_model"],
         model_file_paths=["models/m.onnx"],
     )
     app = App(info)
@@ -1013,9 +1107,12 @@ def test_switch_model_removes_previous_model_files(monkeypatch, tmp_path):
 
     monkeypatch.setattr(
         "qai_hub_apps.registry.base.download",
-        _make_fake_download(model_files=["b.onnx"], extra_files=["b.onnx.data"]),
+        _make_fake_download(
+            model_files=["b.onnx"], extra_files=["b.onnx.data"], model_id="other_model"
+        ),
     )
-    app.switch_model(app_dir, ModelAsset(model_id="test_model"))
+    # A different model, so the switch is not a no-op.
+    app.switch_model(app_dir, ModelAsset(model_id="other_model"))
 
     assert (app_dir / "models" / "m.onnx").exists()
     assert (app_dir / "models" / "b.onnx.data").exists()
@@ -1024,7 +1121,9 @@ def test_switch_model_removes_previous_model_files(monkeypatch, tmp_path):
     assert app_file.exists()
 
 
-def test_switch_model_removes_previous_model_directory(monkeypatch, tmp_path):
+def test_switch_model_removes_previous_model_directory(
+    monkeypatch, tmp_path, confirm_switch
+):
     """A recorded entry that is a directory is removed wholesale."""
     monkeypatch.setattr("qai_hub_apps.registry.base.download", fake_download)
     monkeypatch.setattr(
@@ -1050,7 +1149,9 @@ def test_switch_model_removes_previous_model_directory(monkeypatch, tmp_path):
     assert (app_dir / "models" / "model1.onnx").is_file()
 
 
-def test_switch_model_ignores_unreadable_manifest(monkeypatch, tmp_path):
+def test_switch_model_ignores_unreadable_manifest(
+    monkeypatch, tmp_path, confirm_switch
+):
     """A corrupt manifest is rewritten rather than failing the switch."""
     monkeypatch.setattr("qai_hub_apps.registry.base.download", fake_download)
     monkeypatch.setattr(

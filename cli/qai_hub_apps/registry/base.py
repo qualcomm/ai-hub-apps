@@ -46,8 +46,9 @@ from qai_hub_apps.errors import (
     QAIHubAppsError,
 )
 from qai_hub_apps.logging_utils import is_quiet
-from qai_hub_apps.utils.devices import device_to_chipset
+from qai_hub_apps.utils.devices import device_to_chipset, is_aot_runtime
 from qai_hub_apps.utils.github import make_issue_url
+from qai_hub_apps.utils.scripts import confirm
 from qai_hub_apps.validate import is_app_supported
 
 if TYPE_CHECKING:
@@ -335,7 +336,7 @@ class App:
         return metadata
 
     def _place_model_in_app(
-        self, model_dir: Path, app_dir: Path, metadata: dict
+        self, model_dir: Path, app_dir: Path, metadata: dict, model_asset: ModelAsset
     ) -> None:
         """Move a model asset's files into the app's source tree.
 
@@ -425,8 +426,37 @@ class App:
                 shutil.move(str(item), models_dest / item.name)
 
         manifest = Manifest.load(app_dir)
-        manifest.model = ModelProvenance(model_id=str(model_id), files=placed)
+        manifest.model = ModelProvenance(
+            model_id=str(model_id), requested=model_asset, files=placed
+        )
         manifest.write(app_dir)
+
+    @staticmethod
+    def bundled_model(app_dir: Path) -> ModelProvenance | None:
+        """Return the model recorded in *app_dir*, or None if none is recorded."""
+        return Manifest.load(app_dir).model
+
+    def bundles(self, app_dir: Path, model_asset: ModelAsset) -> bool:
+        """Whether the model recorded in *app_dir* was fetched for *model_asset*.
+
+        False when nothing is recorded, so an app with no model counts as not
+        bundling the requested one. The requested chipset/device only counts for
+        an ahead-of-time compiled runtime, whose assets are chipset-specific;
+        for any other runtime it does not select the asset, so a request that
+        names a different target still bundles the same model.
+        """
+        bundled = self.bundled_model(app_dir)
+        if bundled is None or bundled.requested is None:
+            return False
+        requested = bundled.requested
+        if (requested.model_id, requested.path) != (
+            model_asset.model_id,
+            model_asset.path,
+        ):
+            return False
+        if not is_aot_runtime(self.runtime[0]):
+            return True
+        return requested.resolved_chipset() == model_asset.resolved_chipset()
 
     @staticmethod
     def _remove_recorded_model_files(app_dir: Path) -> None:
@@ -501,32 +531,49 @@ class App:
             )
         return model_tmp, metadata
 
-    def switch_model(self, app_dir: Path, model_asset: ModelAsset) -> str:
-        """Replace the model bundled in an already-fetched app directory.
+    def switch_model(self, app_dir: Path, model_asset: ModelAsset) -> bool:
+        """Replace the model bundled in an already-fetched app, on confirmation.
 
-        The new model is staged and validated before anything is deleted, so a
-        failed download leaves *app_dir* untouched.
+        Returns True when the model was replaced, and False when there is
+        nothing to switch. Declining raises.
         """
         logger.debug(
-            "switch_model('%s'): app_dir=%s, model_asset=%s",
+            "switch_model('%s'): app_dir=%s, model_asset=%r",
             self.id,
             app_dir,
             model_asset,
         )
+        if not app_dir.is_dir():
+            logger.debug("No app fetched at %s; nothing to switch", app_dir)
+            return False
+        if self.bundles(app_dir, model_asset):
+            logger.debug("'%s' already bundles %r", self.id, model_asset)
+            return False
+
         self._validate_model_asset(
             model_asset,
             no_model_hint="There is no bundled model to switch.",
         )
+        bundled = self.bundled_model(app_dir)
+        existing = f"model '{bundled.model_id}'" if bundled is not None else "no model"
+        if not confirm(
+            f"'{app_dir.as_posix()}' already exists with {existing}. "
+            f"Bundle {model_asset} into it?"
+        ):
+            named = f" ({bundled.model_id})" if bundled is not None else ""
+            raise InvalidArgumentError(
+                f"Model replace declined. Re-run without the model option to use "
+                f"the bundled model{named}."
+            )
 
         with tempfile.TemporaryDirectory() as _tmp:
             tmp = Path(_tmp)
             logger.debug("Using temporary staging directory %s", tmp)
             model_tmp, metadata = self._stage_and_validate_model(model_asset, tmp)
-            self._place_model_in_app(model_tmp, app_dir, metadata)
+            self._place_model_in_app(model_tmp, app_dir, metadata, model_asset)
 
-        model_id = str(metadata["model_id"])
-        logger.debug("switch_model('%s') complete: now '%s'", self.id, model_id)
-        return model_id
+        logger.info("Switched '%s' to model '%s'.", self.id, metadata["model_id"])
+        return True
 
     def fetch(
         self,
@@ -539,7 +586,7 @@ class App:
         If the destination already exists, ``overwrite`` removes it and fetches
         in place; otherwise the app is saved to a non-colliding ``-N`` sibling.
         """
-        logger.debug("fetch('%s'): dest=%s, model_asset=%s", self.id, dest, model_asset)
+        logger.debug("fetch('%s'): dest=%s, model_asset=%r", self.id, dest, model_asset)
         app_dest = dest / self.id
 
         if app_dest.exists():
@@ -576,7 +623,7 @@ class App:
             if is_model_required:
                 assert model_asset is not None
                 model_tmp, metadata = self._stage_and_validate_model(model_asset, tmp)
-                self._place_model_in_app(model_tmp, staged, metadata)
+                self._place_model_in_app(model_tmp, staged, metadata, model_asset)
 
             self._write_manifest(staged)
 

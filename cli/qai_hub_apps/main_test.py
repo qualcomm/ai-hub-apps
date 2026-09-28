@@ -447,24 +447,11 @@ def test_run_command_rejects_chipset(monkeypatch, sample_registry_yaml):
     assert exc.value.code == 2
 
 
-def test_switch_command_passes_app_path_and_model(
-    monkeypatch, sample_registry_yaml, tmp_path
-):
-    mock = _run_experimental_main(
-        [
-            "switch",
-            str(tmp_path),
-            "--registry",
-            str(sample_registry_yaml),
-            "--model",
-            "test_model",
-        ],
-        monkeypatch,
-        "run_switch",
-    )
-    app_path, _registry, model_asset = mock.call_args.args
-    assert app_path == tmp_path
-    assert model_asset.model_id == "test_model"
+def test_yes_flag_sets_non_interactive(monkeypatch, sample_registry_yaml):
+    mock = MagicMock()
+    monkeypatch.setattr("qai_hub_apps.main.set_non_interactive", mock)
+    _run_run_main(["run", "test_app", "--yes"], monkeypatch, sample_registry_yaml)
+    mock.assert_called_once_with()
 
 
 def test_configure_show_calls_run_configure(monkeypatch):
