@@ -45,6 +45,22 @@ _KIND_TEMPLATES: dict[str, list[tuple[str, str]]] = {
 }
 
 
+# Files whose content decides whether install_runtime must re-run; launch.sh and
+# launch.ps1 hash them into the runtime marker. Relative to the bundled app dir.
+_RUNTIME_STAMP_FILES = (
+    "install_runtime.{ext}",
+    "requirements*.txt",
+    "versions.override.env",
+    "scripts/versions.env",
+)
+
+
+def _runtime_stamp_files(ext: str) -> list[str]:
+    """Return the runtime stamp files for a ``sh`` or ``ps1`` launch script."""
+    files = [f.format(ext=ext) for f in _RUNTIME_STAMP_FILES]
+    return [f.replace("/", "\\") for f in files] if ext == "ps1" else files
+
+
 def _android_package(app_dir: Path) -> str:
     """Return the Android applicationId from the app's build.gradle."""
     gradle = app_dir / "build.gradle"
@@ -113,6 +129,7 @@ def _launch_plan(
     if info.app_type == AppType.UBUNTU:
         # Ubuntu apps build their image at launch time, not via build.sh.
         context.update(_base_image_context(info))
+        context["runtime_stamp_files"] = _runtime_stamp_files("sh")
         return [("ubuntu/launch_sh.j2", "launch.sh", context)]
     if info.app_type == AppType.ANDROID:
         context["package"] = _android_package(app_dir)
@@ -122,6 +139,7 @@ def _launch_plan(
             ("android/launch_ps1.j2", "launch.ps1", context),
         ]
     if info.app_type == AppType.WINDOWS:
+        context["runtime_stamp_files"] = _runtime_stamp_files("ps1")
         return [("windows/launch_ps1.j2", "launch.ps1", context)]
     raise SystemExit(
         f"Error: no launch script for '{info.id}' (type={info.app_type.value})."

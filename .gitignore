@@ -49,3 +49,6 @@ apps/chatapp_android/src/main/cpp/json.hpp
 
 # Automatically generated when the package is built
 cli/qai_hub_apps/_version.py
+
+# Marker launch.sh/launch.ps1 write once install_runtime succeeds
+.qaiha_runtime_installed

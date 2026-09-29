@@ -31,11 +31,48 @@ done
 SCRIPT="run.sh"
 [ "$RUN_TEST" -eq 1 ] && SCRIPT="test.sh"
 
+# install_runtime.sh is skipped once it has succeeded for this exact app content;
+# the marker holds a hash of everything the install depends on.
+runtime_stamp() {
+    local files=()
+    local f
+    for f in install_runtime.sh requirements*.txt versions.override.env scripts/versions.env; do
+        if [ -f "$f" ]; then
+            files+=("$f")
+        fi
+    done
+    sha1sum -- "${files[@]}" | sha1sum | cut -d' ' -f1
+}
+
+# Explain why the runtime is (re)installed: no marker yet, or a stale one.
+log_runtime_marker_miss() {
+    local marker="$1" installed="$2" stamp="$3"
+    if [ -z "$installed" ]; then
+        echo "No runtime marker at $marker; installing runtime"
+    else
+        echo "Runtime marker at $marker is stale (recorded $installed, current $stamp); reinstalling runtime"
+    fi
+}
+
 if [ "$USE_DOCKER" -eq 0 ]; then
     if [ -f install_runtime.sh ]; then
-        echo "::step::Installing runtime"
-        bash install_runtime.sh
-        echo "::done::Installing runtime"
+        RUNTIME_MARKER="$APP_DIR/.qaiha_runtime_installed"
+        if [ "$CLEAN" -eq 1 ] && [ -f "$RUNTIME_MARKER" ]; then
+            echo "--clean: removing runtime marker at $RUNTIME_MARKER"
+            rm -f "$RUNTIME_MARKER"
+        fi
+        stamp="$(runtime_stamp)"
+        installed="$(cat "$RUNTIME_MARKER" 2>/dev/null || true)"
+        if [ "$installed" = "$stamp" ]; then
+            echo "::skip::Runtime already installed (marker at $RUNTIME_MARKER matches $stamp)"
+        else
+            log_runtime_marker_miss "$RUNTIME_MARKER" "$installed" "$stamp"
+            echo "::step::Installing runtime"
+            bash install_runtime.sh
+            printf '%s\n' "$stamp" > "$RUNTIME_MARKER"
+            echo "Wrote runtime marker $stamp to $RUNTIME_MARKER"
+            echo "::done::Installing runtime"
+        fi
     fi
     echo "::step::Running lidar_segmentation_ubuntu_py natively"
     exec bash "$SCRIPT" "${APP_ARGS[@]}"
@@ -56,6 +93,7 @@ CONTAINER_NAME="$IMAGE_TAG-container"
 # The venv must live outside /app, or the bind mount would hide it -- and a
 # container-built venv in the app dir would collide with the native one.
 CONTAINER_VENV_DIR="/opt/qaiha/venv"
+CONTAINER_RUNTIME_MARKER="/opt/qaiha/runtime-installed"
 
 if [ "$CLEAN" -eq 1 ]; then
     echo "::step::Cleaning prior docker container and image"
@@ -70,7 +108,10 @@ if [ -f "/usr/lib/aarch64-linux-gnu/libcdsprpc.so" ]; then
 elif [ -f "/usr/lib/libcdsprpc.so" ]; then
     LIBCDSPRPC_SRC="/usr/lib/libcdsprpc.so"
 else
-    echo "::error::libcdsprpc.so not found in /usr/lib/aarch64-linux-gnu/ or /usr/lib/" >&2
+    echo "::error::libcdsprpc.so not found in /usr/lib/aarch64-linux-gnu/ or /usr/lib/. Install the Qualcomm host packages, then reboot:" >&2
+    echo "    sudo apt-add-repository -y ppa:ubuntu-qcom-iot/qcom-ppa" >&2
+    echo "    sudo apt-get update" >&2
+    echo "    sudo apt-get install -y qcom-adreno1 qcom-fastrpc1 libqnn1" >&2
     exit 1
 fi
 
@@ -157,13 +198,21 @@ if [ "${QC_INTERNAL_HOST:-}" = "1" ]; then
     echo "::done::Qualcomm CA certificates"
 fi
 
-# Runs on every launch and is expected to skip whatever is already installed.
-# The container persists between launches, so what it installed is still there.
 if [ -f install_runtime.sh ]; then
-    echo "::step::Installing runtime in $CONTAINER_NAME"
-    $SUDO docker exec "${exec_env_args[@]}" -w /app \
-        "$CONTAINER_NAME" bash install_runtime.sh
-    echo "::done::Installing runtime"
+    stamp="$(runtime_stamp)"
+    installed="$($SUDO docker exec "$CONTAINER_NAME" cat "$CONTAINER_RUNTIME_MARKER" 2>/dev/null || true)"
+    if [ "$installed" = "$stamp" ]; then
+        echo "::skip::Runtime already installed in $CONTAINER_NAME (marker at $CONTAINER_RUNTIME_MARKER matches $stamp)"
+    else
+        log_runtime_marker_miss "$CONTAINER_NAME:$CONTAINER_RUNTIME_MARKER" "$installed" "$stamp"
+        echo "::step::Installing runtime in $CONTAINER_NAME"
+        $SUDO docker exec "${exec_env_args[@]}" -w /app \
+            "$CONTAINER_NAME" bash install_runtime.sh
+        $SUDO docker exec "$CONTAINER_NAME" bash -c \
+            'mkdir -p "$(dirname "$1")" && printf "%s\n" "$2" > "$1"' _ "$CONTAINER_RUNTIME_MARKER" "$stamp"
+        echo "Wrote runtime marker $stamp to $CONTAINER_NAME:$CONTAINER_RUNTIME_MARKER"
+        echo "::done::Installing runtime"
+    fi
 fi
 
 # -i so the app can read stdin, -t so Ctrl-C reaches it inside the container
