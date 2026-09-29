@@ -181,7 +181,8 @@ def run_run(
         model_asset = replace(model_asset, device=device.name)
 
     need_model_switch = (
-        model_asset is not None
+        not app.disable_cli_model_fetch
+        and model_asset is not None
         and app_path is not None
         and not app.bundles(app_path, model_asset)
     )
