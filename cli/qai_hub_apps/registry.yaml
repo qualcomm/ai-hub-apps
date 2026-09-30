@@ -136,6 +136,28 @@ apps:
   - Snapdragon X Elite CRD
   model_file_paths:
   - assets/models/classification.onnx
+- name: LiDAR Semantic Segmentation
+  id: lidar_segmentation_ubuntu_py
+  status: published
+  headline: On-device LiDAR point cloud semantic segmentation with TFLite
+  description: A sample app for Ubuntu demonstrating semantic segmentation of LiDAR point clouds via TFLite Runtime. It projects a scan into a range image, classifies every point on-device, and renders a color-coded bird's-eye view and range image to a minimal web interface or an image file, suitable for embedded applications.
+  domain: Computer Vision
+  use_case: Semantic Segmentation
+  app_repo_url: https://github.com/qualcomm/ai-hub-apps/tree/main/apps/lidar_segmentation_ubuntu_py
+  app_type: ubuntu
+  runtime:
+  - tflite
+  related_models:
+  - salsanext
+  precisions:
+  - float
+  languages:
+  - Python
+  supported_devices:
+  - Arduino VENTUNO Q
+  - Dragonwing IQ-9075 EVK
+  model_file_paths:
+  - models/salsanext.tflite
 - name: MediaPipe Hand Gesture Recognition
   id: mediapipe_hand_gesture_ubuntu_py
   status: published
