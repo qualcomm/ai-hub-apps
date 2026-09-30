@@ -739,6 +739,11 @@ pytest -m device_test --model-selection first --test-stage all \
 # Test a specific app
 pytest -m device_test --model-selection first --test-stage fetch \
   -k image_classification_android
+
+# Save the uploaded test.zip bundle locally
+pytest -m device_test --model-selection first --test-stage all \
+  --qdc-token $QDC_API_TOKEN --save-bundle-dir /tmp/qdc_bundles \
+  -k image_classification_android
 ```
 
 ---

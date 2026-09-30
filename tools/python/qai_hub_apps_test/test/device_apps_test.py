@@ -272,6 +272,7 @@ def test_3_on_device_app(
     cli_version: str | None,
     cli_bundle: tuple[str, str] | None,
     device_override: str | None,
+    save_bundle_dir: str | None,
 ) -> None:
     """Submit app to QDC for on-device execution."""
     app_info, model_id = app_to_test
@@ -319,5 +320,6 @@ def test_3_on_device_app(
         cli_wheel=cli_wheel,
         registry_path=registry_path,
         job_name=f"{app_info.id}-{model_id}",
+        save_bundle_dir=save_bundle_dir,
     )
     assert success, f"QDC job failed for {app_info.id} with model {model_id}"

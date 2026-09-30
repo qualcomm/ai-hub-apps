@@ -555,7 +555,8 @@ class AppTestQDCJobs(QDCJobs):
             upload_response = self.upload_file(zip_path, ArtifactType.TESTSCRIPT)
             if save_bundle_dir is not None:
                 os.makedirs(save_bundle_dir, exist_ok=True)
-                shutil.copy(zip_path, save_bundle_dir)
+                saved_path = shutil.copy(zip_path, save_bundle_dir)
+                print(f"Bundle saved to: {saved_path}")
             if os.path.exists(zip_path):
                 os.unlink(zip_path)
 

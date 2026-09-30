@@ -67,6 +67,12 @@ def pytest_addoption(parser: pytest.Parser) -> None:
         help="Prebuilt CLI wheel to install on the device; if omitted, one is built "
         "(source) or downloaded (s3/prod) per --cli-source",
     )
+    parser.addoption(
+        "--save-bundle-dir",
+        default=None,
+        help="Copy the uploaded test.zip bundle to this directory; if omitted, "
+        "no bundle is saved",
+    )
 
 
 @pytest.fixture(scope="session")
@@ -102,6 +108,11 @@ def cli_version(request: pytest.FixtureRequest) -> str | None:
 @pytest.fixture(scope="session")
 def cli_source(request: pytest.FixtureRequest) -> str:
     return request.config.getoption("--cli-source")
+
+
+@pytest.fixture(scope="session")
+def save_bundle_dir(request: pytest.FixtureRequest) -> str | None:
+    return request.config.getoption("--save-bundle-dir")
 
 
 @pytest.fixture(scope="session")
