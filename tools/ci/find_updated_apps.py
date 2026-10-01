@@ -7,7 +7,7 @@
 
 Reads a diff file containing one repo-relative file path per line (i.e. the
 output of `git diff --name-only`) and determines which registered apps need
-to be rebuilt. Two detection strategies are combined:
+to be rebuilt. Markdown files are ignored. Two detection strategies are combined:
 
 1. Direct changes — a file under apps/<app_id>/ maps directly to that app.
 2. Bundled changes — a file under apps/_shared/ or tools/docker/
@@ -111,6 +111,9 @@ def main() -> None:
     bundled_changes: list[str] = []
 
     for path in diff_files:
+        # Docs (e.g. the generated README.md) do not change what an app builds or runs.
+        if Path(path).suffix == ".md":
+            continue
         parts = Path(path).parts
         # Check if the file is a Dockerfile under DOCKER_ROOT
         if parts[: len(docker_prefix)] == docker_prefix:
