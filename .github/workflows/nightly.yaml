@@ -14,7 +14,8 @@ on:
         type: boolean
         default: false
   schedule:
-    - cron: '0 9 * * *' # 1am PDT
+    - cron: '0 9 * * 1-5' # 1am PDT, weekdays
+    - cron: '0 9 * * 6,0' # 1am PDT, weekends
 
 env:
   WHEEL_INDEX_HOST: qaihub-public-python-wheels.s3-website-us-west-2.amazonaws.com
@@ -43,7 +44,9 @@ jobs:
     uses: ./.github/workflows/test_aiha_apps.yaml
     with:
       model_selection: first
-      test_stage: all
+      # TODO(https://github.com/qcom-ai-hub/tetracode/issues/21705): temporarily
+      # skip the on-device stage on weekends.
+      test_stage: ${{ github.event.schedule == '0 9 * * 6,0' && 'build' || 'all' }}
       version: ${{ needs.publish_nightly.result == 'success' && needs.publish_nightly.outputs.version || '' }}
       install_source: ${{ needs.publish_nightly.result == 'success' && 's3' || 'source' }}
 
