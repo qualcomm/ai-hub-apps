@@ -72,8 +72,9 @@ def get_gstreamer_input_pipeline(
         ``"filesrc location=video.mp4 ! decodebin"``. The trailing ``!`` is
         appended by this function.
     video_source_size
-        The (width, height) of the incoming video frames expected from
-        ``video_source``. Used to set the caps on both the NV12 and RGB segments.
+        The exact (width, height) for ``qtiqmmfsrc`` sources. For other sources,
+        including ``v4l2src`` and files, this is an upper bound and frames may be
+        letterboxed to preserve their aspect ratio.
 
     Returns
     -------
@@ -99,8 +100,9 @@ def get_gstreamer_input_pipeline(
 
     return (
         f"{video_source} ! "
-        "videoconvert ! videoscale ! "
-        f"video/x-raw,width={video_source_width},height={video_source_height},format=RGB ! "
+        "videoconvert ! videoscale add-borders=true ! "
+        f"video/x-raw,width=(int)[1,{video_source_width}],"
+        f"height=(int)[1,{video_source_height}],pixel-aspect-ratio=1/1,format=RGB ! "
         "queue max-size-buffers=1 leaky=downstream ! "
         "appsink name=appsink drop=true sync=false max-buffers=1 emit-signals=true"
     )
