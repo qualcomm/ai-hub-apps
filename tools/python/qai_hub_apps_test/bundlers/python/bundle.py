@@ -89,7 +89,7 @@ def bundle_source(
             line = line.strip()
             if line and not line.startswith("#"):
                 utils_requires.append(line)
-    for utils_file in utils_files:
+    for utils_file in sorted(utils_files):
         utils_requires.extend(read_module_requirements(utils_file))
 
     # Merge requirements

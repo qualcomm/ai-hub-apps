@@ -55,7 +55,6 @@ jobs:
     name: "Detect Changed Apps"
     runs-on: [tetra-ubuntu-2204, self-hosted]
     env:
-      VENV_PATH: qaiha-dev
       PYTHON_VERSION: '3.10'
     outputs:
       has_app_changes: ${{ steps.detect.outputs.has_app_changes }}
@@ -69,32 +68,18 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
-      - name: Set up environment (with CLI)
-        run: |
-          bash tools/setup_env.sh \
-            --python="${{ steps.setup_python.outputs.python-path }}" \
-            --venv="${{ env.VENV_PATH }}" \
-            --with-cli
-
-      - name: Generate test registry (test scope)
-        run: |
-          source ${{ env.VENV_PATH }}/bin/activate
-          python -m qai_hub_apps_test.scripts.generate_registry \
-            --output_dir cli/qai_hub_apps/ --scope test
-
       - id: detect
         name: Find updated registered app IDs
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
         run: |
-          source ${{ env.VENV_PATH }}/bin/activate
           if ! git rev-parse --verify --quiet "${BASE_SHA}^{commit}" > /dev/null; then
             # No usable base (manual run or first push to a new branch): default to main.
             echo "::notice::No base commit to diff against (BASE_SHA='${BASE_SHA}'); defaulting to origin/main."
             BASE_SHA="origin/main"
           fi
-          git diff --name-only "$BASE_SHA"...HEAD > changed.txt
-          python tools/ci/find_updated_apps.py --diff-file changed.txt >> $GITHUB_OUTPUT
+          BASE_REF="$(git merge-base "$BASE_SHA" HEAD)"
+          python tools/ci/find_updated_apps.py --base-ref "$BASE_REF" >> $GITHUB_OUTPUT
 
   build_changed_apps:
     name: "Build Changed Apps"
