@@ -12,6 +12,7 @@ import cv2
 import numpy as np
 import utils.constants as C
 from ai_edge_litert.interpreter import Delegate, Interpreter
+from qai_hub_apps_utils.config import AppInfo
 from qai_hub_apps_utils.platform import get_current_device
 from qai_hub_apps_utils.quantization import dequantize, quantize
 from qai_hub_apps_utils.webui import WebUI
@@ -200,12 +201,15 @@ def main(args: argparse.Namespace) -> None:
 
     legend = build_legend(C.BEV_SIZE_PX, C.RANGE_VIEW_WIDTH_PX - C.BEV_SIZE_PX)
 
+    info = AppInfo.load()
+
     if args.output is None:
         print(
             "--------------------------- Web server ----------------------------",
             flush=True,
         )
         ui = WebUI()
+        ui.set_title(info.name)
         ui.start_thread()
 
     timings = {"preprocess": 0.0, "inference": 0.0, "postprocess": 0.0}
@@ -228,7 +232,37 @@ def main(args: argparse.Namespace) -> None:
         print(f"Wrote {args.output}", flush=True)
         return
 
-    ui.set_frame(view[..., ::-1])
+    ui.set_image(view[..., ::-1])
+    ui.set_sections(
+        [
+            {
+                "title": "Model",
+                "rows": [
+                    ("Model", info.name),
+                    ("Use case", info.use_case),
+                    ("Precision", ", ".join(info.precisions)),
+                    ("Backend", f"{info.runtime.upper()} (NPU)"),
+                    ("Weights", metadata.model_filename),
+                ],
+            },
+            {
+                "title": "Scan",
+                "rows": [
+                    ("Source", args.lidar_source.name),
+                    ("Projection", f"{metadata.input_width}x{metadata.input_height}"),
+                    *(
+                        [
+                            ("Inference", f"{timings['inference'] * 1e3:.1f} ms"),
+                            ("Preprocess", f"{timings['preprocess'] * 1e3:.1f} ms"),
+                            ("Postprocess", f"{timings['postprocess'] * 1e3:.1f} ms"),
+                        ]
+                        if args.profile
+                        else []
+                    ),
+                ],
+            },
+        ]
+    )
     print("Serving the segmented scan on port 8080.", flush=True)
     with contextlib.suppress(EOFError, KeyboardInterrupt):
         input("Press Enter to exit. ")

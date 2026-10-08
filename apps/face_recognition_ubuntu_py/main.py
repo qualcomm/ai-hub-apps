@@ -14,6 +14,7 @@ import cv2
 import numpy as np
 import utils.constants as C
 from ai_edge_litert.interpreter import Delegate, Interpreter
+from qai_hub_apps_utils.config import AppInfo
 from qai_hub_apps_utils.draw import draw_box_from_xyxy
 from qai_hub_apps_utils.fps import FpsCounter
 from qai_hub_apps_utils.input_devices import get_default_video_device
@@ -35,7 +36,7 @@ MODEL_PATH = "models/cavaface.tflite"
 def build_interpreter(
     qairt_path: Path | None,
     hexagon_version: str | None,
-) -> Interpreter:
+) -> tuple[Interpreter, str]:
     """Create a TFLite interpreter, preferring the QNN NPU delegate.
 
     If ``qairt_path`` is given and the QNN TFLite delegate loads successfully,
@@ -54,8 +55,9 @@ def build_interpreter(
 
     Returns
     -------
-    Interpreter
-        An allocated TFLite interpreter ready for inference.
+    tuple[Interpreter, str]
+        An allocated TFLite interpreter ready for inference, and the backend it
+        runs on ("NPU" or "CPU").
     """
     if qairt_path is not None:
         delegate_path = (
@@ -85,7 +87,7 @@ def build_interpreter(
                 interpreter = Interpreter(MODEL_PATH, experimental_delegates=[delegate])
                 interpreter.allocate_tensors()
                 print("Backend: QNN NPU delegate (Hexagon)", flush=True)
-                return interpreter
+                return interpreter, "NPU"
             except Exception as exc:
                 print(
                     f"NPU delegate failed to initialize ({exc}); using CPU",
@@ -102,7 +104,7 @@ def build_interpreter(
     interpreter = Interpreter(MODEL_PATH)
     interpreter.allocate_tensors()
     print("Backend: CPU", flush=True)
-    return interpreter
+    return interpreter, "CPU"
 
 
 def _set_input(
@@ -291,8 +293,12 @@ def run_live(
     embed_fn: Any,
     cascade: cv2.CascadeClassifier,
     gallery: dict[str, np.ndarray],
+    backend: str,
 ) -> None:
-    """Recognize faces on a live camera stream, serving annotated frames over HTTP."""
+    """Recognize faces on a live camera stream, serving annotated frames over HTTP.
+
+    `backend` is where the model runs ("NPU" or "CPU"), shown in the Info panel.
+    """
     # GStreamer (gi) is imported lazily so --image / --list-devices work without
     # PyGObject or the system GStreamer stack installed.
     import gi
@@ -363,13 +369,25 @@ def run_live(
         "--------------------------- Web server ----------------------------",
         flush=True,
     )
+    info = AppInfo.load()
+    model_section = {
+        "title": "Model",
+        "rows": [
+            ("Model", info.name),
+            ("Use case", info.use_case),
+            ("Precision", ", ".join(info.precisions)),
+            ("Backend", f"{info.runtime.upper()} ({backend})"),
+            ("Gallery", f"{len(gallery)} identities"),
+        ],
+    }
     try:
         ui = WebUI()
+        ui.set_title(info.name)
         ui.start_thread()
         while True:
             rgb_frame = outq.get(timeout=5)
 
-            recognize_faces(
+            results = recognize_faces(
                 rgb_frame,
                 embed_fn,
                 cascade,
@@ -381,6 +399,41 @@ def run_live(
             fps_counter.tick()
 
             ui.set_frame(rgb_frame[..., ::-1])
+            ui.set_sections(
+                [
+                    model_section,
+                    {
+                        "title": "Recognition",
+                        "rows": [
+                            ("FPS", f"{fps_counter.fps():.1f}"),
+                            ("Faces", str(len(results))),
+                            (
+                                "Identified",
+                                str(
+                                    sum(
+                                        1
+                                        for name, _ in results
+                                        if name != C.UNKNOWN_LABEL
+                                    )
+                                ),
+                            ),
+                            *(
+                                [
+                                    (
+                                        "Matches",
+                                        [
+                                            (name, f"{score:.2f}")
+                                            for name, score in results
+                                        ],
+                                    )
+                                ]
+                                if results
+                                else []
+                            ),
+                        ],
+                    },
+                ]
+            )
 
     except queue.Empty:
         print("Timed out waiting for input! Exiting...")
@@ -400,7 +453,7 @@ def main(args: argparse.Namespace) -> None:
             "Pass it with --hexagon-version <e.g. v73>."
         )
 
-    interpreter = build_interpreter(args.qairt_path, args.hexagon_version)
+    interpreter, backend = build_interpreter(args.qairt_path, args.hexagon_version)
     input_details = interpreter.get_input_details()
     output_details = interpreter.get_output_details()
 
@@ -413,7 +466,7 @@ def main(args: argparse.Namespace) -> None:
     if args.image:
         run_image(args, embed_fn, cascade, gallery)
     else:
-        run_live(args, embed_fn, cascade, gallery)
+        run_live(args, embed_fn, cascade, gallery, backend)
 
 
 if __name__ == "__main__":

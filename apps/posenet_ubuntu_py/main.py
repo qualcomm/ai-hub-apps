@@ -14,6 +14,7 @@ import gi
 import numpy as np
 import utils.constants as C
 from ai_edge_litert.interpreter import Delegate, Interpreter
+from qai_hub_apps_utils.config import AppInfo
 from qai_hub_apps_utils.fps import FpsCounter
 from qai_hub_apps_utils.image_processing import resize_pad
 from qai_hub_apps_utils.input_devices import get_default_video_device
@@ -244,8 +245,19 @@ def main(args: argparse.Namespace) -> None:
         "--------------------------- Web server ----------------------------",
         flush=True,
     )
+    info = AppInfo.load()
+    model_section = {
+        "title": "Model",
+        "rows": [
+            ("Model", info.name),
+            ("Use case", info.use_case),
+            ("Precision", ", ".join(info.precisions)),
+            ("Backend", f"{info.runtime.upper()} (NPU)"),
+        ],
+    }
     try:
         ui = WebUI()
+        ui.set_title(info.name)
         ui.start_thread()
         while True:
             rgb_frame = outq.get(timeout=5)
@@ -266,7 +278,22 @@ def main(args: argparse.Namespace) -> None:
 
             fps_counter.tick()
 
+            poses = int((pose_scores >= C.MIN_POSE_SCORE).sum())
+            keypoints = int((keypoint_scores >= C.MIN_PART_SCORE).sum())
             ui.set_frame(rgb_frame[..., ::-1])
+            ui.set_sections(
+                [
+                    model_section,
+                    {
+                        "title": "Detections",
+                        "rows": [
+                            ("FPS", f"{fps_counter.fps():.1f}"),
+                            ("Poses", str(poses)),
+                            ("Keypoints", str(keypoints)),
+                        ],
+                    },
+                ]
+            )
 
     except queue.Empty:
         print("Timed out waiting for input! Exiting...")

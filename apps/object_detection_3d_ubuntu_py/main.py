@@ -7,6 +7,7 @@ import contextlib
 import queue
 import subprocess
 import warnings
+from collections import Counter
 from pathlib import Path
 from typing import Any
 
@@ -15,6 +16,7 @@ import numpy as np
 import utils.constants as C
 from ai_edge_litert.interpreter import Delegate, Interpreter
 from qai_hub_apps_utils.bbox_processing import batched_nms
+from qai_hub_apps_utils.config import AppInfo
 from qai_hub_apps_utils.fps import FpsCounter
 from qai_hub_apps_utils.input_devices import get_default_video_device
 from qai_hub_apps_utils.platform import get_current_device
@@ -313,8 +315,25 @@ def main(args: argparse.Namespace) -> None:
         flush=True,
     )
     proj_matrix = None
+    info = AppInfo.load()
+    model_section = {
+        "title": "Model",
+        "rows": [
+            ("Model", info.name),
+            ("Use case", info.use_case),
+            ("Precision", ", ".join(info.precisions)),
+            (
+                "Components",
+                [
+                    (detector_io.filename, "TFLITE (NPU)"),
+                    (box3d_io.filename, "TFLITE (NPU)"),
+                ],
+            ),
+        ],
+    }
     try:
         ui = WebUI()
+        ui.set_title(info.name)
         ui.start_thread()
         while True:
             rgb_frame = outq.get(timeout=5)
@@ -325,6 +344,7 @@ def main(args: argparse.Namespace) -> None:
                     frame_width, frame_height, args.hfov
                 )
 
+            detected: list[str] = []
             for orientation, dimension, location, label in run_inference(
                 rgb_frame,
                 detector,
@@ -337,10 +357,37 @@ def main(args: argparse.Namespace) -> None:
                 draw_3d_box(
                     rgb_frame, proj_matrix, orientation, dimension, location, label
                 )
+                detected.append(label)
 
             fps_counter.tick()
 
+            counts = Counter(detected)
             ui.set_frame(rgb_frame[..., ::-1])
+            ui.set_sections(
+                [
+                    model_section,
+                    {
+                        "title": "Detections",
+                        "rows": [
+                            ("FPS", f"{fps_counter.fps():.1f}"),
+                            ("Objects", str(len(detected))),
+                            *(
+                                [
+                                    (
+                                        "Classes",
+                                        [
+                                            (label, str(count))
+                                            for label, count in counts.most_common()
+                                        ],
+                                    )
+                                ]
+                                if counts
+                                else []
+                            ),
+                        ],
+                    },
+                ]
+            )
 
     except queue.Empty:
         print("Timed out waiting for input! Exiting...")

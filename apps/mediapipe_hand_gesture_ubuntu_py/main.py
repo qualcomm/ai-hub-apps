@@ -19,6 +19,7 @@ from qai_hub_apps_utils.bbox_processing import (
     batched_nms,
     compute_box_affine_crop_resize_matrix,
 )
+from qai_hub_apps_utils.config import AppInfo
 from qai_hub_apps_utils.fps import FpsCounter
 from qai_hub_apps_utils.image_processing import (
     apply_affine_to_coordinates,
@@ -458,8 +459,26 @@ def main(args: argparse.Namespace) -> None:
         "--------------------------- Web server ----------------------------",
         flush=True,
     )
+    info = AppInfo.load()
+    model_section = {
+        "title": "Model",
+        "rows": [
+            ("Model", info.name),
+            ("Use case", info.use_case),
+            ("Precision", ", ".join(info.precisions)),
+            (
+                "Components",
+                [
+                    ("Palm detector", "TFLITE (NPU)"),
+                    ("Landmark detector", "TFLITE (NPU)"),
+                    ("Gesture classifier", "TFLITE (CPU)"),
+                ],
+            ),
+        ],
+    }
     try:
         ui = WebUI()
+        ui.set_title(info.name)
         ui.start_thread()
         while True:
             rgb_frame = outq.get(timeout=5)
@@ -487,7 +506,30 @@ def main(args: argparse.Namespace) -> None:
 
             fps_counter.tick()
 
+            # run_inference batches its results; this loop feeds a single frame.
+            hand_sides = [
+                "right" if right else "left"
+                for right in (is_right[0] if is_right else [])
+            ]
+            hand_gestures = gestures[0] if gestures else []
             ui.set_frame(rgb_frame[..., ::-1])
+            ui.set_sections(
+                [
+                    model_section,
+                    {
+                        "title": "Detections",
+                        "rows": [
+                            ("FPS", f"{fps_counter.fps():.1f}"),
+                            ("Hands", str(len(hand_sides))),
+                            (
+                                "Handedness",
+                                ", ".join(hand_sides) or "-",
+                            ),
+                            ("Gestures", ", ".join(hand_gestures) or "-"),
+                        ],
+                    },
+                ]
+            )
 
     except queue.Empty:
         print("Timed out waiting for input! Exiting...")
