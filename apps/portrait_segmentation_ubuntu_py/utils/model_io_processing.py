@@ -100,8 +100,8 @@ def build_soft_alpha(
     """
     Build a soft, frame-resolution foreground alpha for background compositing.
 
-    The probability is cleaned with ``_clean_mask``, feathered with a Gaussian
-    blur for a soft edge, then upsampled to the frame resolution.
+    The probability is cleaned with ``_clean_mask`` at the model's output
+    resolution, upsampled to the frame resolution, and feathered.
 
     Parameters
     ----------
@@ -117,18 +117,22 @@ def build_soft_alpha(
         Foreground alpha of shape (height, width), dtype float32, in [0, 1].
     """
     frame_w, frame_h = frame_size
-    alpha = _clean_mask(prob).astype(np.float32)
-    if C.EDGE_FEATHER > 0:
-        alpha = cv2.GaussianBlur(alpha, (C.EDGE_FEATHER, C.EDGE_FEATHER), 0)
-    return cv2.resize(alpha, (frame_w, frame_h), interpolation=cv2.INTER_LINEAR)
+    cleaned = _clean_mask(prob).astype(np.float32)
+    alpha = cv2.resize(cleaned, (frame_w, frame_h), interpolation=cv2.INTER_LINEAR)
+    ksize = round(C.EDGE_FEATHER_FRACTION * min(frame_w, frame_h))
+    # get an odd kernel size; 0 if lesser than 3
+    feather = ksize | 1 if ksize >= 3 else 0
+    if feather:
+        alpha = cv2.GaussianBlur(alpha, (feather, feather), 0)
+    return alpha
 
 
 def blur_background(rgb_frame: np.ndarray) -> np.ndarray:
     """
-    Return a heavily blurred copy of the frame for use as a background.
+    Return a blurred copy of the frame for use as a background.
 
-    Downscaling then upscaling by ``C.BLUR_DOWNSCALE`` yields a strong blur far
-    more cheaply than a large-kernel Gaussian at full resolution.
+    The frame is downscaled, blurred, then upscaled; a blur kernel wide enough to
+    be heavy is expensive at native resolution.
 
     Parameters
     ----------
@@ -138,12 +142,15 @@ def blur_background(rgb_frame: np.ndarray) -> np.ndarray:
     Returns
     -------
     np.ndarray
-        Blurred RGB frame of the same shape and dtype.
+        Blurred RGB frame of the same shape and dtype as ``rgb_frame``.
     """
     frame_h, frame_w = rgb_frame.shape[:2]
     small_w = max(1, frame_w // C.BLUR_DOWNSCALE)
     small_h = max(1, frame_h // C.BLUR_DOWNSCALE)
-    small = cv2.resize(rgb_frame, (small_w, small_h), interpolation=cv2.INTER_LINEAR)
+
+    small = cv2.resize(rgb_frame, (small_w, small_h), interpolation=cv2.INTER_AREA)
+    if C.BLUR_KERNEL_SIZE > 0:
+        small = cv2.stackBlur(small, (C.BLUR_KERNEL_SIZE, C.BLUR_KERNEL_SIZE))
     return cv2.resize(small, (frame_w, frame_h), interpolation=cv2.INTER_LINEAR)
 
 

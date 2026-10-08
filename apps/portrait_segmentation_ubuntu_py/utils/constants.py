@@ -19,7 +19,7 @@ MASK_THRESHOLD = 0.75
 # Side length (px) of the elliptical kernel used for the morphological open/close
 # cleanup. Open removes isolated speckles; close fills small holes inside the
 # person. 0 disables the morphological step.
-MORPH_KERNEL_SIZE = 7
+MORPH_KERNEL_SIZE = 3
 
 # RGB color the foreground (person) mask is blended with for visualization.
 OVERLAY_COLOR = (68, 132, 255)
@@ -27,10 +27,16 @@ OVERLAY_COLOR = (68, 132, 255)
 # Blend strength of the overlay over the foreground pixels, in [0, 1].
 OVERLAY_ALPHA = 0.5
 
-# Side length (px) of the Gaussian kernel used to feather the mask edge into a
-# soft alpha for background blur/replacement. 0 disables feathering.
-EDGE_FEATHER = 9
+# Side length of the Gaussian kernel used to feather the mask edge into a soft
+# alpha for background blur/replacement, as a fraction of the frame's shorter
+# side. 0 disables feathering.
+EDGE_FEATHER_FRACTION = 0.008
 
-# Downscale factor for the background blur: the frame is shrunk by this factor,
-# blurred, then upscaled, giving a cheap heavy blur.
-BLUR_DOWNSCALE = 6
+# Downscale factor for the background blur.
+BLUR_DOWNSCALE = 4
+
+# Side length (px) of the blur kernel applied at the downscaled size. 0 disables
+# it, which makes the background visibly blocky.
+# Side length (px) of the blur kernel applied at the downscaled size. Must be odd
+# (or 0 to disable, which makes the background visibly blocky).
+BLUR_KERNEL_SIZE = 5
