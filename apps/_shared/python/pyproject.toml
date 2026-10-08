@@ -26,3 +26,8 @@ dependencies = {file = ["requirements.txt"]}
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["qai_hub_apps_utils*"]
+
+# Per-module data files are not importable
+# modules, so setuptools needs them listed explicitly.
+[tool.setuptools.package-data]
+qai_hub_apps_utils = ["assets/**/*"]

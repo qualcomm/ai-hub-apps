@@ -10,11 +10,11 @@ from typing import Any
 
 import cv2
 import numpy as np
-import qai_hub_apps_utils.webui as ui
 import utils.constants as C
 from ai_edge_litert.interpreter import Delegate, Interpreter
 from qai_hub_apps_utils.platform import get_current_device
 from qai_hub_apps_utils.quantization import dequantize, quantize
+from qai_hub_apps_utils.webui import WebUI
 from utils.draw import build_legend, colorize_range_view, compose_view, render_bev
 from utils.input_processing import load_scan, project_scan
 from utils.model_io_processing import decode_class_map, unproject_labels
@@ -205,6 +205,7 @@ def main(args: argparse.Namespace) -> None:
             "--------------------------- Web server ----------------------------",
             flush=True,
         )
+        ui = WebUI()
         ui.start_thread()
 
     timings = {"preprocess": 0.0, "inference": 0.0, "postprocess": 0.0}

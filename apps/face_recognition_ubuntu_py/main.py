@@ -12,7 +12,6 @@ from typing import Any
 
 import cv2
 import numpy as np
-import qai_hub_apps_utils.webui as ui
 import utils.constants as C
 from ai_edge_litert.interpreter import Delegate, Interpreter
 from qai_hub_apps_utils.draw import draw_box_from_xyxy
@@ -20,6 +19,7 @@ from qai_hub_apps_utils.fps import FpsCounter
 from qai_hub_apps_utils.input_devices import get_default_video_device
 from qai_hub_apps_utils.platform import get_current_device
 from qai_hub_apps_utils.quantization import dequantize, quantize
+from qai_hub_apps_utils.webui import WebUI
 from utils.detection import crop_face, detect_faces, load_cascade
 from utils.gallery import build_gallery
 from utils.input_processing import (
@@ -364,6 +364,7 @@ def run_live(
         flush=True,
     )
     try:
+        ui = WebUI()
         ui.start_thread()
         while True:
             rgb_frame = outq.get(timeout=5)

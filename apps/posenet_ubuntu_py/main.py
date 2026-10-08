@@ -12,7 +12,6 @@ from typing import Any
 
 import gi
 import numpy as np
-import qai_hub_apps_utils.webui as ui
 import utils.constants as C
 from ai_edge_litert.interpreter import Delegate, Interpreter
 from qai_hub_apps_utils.fps import FpsCounter
@@ -20,6 +19,7 @@ from qai_hub_apps_utils.image_processing import resize_pad
 from qai_hub_apps_utils.input_devices import get_default_video_device
 from qai_hub_apps_utils.platform import get_current_device
 from qai_hub_apps_utils.quantization import dequantize, quantize
+from qai_hub_apps_utils.webui import WebUI
 from utils.draw import draw_skel_and_kp
 from utils.input_processing import get_gstreamer_input_pipeline
 from utils.model_io_processing import decode_multiple_poses
@@ -245,6 +245,7 @@ def main(args: argparse.Namespace) -> None:
         flush=True,
     )
     try:
+        ui = WebUI()
         ui.start_thread()
         while True:
             rgb_frame = outq.get(timeout=5)

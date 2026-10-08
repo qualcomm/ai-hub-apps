@@ -2,7 +2,7 @@
 # Copyright (c) 2025 Qualcomm Technologies, Inc. and/or its subsidiaries.
 # SPDX-License-Identifier: BSD-3-Clause
 # ---------------------------------------------------------------------
-"""Collect qai_hub_apps_utils source files needed by an app."""
+"""Collect qai_hub_apps_utils source and asset files needed by an app."""
 
 from __future__ import annotations
 
@@ -104,3 +104,15 @@ def init_files_for_utils_file(utils_file: Path, utils_parent: Path) -> list[Path
         if init.exists():
             inits.append(init)
     return inits
+
+
+def collect_module_assets(py_file: Path) -> set[Path]:
+    """Return the asset files a qai_hub_apps_utils module ships, if any.
+
+    A module's assets live in ``assets/<module>/`` next to it, (e.g. ``webui.py`` ->
+    ``assets/webui/``). A missing directory is not an error.
+    """
+    asset_dir = py_file.parent / "assets" / py_file.stem
+    if not asset_dir.is_dir():
+        return set()
+    return {f for f in asset_dir.rglob("*") if f.is_file()}

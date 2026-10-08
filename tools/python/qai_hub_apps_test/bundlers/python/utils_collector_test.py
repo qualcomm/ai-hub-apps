@@ -10,6 +10,7 @@ import pytest
 
 from qai_hub_apps_test.bundlers.python.utils_collector import (
     collect_all_utils_files,
+    collect_module_assets,
     collect_utils_imports_from_file,
     init_files_for_utils_file,
     module_to_utils_file,
@@ -194,3 +195,23 @@ def test_unresolvable_module_warns_and_continues(tmp_path: Path) -> None:
     with pytest.warns(UserWarning, match="could not be resolved"):
         result = collect_all_utils_files(app, utils)
     assert result == set()
+
+
+def test_module_assets_collected(tmp_path: Path) -> None:
+    utils_dir = tmp_path / _UTILS
+    utils_dir.mkdir()
+    mod = utils_dir / "webui.py"
+    mod.write_text("")
+    asset_dir = utils_dir / "assets" / "webui"
+    asset_dir.mkdir(parents=True)
+    index = asset_dir / "index.html"
+    index.write_text("<html></html>")
+    assert collect_module_assets(mod) == {index}
+
+
+def test_module_without_assets_returns_empty(tmp_path: Path) -> None:
+    utils_dir = tmp_path / _UTILS
+    utils_dir.mkdir()
+    mod = utils_dir / "draw.py"
+    mod.write_text("")
+    assert collect_module_assets(mod) == set()

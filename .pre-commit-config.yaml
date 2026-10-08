@@ -30,6 +30,17 @@ repos:
             - //
             - --allow-past-years
             - --no-extra-eol
+    -   id: insert-license
+        files: \.html$
+        args:
+            - --license-filepath
+            - .pre-commit-license-header.txt
+            - --comment-style
+            - <!--| |-->
+            - --insert-license-after-regex
+            - '^<!doctype html>$'
+            - --allow-past-years
+            - --no-extra-eol
 -   repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
     hooks:

@@ -8,7 +8,8 @@ The bundler:
   1. Verifies the app is a Python app.
   2. Scans all app .py files for imports from qai_hub_apps_utils.
   3. Copies only the needed qai_hub_apps_utils modules into out_dir (preserving
-     the qai_hub_apps_utils/ directory structure so imports work unchanged).
+     the qai_hub_apps_utils/ directory structure so imports work unchanged),
+     along with each module's assets/<module>/ directory if it has one.
   4. Reads the base qai_hub_apps_utils requirements.txt and
      requirements-<module>.txt for each copied utils module, then merges with
      the app's requirements.txt into requirements.txt in out_dir.
@@ -30,6 +31,7 @@ from qai_hub_apps_test.bundlers.python.requirements import (
 )
 from qai_hub_apps_test.bundlers.python.utils_collector import (
     collect_all_utils_files,
+    collect_module_assets,
     init_files_for_utils_file,
 )
 from qai_hub_apps_test.bundlers.python.utils_resolver import resolve_utils_root
@@ -96,14 +98,16 @@ def bundle_source(
     app_req_file = app_root / "requirements.txt"
     merged_reqs = merge_requirements(app_req_file, utils_requires)
 
-    # Collect __init__.py files needed for qai_hub_apps_utils package structure
+    # Collect __init__.py files needed for qai_hub_apps_utils package structure,
+    # plus any assets/<module>/ files the copied modules ship.
     all_utils_files: set[Path] = set(utils_files)
     for utils_file in utils_files:
         all_utils_files.update(init_files_for_utils_file(utils_file, utils_parent))
+        all_utils_files.update(collect_module_assets(utils_file))
 
     shutil.copytree(app_root, out_dir)
 
-    # qai_hub_apps_utils files
+    # qai_hub_apps_utils modules and assets
     for utils_file in sorted(all_utils_files):
         arcname = utils_file.relative_to(utils_parent)
         target = out_dir / arcname

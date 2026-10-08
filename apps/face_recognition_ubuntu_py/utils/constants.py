@@ -45,7 +45,7 @@ BOX_MARGIN = 0.2
 
 # ---------------------------------------------------------------------
 # Overlay drawing. Colors are RGB — frames are RGB in the pipeline and only
-# flipped to BGR by webui.set_frame(frame[..., ::-1]) just before JPEG encoding.
+# flipped to BGR by WebUI.set_frame(frame[..., ::-1]) just before JPEG encoding.
 # ---------------------------------------------------------------------
 KNOWN_COLOR = (0, 255, 0)
 UNKNOWN_COLOR = (255, 0, 0)

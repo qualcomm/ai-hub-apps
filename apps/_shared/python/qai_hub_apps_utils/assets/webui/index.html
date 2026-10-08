@@ -1,0 +1,358 @@
+<!doctype html>
+<!--
+  ---------------------------------------------------------------------
+  Copyright (c) 2025 Qualcomm Technologies, Inc. and/or its subsidiaries.
+  SPDX-License-Identifier: BSD-3-Clause
+  ---------------------------------------------------------------------
+-->
+<html>
+  <head>
+    <title>{{ app_title }} - QAI-Hub Apps</title>
+    <style>
+      /* Layout: fixed Info rail + fluid window grid, under a branded bar. */
+      :root {
+        --bg: #eceff4;
+        --surface: #ffffff;
+        --surface-sunken: #f5f7fa;
+        --border: #dde2ea;
+        --text: #171b22;
+        --text-muted: #667085;
+        --accent: #3253dc;
+        --radius: 10px;
+        --shadow: 0 1px 2px rgba(16, 24, 40, 0.06), 0 1px 3px rgba(16, 24, 40, 0.04);
+        --font: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        --logo: url("{{ url_for('static', filename='qualcomm-logo.png') }}");
+      }
+      @media (prefers-color-scheme: dark) {
+        :root:not([data-theme="light"]) {
+          --bg: #0d1117;
+          --surface: #161b22;
+          --surface-sunken: #1c2230;
+          --border: #2a3240;
+          --text: #e6edf3;
+          --text-muted: #8b96a8;
+          --accent: #7a93f0;
+          --shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+          color-scheme: dark;
+        }
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: var(--font);
+        font-size: 14px;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 10px 16px;
+        background: var(--surface);
+        border-bottom: 1px solid var(--border);
+      }
+      header .logo {
+        flex: 0 0 auto;
+        width: 240px;
+        height: 22px;
+        /* The logo is one flat color with alpha, so masking it lets the mark
+           take --accent and stay legible on either theme. */
+        background: var(--accent);
+        -webkit-mask: var(--logo) left center / contain no-repeat;
+        mask: var(--logo) left center / contain no-repeat;
+      }
+      header .app-name {
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: var(--text-muted);
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .layout {
+        display: flex;
+        gap: 12px;
+        padding: 12px 16px;
+        height: calc(100vh - 59px);
+      }
+      .info-panel {
+        flex: 0 0 272px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        overflow-y: auto;
+        padding: 4px 16px 16px;
+      }
+      .grid {
+        flex: 1 1 auto;
+        min-width: 0;
+        display: grid;
+        grid-template-rows: repeat({{ rows }}, 1fr);
+        grid-template-columns: {{ columns_css }};
+        gap: 12px;
+      }
+
+      .cell {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+      }
+      .cell-media {
+        width: 100%;
+        height: 100%;
+        min-height: 0;
+        overflow: hidden;
+        background: var(--surface-sunken);
+      }
+      .cell-media img { width: 100%; height: 100%; object-fit: scale-down; }
+      .cell-title {
+        margin: 8px 0 2px;
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--text-muted);
+      }
+      .cell-text {
+        margin: 0;
+        padding: 8px 12px 12px;
+        width: 100%;
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow-y: auto;
+        font-size: 13px;
+        line-height: 1.5;
+        color: var(--text-muted);
+        white-space: pre-line;
+        text-align: left;
+        font-variant-numeric: tabular-nums;
+      }
+      .disconnected {
+        position: absolute;
+        inset: 0;
+        z-index: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+        text-align: center;
+        font-size: 16px;
+        font-weight: 600;
+        color: #fff;
+        background: rgba(13, 17, 23, 0.74);
+        backdrop-filter: blur(2px);
+      }
+      .disconnected[hidden] { display: none; }
+
+      .info-panel .section-title {
+        margin: 16px 0 6px;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--accent);
+      }
+      .info-panel .section-title:first-child { margin-top: 12px; }
+      .info-panel .section-row,
+      .info-panel .section-group {
+        border-bottom: 1px solid var(--border);
+        font-size: 13px;
+      }
+      .info-panel .section-row:last-child,
+      .info-panel .section-group:last-child { border-bottom: 0; }
+      .info-panel .section-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 7px 0;
+      }
+      .info-panel .section-row .label { color: var(--text-muted); }
+      .info-panel .section-row .value {
+        color: var(--text);
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+      }
+      .info-panel .section-group { padding: 7px 0 4px; }
+      .info-panel .section-group > .label { color: var(--text-muted); }
+      .info-panel .sub-rows {
+        margin: 6px 0 0;
+        padding-left: 10px;
+        border-left: 2px solid var(--accent);
+      }
+      .info-panel .sub-row {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        gap: 2px 12px;
+        padding: 4px 0;
+        font-size: 12px;
+      }
+      .info-panel .sub-row .label { color: var(--text); word-break: break-word; }
+      .info-panel .sub-row .value {
+        color: var(--text-muted);
+        white-space: nowrap;
+        font-variant-numeric: tabular-nums;
+      }
+
+      @media (max-width: 760px) {
+        header { padding: 10px 16px; }
+        header .logo { width: 150px; height: 16px; }
+        header .app-name { font-size: 11px; }
+        .layout { flex-direction: column; height: auto; padding-block: 12px; }
+        .info-panel { flex: 0 0 auto; }
+        .grid { min-height: 60vh; }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="logo" role="img" aria-label="Qualcomm Innovation Center, Inc."></div>
+      <div class="app-name">{{ app_title }}</div>
+    </header>
+    <div class="layout">
+      <div class="info-panel" id="info-panel" hidden></div>
+      <div class="grid">
+        {% for win in windows %}
+        <div class="cell">
+          {% if loop.first %}<div class="disconnected" id="status" hidden></div>{% endif %}
+          {% if win.title %}<div class="cell-title">{{ win.title }}</div>{% endif %}
+          <div class="cell-media" id="cell-media-{{ loop.index0 }}" hidden>
+            <img data-window="{{ loop.index0 }}" />
+          </div>
+          <p class="cell-text" id="win-text-{{ loop.index0 }}"></p>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    <script>
+      document.addEventListener('keydown', function (e) {
+        fetch('/keypress', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({key: e.key})
+        });
+      });
+
+      function node(tag, cls, text) {
+        var n = document.createElement(tag);
+        n.className = cls;
+        if (text !== undefined) n.textContent = text;
+        return n;
+      }
+
+      var lastSectionsJson = null;
+      function renderInfoPanel(sections) {
+        // Skip the DOM rebuild when nothing changed.
+        var sectionsJson = JSON.stringify(sections);
+        if (sectionsJson === lastSectionsJson) return;
+        lastSectionsJson = sectionsJson;
+        var el = document.getElementById('info-panel');
+        el.hidden = !sections.length;
+        el.innerHTML = '';
+        sections.forEach(function (section) {
+          el.appendChild(node('div', 'section-title', section.title || ''));
+          (section.rows || []).forEach(function (row) {
+            if (Array.isArray(row[1])) {
+              var group = node('div', 'section-group');
+              group.appendChild(node('div', 'label', row[0]));
+              var subRows = node('div', 'sub-rows');
+              row[1].forEach(function (sub) {
+                var subEl = node('div', 'sub-row');
+                subEl.appendChild(node('span', 'label', sub[0]));
+                subEl.appendChild(node('span', 'value', sub[1]));
+                subRows.appendChild(subEl);
+              });
+              group.appendChild(subRows);
+              el.appendChild(group);
+              return;
+            }
+            var rowEl = node('div', 'section-row');
+            rowEl.appendChild(node('span', 'label', row[0]));
+            rowEl.appendChild(node('span', 'value', row[1]));
+            el.appendChild(rowEl);
+          });
+        });
+      }
+
+      // A live window holds the MJPEG stream open; a still one (set_image) is
+      // fetched once per frame id, so a single image needs no repeated sends.
+      var sources = {};
+      function updateSources(windows) {
+        windows.forEach(function (w, i) {
+          if (!w.has_frame) return;
+          var src = w.static ? '/image/' + i + '?v=' + w.frame : '/stream/' + i;
+          if (sources[i] === src) return;
+          sources[i] = src;
+          document.querySelector('#cell-media-' + i + ' img').src = src;
+        });
+      }
+
+      // Last frame of each window, kept on screen after the server goes away.
+      var snapshots = {};
+      function snapshotFrames(windows) {
+        windows.forEach(function (w, i) {
+          var img = document.querySelector('#cell-media-' + i + ' img');
+          var snap = snapshots[i];
+          if (!w.has_frame || !img.naturalWidth || (snap && snap.frame === w.frame)) return;
+          var canvas = snap ? snap.canvas : document.createElement('canvas');
+          if (canvas.width !== img.naturalWidth) canvas.width = img.naturalWidth;
+          if (canvas.height !== img.naturalHeight) canvas.height = img.naturalHeight;
+          canvas.getContext('2d').drawImage(img, 0, 0);
+          snapshots[i] = {frame: w.frame, canvas: canvas};
+        });
+      }
+      function freezeFrames() {
+        Object.keys(snapshots).forEach(function (i) {
+          document.querySelector('#cell-media-' + i + ' img').src =
+            snapshots[i].canvas.toDataURL('image/jpeg', 0.92);
+        });
+      }
+
+      var failingSince = null;
+      function pollState() {
+        fetch('/state').then(function (r) { return r.json(); }).then(function (state) {
+          failingSince = null;
+          renderInfoPanel(state.sections);
+          updateSources(state.windows);
+          snapshotFrames(state.windows);
+          state.windows.forEach(function (w, i) {
+            document.getElementById('win-text-' + i).textContent = w.text;
+            // Hide the <img> until the window has a frame, not a broken image.
+            document.getElementById('cell-media-' + i).hidden = !w.has_frame;
+          });
+        }).catch(function () {
+          if (failingSince === null) failingSince = Date.now();
+        }).then(function () {
+          if (failingSince !== null && Date.now() - failingSince >= 2000) {
+            // The server is gone; stop retrying.
+            var status = document.getElementById('status');
+            status.textContent =
+              'Disconnected - the video input has stopped.';
+            status.hidden = false;
+            freezeFrames();
+            return;
+          }
+          // Schedule after the response so requests don't pile up.
+          setTimeout(pollState, 500);
+        });
+      }
+      pollState();
+    </script>
+  </body>
+</html>

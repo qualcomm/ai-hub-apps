@@ -55,6 +55,7 @@ bundle_app(app_id, output_dir)
   requirements.txt         # merged pip requirements
   <app source files>
   qai_hub_apps_utils/      # shared utils modules (if imported by app)
+    assets/<module>/       # that module's data files (if it has any)
 ```
 
 ---
@@ -176,14 +177,37 @@ Pure variable references like `source "$_VERSIONS_FILE"` are silently skipped (t
 
 ---
 
+## Shared Python Module Assets
+
+A `qai_hub_apps_utils` module that needs non-Python data files (templates, icons,
+small static files) puts them in `assets/<module>/` next to the module, mirroring the
+`requirements/requirements-<module>.txt` convention:
+
+```
+apps/_shared/python/qai_hub_apps_utils/
+  webui.py
+  requirements/requirements-webui.txt   # pip deps for the module
+  assets/webui/index.html               # data files for the module
+```
+
+Whenever the import scan pulls `<module>.py` into a bundle, everything under
+`assets/<module>/` is copied with it, preserving the relative path — so the module
+locates its assets the same way in the repo, in a bundle, and when pip-installed.
+A module with no `assets/<module>/` directory is not an error; most have none.
+
+> [!IMPORTANT]
+> **Locate them relative to the module, never the CWD.** `webui.py` passes `template_folder="assets/webui"` to `Flask(__name__, ...)`, which resolves against the module's directory.
+
+---
+
 ## Architecture Reference
 
 ```
 bundlers/
   __init__.py       bundle_app() — orchestrates temp dir, bundle_source, bundle_scripts, finalize
   python/
-    bundle.py       bundle_source() — copies source + qai_hub_apps_utils modules + requirements
-    utils_collector.py  AST-based qai_hub_apps_utils import scanner
+    bundle.py       bundle_source() — copies source + qai_hub_apps_utils modules + assets + requirements
+    utils_collector.py  AST-based qai_hub_apps_utils import scanner; also collects per-module assets
     utils_resolver.py   Locates the qai_hub_apps_utils package root
     requirements.py   requirements.txt parsing and merging
   shell/

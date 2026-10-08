@@ -137,6 +137,12 @@ exec_env_args=(-e "QAIHA_APP_ROOT=/app" -e "QAIHA_VENV_OVERRIDE=$CONTAINER_VENV_
 for var in "${!QAI_HUB_APPS_@}"; do
     exec_env_args+=(-e "$var=${!var}")
 done
+# The container only sees its Docker bridge IP; pass the host's so the web UI
+# can print a URL reachable from the network.
+host_ip="$(ip route get 1.1.1.1 2>/dev/null | awk '{for (i = 1; i < NF; i++) if ($i == "src") {print $(i + 1); exit}}')"
+if [ -n "$host_ip" ]; then
+    exec_env_args+=(-e "QAIHA_HOST_IP=$host_ip")
+fi
 
 # A container is pinned to the image id it was created from, not to the tag, so
 # an existing container built from an older image would silently keep running
