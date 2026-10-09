@@ -20,7 +20,6 @@ Usage:
 
 import argparse
 import logging
-import os
 import subprocess
 import sys
 import tempfile
@@ -40,31 +39,16 @@ def run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
 
 
 def fetch_all_apps(worktree: Path, out_dir: Path) -> set[str]:
-    """Install the worktree's own tooling, fetch every registered app, return their ids."""
-    venv = worktree / ".venv_detect"
-    logger.info("=> installing tooling")
-    run(
-        ["bash", "tools/setup_env.sh", f"--venv={venv}", "--with-cli"],
-        cwd=worktree,
-    )
-    logger.info("=> generate registry")
+    """Stage the worktree's apps via its own script, and return their ids."""
+    logger.info("=> staging apps")
     run(
         [
-            str(venv / "bin" / "python"),
-            "-m",
-            "qai_hub_apps_test.scripts.generate_registry",
-            "--output_dir",
-            "cli/qai_hub_apps/",
-            "--scope",
-            "test",
+            "bash",
+            "tools/ci/stage_all_apps.sh",
+            f"--venv={worktree / '.venv_detect'}",
+            f"--outdir={out_dir}",
         ],
         cwd=worktree,
-    )
-    logger.info("=> fetching apps")
-    run(
-        ["bash", "tools/ci/fetch_all_apps.sh", str(out_dir)],
-        cwd=worktree,
-        env={**os.environ, "PATH": f"{venv / 'bin'}{os.pathsep}{os.environ['PATH']}"},
     )
     app_ids = {d.name for d in out_dir.iterdir() if d.is_dir()}
     if not app_ids:
