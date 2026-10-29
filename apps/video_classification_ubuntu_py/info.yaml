@@ -1,0 +1,25 @@
+name: Video Classification
+id: video_classification_ubuntu_py
+license_url: https://github.com/qualcomm/ai-hub-apps/blob/main/LICENSE
+license_type: bsd-3-clause
+runtime: tflite
+status: unpublished
+domain: 'Computer Vision'
+headline: 'On-device video classification with TFLite'
+description: 'A sample app for Ubuntu integrating a video-classification model via TFLite Runtime. It samples a clip of frames spanning the input video, classifies the action on-device, and prints the top predicted Kinetics-400 classes.'
+precisions: [float]
+app_type: 'ubuntu'
+static_img_filename: 'VideoClassification.png'
+app_repo_relative_path: 'video_classification_ubuntu_py'
+model_file_paths:
+  - 'models/classifier.tflite'
+os:
+  name: Ubuntu
+  version: 24.04+
+languages: ['Python']
+base_docker: ubuntu.dockerfile
+use_case: 'Video Classification'
+supported_devices:
+  - name: "Arduino VENTUNO Q"
+    status: "Tested"
+related_models: ['resnet_2plus1d', 'resnet_3d', 'resnet_mixed']
