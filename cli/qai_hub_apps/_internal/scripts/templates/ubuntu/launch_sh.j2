@@ -48,6 +48,11 @@ log_runtime_marker_miss() {
     fi
 }
 
+# The Adreno/FastRPC/QNN drivers live on the host, so they are installed here
+# rather than in install_runtime.sh, which the docker path runs in the container.
+source ../_shared/scripts/qcom_host_utils.sh
+install_qcom_host_pkgs
+
 if [ "$USE_DOCKER" -eq 0 ]; then
     if [ -f install_runtime.sh ]; then
         RUNTIME_MARKER="$APP_DIR/.qaiha_runtime_installed"
@@ -96,18 +101,9 @@ if [ "$CLEAN" -eq 1 ]; then
     echo "::done::clean"
 fi
 
-LIBCDSPRPC_SRC=""
-if [ -f "/usr/lib/aarch64-linux-gnu/libcdsprpc.so" ]; then
-    LIBCDSPRPC_SRC="/usr/lib/aarch64-linux-gnu/libcdsprpc.so"
-elif [ -f "/usr/lib/libcdsprpc.so" ]; then
-    LIBCDSPRPC_SRC="/usr/lib/libcdsprpc.so"
-else
-    echo "::error::libcdsprpc.so not found in /usr/lib/aarch64-linux-gnu/ or /usr/lib/. Install the Qualcomm host packages, then reboot:" >&2
-    echo "    sudo apt-add-repository -y ppa:ubuntu-qcom-iot/qcom-ppa" >&2
-    echo "    sudo apt-get update" >&2
-    echo "    sudo apt-get install -y qcom-adreno1 qcom-fastrpc1 libqnn1" >&2
-    exit 1
-fi
+# Bind-mounted into the container at the unversioned path the QAIRT HTP stub
+# loads by name. install_qcom_host_pkgs above guarantees it exists.
+LIBCDSPRPC_SRC="$(qcom_host_libcdsprpc)"
 
 # The base image is prebuilt and published, so this build is just a pull.
 # QAIHA_BASE_IMAGE overrides it, e.g. to point at a locally built base.

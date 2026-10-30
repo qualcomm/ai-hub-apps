@@ -18,6 +18,6 @@ install_qairt
 $SUDO apt-add-repository -y ppa:ubuntu-qcom-iot/qcom-ppa
 $SUDO apt-get update -q
 
-install_apt_pkgs unzip qcom-fastrpc-dev
+install_apt_pkg unzip
 
 install_pip_deps -r "$SCRIPT_DIR/requirements.txt"

@@ -57,18 +57,6 @@ Follow [these instructions](https://docs.docker.com/engine/install/ubuntu/#insta
 > the base. Alternatively, run the app natively on the host with `--no-docker` and skip
 > Docker entirely.
 
-### Install Ubuntu host packages (Dragonwing devices)
-
-Add the Qualcomm PPA and install the required host packages:
-
-```bash
-sudo apt-add-repository -y ppa:ubuntu-qcom-iot/qcom-ppa
-sudo apt-get update
-sudo apt-get install qcom-fastrpc1 qcom-fastrpc-dev
-```
-
-After installing, reboot the device.
-
 ## Run
 
 `./launch.sh` builds the app's Docker image — with all required runtime

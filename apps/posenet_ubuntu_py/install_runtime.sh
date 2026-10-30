@@ -19,7 +19,6 @@ $SUDO apt-add-repository -y ppa:ubuntu-qcom-iot/qcom-ppa
 $SUDO apt-get update -q
 
 install_apt_pkgs \
-    qcom-fastrpc-dev \
     libcairo2-dev \
     pkg-config \
     libgirepository1.0-dev \

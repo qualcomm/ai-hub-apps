@@ -61,23 +61,16 @@ Follow [these instructions](https://docs.docker.com/engine/install/ubuntu/#insta
 > the base. Alternatively, run the app natively on the host with `--no-docker` and skip
 > Docker entirely.
 
-### Install Ubuntu host packages (Dragonwing devices)
+### Install the camera server (Dragonwing RB3 built-in camera)
 
-Add the Qualcomm PPA and install the required host packages:
+If you are using the built-in camera on a Dragonwing RB3, install
+`qcom-camera-server`, then reboot the device:
 
 ```bash
 sudo apt-add-repository -y ppa:ubuntu-qcom-iot/qcom-ppa
 sudo apt-get update
-sudo apt-get install qcom-fastrpc1 qcom-fastrpc-dev
-```
-
-If you are using a built-in camera on the Dragonwing RB3, also install `qcom-camera-server`:
-
-```bash
 sudo apt-get install qcom-camera-server
 ```
-
-After installing, reboot the device.
 
 ## Run
 

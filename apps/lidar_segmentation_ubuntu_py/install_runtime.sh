@@ -19,7 +19,6 @@ $SUDO apt-add-repository -y ppa:ubuntu-qcom-iot/qcom-ppa
 $SUDO apt-get update -q
 
 install_apt_pkgs \
-    qcom-fastrpc-dev \
     qcom-libdmabufheap
 
 install_apt_pkg unzip
