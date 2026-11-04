@@ -83,7 +83,7 @@ env:
 jobs:
   list_apps:
     name: "Distribute Apps by Type"
-    runs-on: [tetra-ubuntu-2204, self-hosted]
+    runs-on: aihub-apps-ubuntu-2404-ec2
     outputs:
       ubuntu: ${{ steps.list.outputs.ubuntu }}
       android: ${{ steps.list.outputs.android }}
@@ -208,7 +208,7 @@ jobs:
     name: "Build Test Report"
     needs: [test_ubuntu_apps, test_android_apps, test_windows_apps]
     if: always()
-    runs-on: [tetra-ubuntu-2204, self-hosted]
+    runs-on: aihub-apps-ubuntu-2404-ec2
     outputs:
       result_payload: ${{ steps.build.outputs.result_payload }}
 

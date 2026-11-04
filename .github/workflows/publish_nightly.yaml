@@ -16,7 +16,7 @@ env:
 jobs:
   resolve:
     name: "Resolve Nightly Version"
-    runs-on: [tetra-ubuntu-2204, self-hosted]
+    runs-on: aihub-apps-ubuntu-2404-ec2
     outputs:
       version: ${{ steps.version.outputs.version }}
       is_dev: ${{ steps.version.outputs.is_dev }}

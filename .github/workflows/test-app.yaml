@@ -105,7 +105,7 @@ env:
 jobs:
   test:
     name: "Test ${{ inputs.app }}"
-    runs-on: ${{ inputs.app_type == 'windows' && fromJSON('["self-hosted", "Windows", "X64", "windows-docker"]') || fromJSON('["tetra-ubuntu-2204", "self-hosted"]') }}
+    runs-on: ${{ inputs.app_type == 'windows' && fromJSON('["self-hosted", "Windows", "X64", "windows-docker"]') || 'aihub-apps-ubuntu-2404-ec2' }}
     permissions:
       id-token: write
       contents: read

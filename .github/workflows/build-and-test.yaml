@@ -42,7 +42,7 @@ jobs:
   precommit_check:
     name: "Pre-commit Hook Rules Check"
     if: ${{ inputs.do_all || inputs.do_precommit }}
-    runs-on: [tetra-ubuntu-2204, self-hosted]
+    runs-on: aihub-apps-ubuntu-2404-ec2
     env:
       VENV_PATH: qaiha-dev
     steps:
@@ -70,7 +70,7 @@ jobs:
   check_generated_files:
     name: "Check generated files are up to date"
     if: ${{ inputs.do_all || inputs.do_precommit }}
-    runs-on: [tetra-ubuntu-2204, self-hosted]
+    runs-on: aihub-apps-ubuntu-2404-ec2
     env:
       VENV_PATH: qaiha-dev
     steps:

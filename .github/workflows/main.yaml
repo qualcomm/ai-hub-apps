@@ -23,7 +23,7 @@ concurrency:
 jobs:
   determine_ci_steps:
     name: "Determine CI Steps"
-    runs-on: [tetra-ubuntu-2204, self-hosted]
+    runs-on: aihub-apps-ubuntu-2404-ec2
 
     outputs:
       should_skip: ${{ steps.skip_check.outputs.should_skip }}
@@ -53,7 +53,7 @@ jobs:
 
   detect_changed_apps:
     name: "Detect Changed Apps"
-    runs-on: [tetra-ubuntu-2204, self-hosted]
+    runs-on: aihub-apps-ubuntu-2404-ec2
     env:
       PYTHON_VERSION: '3.10'
     outputs:
@@ -98,7 +98,7 @@ jobs:
     name: "Ensure Builds Pass"
     needs: [detect_changed_apps, build_changed_apps]
     if: always()
-    runs-on: [tetra-ubuntu-2204, self-hosted]
+    runs-on: aihub-apps-ubuntu-2404-ec2
     steps:
       - name: Verify build result
         run: |

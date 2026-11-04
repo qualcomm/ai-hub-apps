@@ -58,7 +58,7 @@ jobs:
       name: Release Apps and Wheel (${{ inputs.target }})
       needs: [approve]
       if: ${{ !cancelled() && (needs.approve.result == 'success' || needs.approve.result == 'skipped') }}
-      runs-on: [tetra-ubuntu-2204, self-hosted]
+      runs-on: aihub-apps-ubuntu-2404-ec2
       permissions:
         id-token: write
         contents: read

@@ -62,7 +62,7 @@ jobs:
     if: ${{ failure() && (github.event_name == 'schedule' || inputs.notify_slack) }}
     name: Notify Failure
     needs: [precommit_check, test_website_import, test_on_device_apps, publish_nightly]
-    runs-on: [tetra-ubuntu-2204, self-hosted]
+    runs-on: aihub-apps-ubuntu-2404-ec2
     permissions:
         contents: read
         issues: write
@@ -173,7 +173,7 @@ jobs:
     name: Notify Success
     needs: [publish_nightly, test_on_device_apps]
     if: ${{ !cancelled() && needs.publish_nightly.result == 'success' && (github.event_name == 'schedule' || inputs.notify_slack) }}
-    runs-on: [tetra-ubuntu-2204, self-hosted]
+    runs-on: aihub-apps-ubuntu-2404-ec2
     steps:
       - name: Send Slack Notification
         uses: slackapi/slack-github-action@v4.0.0

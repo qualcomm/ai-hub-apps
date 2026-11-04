@@ -28,7 +28,7 @@ jobs:
   cli_tests:
     name: "CLI Tests"
     if: ${{ inputs.do_all || inputs.do_precommit }}
-    runs-on: [tetra-ubuntu-2204, self-hosted]
+    runs-on: aihub-apps-ubuntu-2404-ec2
 
     steps:
     - uses: actions/checkout@v7
@@ -67,7 +67,7 @@ jobs:
   bundler_unit_tests:
     name: "Bundler Unit Tests"
     if: ${{ inputs.do_all || inputs.do_precommit }}
-    runs-on: [tetra-ubuntu-2204, self-hosted]
+    runs-on: aihub-apps-ubuntu-2404-ec2
     env:
       VENV_PATH: qaiha-dev
     steps:
