@@ -246,11 +246,10 @@ def max_pool_2d(scores: np.ndarray, radius: int) -> np.ndarray:
         mode="constant",
         constant_values=-np.inf,
     )
-    # numpy's stub types axis as a single index, but a tuple is valid at runtime.
     windows = np.lib.stride_tricks.sliding_window_view(
         padded,
         (kernel, kernel),
-        axis=(1, 2),  # type: ignore[call-overload]
+        axis=(1, 2),
     )
     return windows.max(axis=(-2, -1))
 

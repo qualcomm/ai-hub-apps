@@ -41,8 +41,6 @@ on:
     secrets:
       QDC_API_TOKEN:
         required: false
-      HUB_USER_TOKEN_PROD:
-        required: false
       QAIHA_CI_AWS_ROLE_ARN:
         required: false
 
@@ -175,12 +173,6 @@ jobs:
         run: |
           ${{ env.ACTIVATE_VENV }}
           python -m qai_hub_apps._internal.scripts.generate_registry --output_dir cli/qai_hub_apps/ --scope test
-
-      - name: Configure QAI Hub client
-        if: ${{ inputs.app_type == 'windows' }}
-        run: |
-          ${{ env.ACTIVATE_VENV }}
-          qai-hub configure --api_token ${{ secrets.HUB_USER_TOKEN_PROD }}
 
       - name: Log in to GHCR (Linux)
         if: ${{ inputs.test_stage != 'fetch' && inputs.app_type != 'windows' }}

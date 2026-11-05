@@ -10,7 +10,7 @@ import time
 from collections.abc import Callable, Iterator
 
 import httpx
-import qai_hub as hub
+from qai_hub_models_cli.proto.platform_pb2 import FormFactor, OperatingSystemType
 from qualcomm_device_cloud_sdk.api import qdc_api
 from qualcomm_device_cloud_sdk.models import (
     ArtifactType,
@@ -30,6 +30,8 @@ from tenacity import (
     stop_after_attempt,
     wait_exponential,
 )
+
+from qai_hub_apps.utils.devices import resolve_device_info
 
 # States in which a job is still in progress (not yet terminal)
 _RUNNING_STATES = {
@@ -231,55 +233,41 @@ def retry_qdc(
 
 
 class QDCDevice:
-    """Wraps a QAI Hub device and exposes QDC-specific properties."""
+    """Wraps an AI Hub device and exposes QDC-specific properties."""
 
     def __init__(self, device: str) -> None:
         """
         Parameters
         ----------
         device
-            QAI Hub device name. The latest matching device is selected.
-        """
-        self.device = hub.get_devices(device)[-1]
-        self.device_attributes = getattr(self.device, "attributes", [])
+            AI Hub device name, matched leniently (case and punctuation are
+            ignored). It is looked up in the platform data bundled with
+            qai-hub-models-cli, so no AI Hub API token or network call to
+            AI Hub is needed.
 
-    @property
-    def hexagon_version(self) -> str:
-        """Hexagon version string parsed from the device's hub attributes."""
-        htp_version = None
-        for attr in self.device_attributes:
-            if "hexagon" in attr:
-                htp_version = attr.split(":")[-1]
-        assert htp_version is not None, (
-            f"Hexagon/HTP version not found in device attributes. "
-            f"Device: {getattr(self.device, 'name', 'unknown')!r}. "
-            f"Attributes: {self.device_attributes!r}"
-        )
-        return htp_version
+        Raises
+        ------
+        InvalidArgumentError
+            If the device is not in the platform data.
+        """
+        self.device = resolve_device_info(device)
 
     @property
     def windows_platform(self) -> bool:
-        """True if the device runs Windows, based on hub attributes."""
-        for attr in self.device_attributes:
-            if "os" in attr and attr.endswith("windows"):
-                return True
-        return False
+        """True if the device runs Windows."""
+        return (
+            self.device.os.ostype == OperatingSystemType.OPERATING_SYSTEM_TYPE_WINDOWS
+        )
 
     @property
     def mobile_platform(self) -> bool:
-        """True if the device is a phone form factor, based on hub attributes."""
-        for attr in self.device_attributes:
-            if "format" in attr and attr.endswith("phone"):
-                return True
-        return False
+        """True if the device is a phone form factor."""
+        return self.device.form_factor == FormFactor.FORM_FACTOR_PHONE
 
     @property
     def iot_platform(self) -> bool:
-        """True if the device is an IoT form factor, based on hub attributes."""
-        for attr in self.device_attributes:
-            if "format" in attr and attr.endswith("iot"):
-                return True
-        return False
+        """True if the device is an IoT form factor."""
+        return self.device.form_factor == FormFactor.FORM_FACTOR_IOT
 
     @property
     def qdc_name(self) -> str:
