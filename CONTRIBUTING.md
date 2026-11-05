@@ -544,8 +544,6 @@ unchanged.
 nothing in CI passes it — the base images cannot be built on the Qualcomm network at
 all (SDKMAN's own `curl` and the JVM truststore are out of reach of any `wget` flag).
 
-The workflow (`test-app.yaml`) sets `QC_INTERNAL_HOST: '1'`.
-
 ### CI keeps generated scripts in sync
 
 `build-and-test.yaml`'s **"Check generated files are up to date"** job regenerates
