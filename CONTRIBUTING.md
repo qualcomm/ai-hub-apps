@@ -18,6 +18,7 @@ This guide covers dev environment setup, repo architecture, app conventions, tes
 - [Testing Infrastructure](#testing-infrastructure)
 - [Code Style and Linting](#code-style-and-linting)
 - [Adding a New App](#adding-a-new-app)
+- [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -32,25 +33,32 @@ This guide covers dev environment setup, repo architecture, app conventions, tes
 > [!IMPORTANT]
 > The expected contributor environment is a **Linux or macOS host**. Some dev dependencies (e.g. `onnxruntime` via `qai_hub_models`) lack `win-arm64` wheels, so the full tooling — including `generate_registry` — may not install cleanly on native Windows.
 >
-> **Install git-lfs and run `git lfs install` *before cloning*.** Binary assets are
-> LFS-tracked (see `.gitattributes`) — including the static bash shim at
-> `cli/qai_hub_apps/_internal/qdc/bash_static/bash-static-x86_64` that the Android
-> QDC tests bundle. A clone made without git-lfs, or with `GIT_LFS_SKIP_SMUDGE=1` set,
-> leaves these as ~130-byte text pointer files. Nothing checks this locally, so the
-> failure surfaces remotely and late: the pointer is bundled, uploaded, and the device
-> job fails with an exec-format error. If you already cloned, `git lfs install && git lfs
-> pull` fixes it; confirm with
-> `sha256sum -c cli/qai_hub_apps/_internal/qdc/bash_static/bash-static-x86_64.sha256`.
+> **Install [git-lfs](https://git-lfs.com) and run `git lfs install` *before cloning*.**
+> Binary assets are LFS-tracked. If you already cloned, run
+> `git lfs install && git lfs pull` — see [Troubleshooting](#troubleshooting).
 >
 > **On Windows, enable Developer Mode and set `git config --global core.symlinks true` *before cloning*.** Otherwise symlinks are checked out as plain text files and builds will fail.
 
 ### Environment
 
+`setup_env.sh` creates the dev virtual environment and installs everything the repo
+tooling needs, including `pre-commit`, `mypy`, and the JVM lint toolchain.
+
 ```bash
-# Create and activate the dev virtual environment
+# Create and activate the dev virtual environment, then install the git hooks
 bash tools/setup_env.sh
 source qaiha-dev/bin/activate
+pre-commit install
+
+# Run all hooks manually
+pre-commit run --all-files
 ```
+
+> [!IMPORTANT]
+> Run the hooks from `qaiha-dev` — not from a conda env or an existing venv of your own.
+> `pre-commit`, `mypy`, and the JVM lint toolchain all come from `setup_env.sh`, and the
+> mypy hooks resolve `mypy` from `qaiha-dev/` specifically (`tools/run_mypy.sh`). See
+> [mypy results differ from CI](#mypy-results-differ-from-ci).
 
 Available flags for `setup_env.sh`:
 
@@ -60,18 +68,6 @@ Available flags for `setup_env.sh`:
 | `--with-qdc-sdk` | Download and install the Qualcomm Device Cloud SDK wheel |
 | `--venv <path>` | Custom venv path (default: `qaiha-dev`) |
 | `--python <exe>` | Python executable to use (default: `python3`) |
-
-### Pre-commit Hooks
-
-```bash
-pre-commit install
-
-# Run all hooks manually
-pre-commit run --all-files
-
-# Separate line-ending check
-pre-commit run --config .pre-commit-line-ending-check.yaml --all-files
-```
 
 The Java/Kotlin hooks (`google-java-format`, `checkstyle`, `ktlint`) need a JVM toolchain.
 `setup_env` provisions it automatically into `.lint-tools/` (git-ignored).
@@ -861,6 +857,44 @@ pytest -m device_test --model-selection first --test-stage all \
   -k <your_app_id>
 ```
 
+
+## Troubleshooting
+
+### LFS pointer files instead of binaries
+
+A clone made without git-lfs, or with `GIT_LFS_SKIP_SMUDGE=1` set, leaves LFS-tracked
+binaries (see `.gitattributes`) as ~130-byte text pointer files. Nothing checks this
+locally: for the static bash shim the Android QDC tests bundle, the pointer is bundled, uploaded, and the device job fails with an exec-format error.
+
+Fix it, then confirm:
+
+```bash
+git lfs install && git lfs pull
+
+# The checksum file lists a bare filename, so verify from its own directory:
+(cd cli/qai_hub_apps/_internal/qdc/bash_static && sha256sum -c bash-static-x86_64.sha256)
+```
+
+### mypy results differ from CI
+
+If the mypy hooks pass locally but fail in CI (or the reverse), check which environment
+they ran in. A different environment — a conda env, your own venv, or a `qaiha-dev` created months ago — may resolve different transitive stub versions than CI does. The errors that
+surface are genuinely different, in both directions.
+
+`tools/run_mypy.sh` activates `qaiha-dev/` by design, so the hooks are reproducible only
+from that environment at the default path. Recreate it to match CI:
+
+```bash
+rm -rf qaiha-dev
+bash tools/setup_env.sh
+source qaiha-dev/bin/activate
+pre-commit run --all-files
+```
+
+A custom `--venv <path>` is for CI and automation; the pre-commit mypy hooks will not find
+it and will exit with `[ERROR] qaiha-dev not found`.
+
+---
 
 ## Questions?
 
