@@ -3,7 +3,7 @@ id: video_classification_ubuntu_py
 license_url: https://github.com/qualcomm/ai-hub-apps/blob/main/LICENSE
 license_type: bsd-3-clause
 runtime: tflite
-status: unpublished
+status: published
 domain: 'Computer Vision'
 headline: 'On-device video classification with TFLite'
 description: 'A sample app for Ubuntu integrating a video-classification model via TFLite Runtime. It samples a clip of frames spanning the input video, classifies the action on-device, and prints the top predicted Kinetics-400 classes.'

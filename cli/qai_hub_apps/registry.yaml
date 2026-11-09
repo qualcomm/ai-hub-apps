@@ -515,6 +515,29 @@ apps:
   - Snapdragon X Elite CRD
   model_file_paths:
   - assets/models/super_resolution.onnx
+- name: Video Classification
+  id: video_classification_ubuntu_py
+  status: published
+  headline: On-device video classification with TFLite
+  description: A sample app for Ubuntu integrating a video-classification model via TFLite Runtime. It samples a clip of frames spanning the input video, classifies the action on-device, and prints the top predicted Kinetics-400 classes.
+  domain: Computer Vision
+  use_case: Video Classification
+  app_repo_url: https://github.com/qualcomm/ai-hub-apps/tree/main/apps/video_classification_ubuntu_py
+  app_type: ubuntu
+  runtime:
+  - tflite
+  related_models:
+  - resnet_2plus1d
+  - resnet_3d
+  - resnet_mixed
+  precisions:
+  - float
+  languages:
+  - Python
+  supported_devices:
+  - Arduino VENTUNO Q
+  model_file_paths:
+  - models/classifier.tflite
 - name: Whisper Windows
   id: whisper_windows_py
   status: published

@@ -91,6 +91,7 @@ __NOTE: Some of these apps will run without NPU acceleration on non-Snapdragon®
 | [EasyOCR Text Recognition](apps/easyocr_ubuntu_py) | Python | TensorFlow Lite | GStreamer |
 | [Image Colourization](apps/colourization_ubuntu_py) | Python | TensorFlow Lite | GStreamer |
 | [Depth Estimation](apps/depth_estimation_ubuntu_py) | Python | TensorFlow Lite | GStreamer |
+| [Video Classification](apps/video_classification_ubuntu_py) | Python | TensorFlow Lite | |
 <!-- /UBUNTU_APPS -->
 
 _\* Source available on GitHub; not included in the CLI release._
