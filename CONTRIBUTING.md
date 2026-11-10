@@ -67,7 +67,12 @@ Available flags for `setup_env.sh`:
 | `--with-cli` | Also install the `qai-hub-apps` CLI package (`cli/`) |
 | `--with-qdc-sdk` | Download and install the Qualcomm Device Cloud SDK wheel |
 | `--venv <path>` | Custom venv path (default: `qaiha-dev`) |
-| `--python <exe>` | Python executable to use (default: `python3`) |
+| `--python <exe>` | Python executable name or path, e.g. `python3.12` — not a bare version like `3.12` (default: `python3`) |
+| `--recreate` | Delete and recreate the venv if it already exists |
+
+If the venv already exists with a different Python `major.minor` than `--python`, or is broken
+(no working interpreter), `setup_env.sh` fails. Re-run with `--recreate`,
+or pass a different `--venv`.
 
 The Java/Kotlin hooks (`google-java-format`, `checkstyle`, `ktlint`) need a JVM toolchain.
 `setup_env` provisions it automatically into `.lint-tools/` (git-ignored).
