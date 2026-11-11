@@ -13,6 +13,7 @@ $AppDir = $PSScriptRoot
 Set-Location $AppDir
 
 . ..\_shared\scripts\exit_codes.ps1
+. ..\_shared\scripts\adb_utils.ps1
 
 $Package = "com.quicinc.superresolution"
 $Apk = "build\outputs\apk\debug\app-debug.apk"
@@ -33,28 +34,7 @@ if ($Test -and -not (Test-Path $TestApk)) {
     exit $QaihaExitBuildRequired
 }
 
-$Devices = @(adb devices | Select-Object -Skip 1 | ForEach-Object {
-    $Fields = $_ -split '\s+'
-    if ($Fields.Count -ge 2 -and $Fields[1] -eq "device") { $Fields[0] }
-})
-
-if ($Devices.Count -eq 0) {
-    Write-Host "::error::No Android device connected. Connect a device with USB debugging enabled."
-    exit 1
-} elseif ($Devices.Count -eq 1) {
-    $Serial = $Devices[0]
-} else {
-    Write-Host "Connected devices:"
-    for ($i = 0; $i -lt $Devices.Count; $i++) {
-        Write-Host ("  {0}) {1}" -f ($i + 1), $Devices[$i])
-    }
-    $Choice = Read-Host "Select a device [1-$($Devices.Count)]"
-    if ($Choice -notmatch '^\d+$' -or [int]$Choice -lt 1 -or [int]$Choice -gt $Devices.Count) {
-        Write-Host "::error::Invalid selection '$Choice'."
-        exit 1
-    }
-    $Serial = $Devices[[int]$Choice - 1]
-}
+$Serial = Select-AdbDevice
 
 Write-Host "::step::Installing $Apk on $Serial"
 adb -s $Serial install -r -t $Apk

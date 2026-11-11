@@ -12,6 +12,7 @@ APP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$APP_DIR"
 
 source ../_shared/scripts/exit_codes.sh
+source ../_shared/scripts/adb_utils.sh
 
 PACKAGE="com.geniex.demo"
 APK="build/outputs/apk/debug/app-debug.apk"
@@ -43,31 +44,7 @@ if [ "$RUN_TEST" -eq 1 ] && [ ! -f "$TEST_APK" ]; then
     exit "$QAIHA_EXIT_BUILD_REQUIRED"
 fi
 
-DEVICES=()
-NUM_DEVICES=0
-while IFS= read -r serial; do
-    [ -n "$serial" ] || continue
-    DEVICES+=("$serial")
-    NUM_DEVICES=$((NUM_DEVICES + 1))
-done < <(adb devices | awk 'NR > 1 && $2 == "device" { print $1 }')
-
-if [ "$NUM_DEVICES" -eq 0 ]; then
-    echo "::error::No Android device connected. Connect a device with USB debugging enabled." >&2
-    exit 1
-elif [ "$NUM_DEVICES" -eq 1 ]; then
-    SERIAL="${DEVICES[0]}"
-else
-    echo "Connected devices:"
-    for i in "${!DEVICES[@]}"; do
-        printf '  %d) %s\n' "$((i + 1))" "${DEVICES[i]}"
-    done
-    read -rp "Select a device [1-$NUM_DEVICES]: " choice
-    if ! [[ "$choice" =~ ^[0-9]+$ ]] || [ "$choice" -lt 1 ] || [ "$choice" -gt "$NUM_DEVICES" ]; then
-        echo "::error::Invalid selection '$choice'." >&2
-        exit 1
-    fi
-    SERIAL="${DEVICES[choice - 1]}"
-fi
+select_adb_device
 
 echo "::step::Installing $APK on $SERIAL"
 adb -s "$SERIAL" install -r -t "$APK"

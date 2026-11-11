@@ -39,19 +39,14 @@ if [ ! -d "$APP_DIR/scripts" ]; then
     exit 1
 fi
 
-# Derive unique image/container names from the app directory so two copies of
-# the same app in different directories never collide.
-HASH="$(printf '%s' "$APP_DIR" | sha1sum | cut -c1-12)"
-IMAGE_TAG="aiha-build-$(basename "$APP_DIR")-$HASH"
+source ../_shared/scripts/docker_utils.sh
+
+IMAGE_TAG="$(docker_image_tag aiha-build "$APP_DIR")"
 CONTAINER_NAME="$IMAGE_TAG-container"
 
 # The Android toolchain lives in a prebuilt base image, so this build is just a
-# pull. QAIHA_BASE_IMAGE overrides it, e.g. to point at a locally built base.
-if [ -n "${QAIHA_BASE_IMAGE:-}" ]; then
-    BASE_IMAGE="$QAIHA_BASE_IMAGE"
-else
-    BASE_IMAGE="ghcr.io/qcom-ai-hub/qai-hub-apps-android-base:sha-f3ce55a28d93"
-fi
+# pull.
+BASE_IMAGE="$(resolve_base_image "ghcr.io/qcom-ai-hub/qai-hub-apps-android-base:sha-f3ce55a28d93")"
 build_args=(--build-arg "BASE_IMAGE=$BASE_IMAGE")
 
 # --clean tears down prior build state (image, container, host-side outputs).
@@ -74,18 +69,7 @@ fi
 echo "::done::Docker image"
 
 # Reuse this app directory's container, or create it.
-if ! docker start "$CONTAINER_NAME" >/dev/null 2>&1; then
-    # A create or install that died earlier can leave a container behind under
-    # this name in a state docker start rejects; replace it.
-    docker rm -f "$CONTAINER_NAME" >/dev/null 2>&1 || true
-    echo "::step::Creating container $CONTAINER_NAME"
-    # --init reaps the daemons that docker exec children reparent to PID 1.
-    docker create --name "$CONTAINER_NAME" --init \
-        -v "$APP_DIR:/app" \
-        "$IMAGE_TAG" sleep infinity >/dev/null
-    docker start "$CONTAINER_NAME" >/dev/null
-    echo "::done::container"
-fi
+start_container "$CONTAINER_NAME" "$IMAGE_TAG" -v "$APP_DIR:/app"
 
 # Stop the container after the build so it holds no resources between builds,
 # and hand back anything it wrote into the bind-mounted app directory, which it
@@ -97,33 +81,7 @@ cleanup_container() {
 }
 trap cleanup_container EXIT
 
-if [ "${QC_INTERNAL_HOST:-}" = "1" ]; then
-    echo "::step::Installing Qualcomm CA certificates in $CONTAINER_NAME"
-    docker exec "$CONTAINER_NAME" bash -c '
-        set -euo pipefail
-        cert_dir=/usr/local/share/ca-certificates/qualcomm.com
-        if [ ! -f "$cert_dir/nscacert.crt" ]; then
-            mkdir -p "$cert_dir"
-            wget --no-check-certificate -P "$cert_dir" \
-                https://pki.qualcomm.com/qc_root_g2_cert.crt \
-                https://pki.qualcomm.com/ssl_v2_cert.crt \
-                https://pki.qualcomm.com/ssl_v4_cert.crt
-            wget --no-check-certificate -O "$cert_dir/nscacert.crt" \
-                https://github.qualcomm.com/raw/netskope-ssl/download/main/nscacert.cer
-            update-ca-certificates
-        fi'
-
-    docker exec "$CONTAINER_NAME" bash -c '
-        set -euo pipefail
-        . /app/scripts/android_utils.sh
-        keystore="$JAVA_HOME/lib/security/cacerts"
-        if ! keytool -list -alias qualcommroot -keystore "$keystore" -storepass changeit >/dev/null 2>&1; then
-            keytool -import -noprompt -trustcacerts -alias qualcommroot \
-                -file /usr/local/share/ca-certificates/qualcomm.com/nscacert.crt \
-                -keystore "$keystore" -storepass changeit
-        fi'
-    echo "::done::Qualcomm CA certificates"
-fi
+install_qc_ca_certs "$CONTAINER_NAME" --java-keystore
 
 if [ -f install_build.sh ]; then
     echo "::step::Installing build dependencies in $CONTAINER_NAME"

@@ -12,6 +12,7 @@ param([switch]$NoDocker, [switch]$Clean)
 $ErrorActionPreference = "Stop"
 
 . ..\_shared\scripts\interactive.ps1
+. ..\_shared\scripts\docker_utils.ps1
 
 function Assert-Success {
     param([string]$What)
@@ -44,10 +45,7 @@ if ($NoDocker) {
 
 # Derive unique image/container names from the app directory so two copies of
 # the same app in different directories never collide.
-$Sha1 = [System.Security.Cryptography.SHA1]::Create()
-$Bytes = [System.Text.Encoding]::UTF8.GetBytes($AppDir)
-$Hash = ([System.BitConverter]::ToString($Sha1.ComputeHash($Bytes)) -replace '-', '').ToLower().Substring(0, 12)
-$ImageTag = "aiha-build-$(Split-Path $AppDir -Leaf)-$Hash"
+$ImageTag = Get-DockerImageTag -Prefix "aiha-build" -AppDir $AppDir
 $ContainerName = "$ImageTag-container"
 
 # -Clean tears down prior build state (image, container, host-side outputs) and
@@ -75,12 +73,8 @@ if (-not (Test-Path "$AppDir\scripts")) {
 
 try {
     # The MSVC toolchain lives in a prebuilt base image, so this build is just a
-    # pull. QAIHA_BASE_IMAGE overrides it, e.g. to point at a locally built base.
-    if ($env:QAIHA_BASE_IMAGE) {
-        $BaseImage = $env:QAIHA_BASE_IMAGE
-    } else {
-        $BaseImage = "ghcr.io/qcom-ai-hub/qai-hub-apps-windows-base:sha-72a927d1095e"
-    }
+    # pull.
+    $BaseImage = Resolve-BaseImage -Pinned "ghcr.io/qcom-ai-hub/qai-hub-apps-windows-base:sha-72a927d1095e"
 
     Write-Host "::step::Building Docker image from $BaseImage"
     docker build --build-arg "BASE_IMAGE=$BaseImage" -t $ImageTag .

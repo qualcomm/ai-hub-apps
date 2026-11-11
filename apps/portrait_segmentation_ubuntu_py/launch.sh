@@ -31,28 +31,8 @@ done
 SCRIPT="run.sh"
 [ "$RUN_TEST" -eq 1 ] && SCRIPT="test.sh"
 
-# install_runtime.sh is skipped once it has succeeded for this exact app content;
-# the marker holds a hash of everything the install depends on.
-runtime_stamp() {
-    local files=()
-    local f
-    for f in install_runtime.sh requirements*.txt versions.override.env scripts/versions.env; do
-        if [ -f "$f" ]; then
-            files+=("$f")
-        fi
-    done
-    sha1sum -- "${files[@]}" | sha1sum | cut -d' ' -f1
-}
-
-# Explain why the runtime is (re)installed: no marker yet, or a stale one.
-log_runtime_marker_miss() {
-    local marker="$1" installed="$2" stamp="$3"
-    if [ -z "$installed" ]; then
-        echo "No runtime marker at $marker; installing runtime"
-    else
-        echo "Runtime marker at $marker is stale (recorded $installed, current $stamp); reinstalling runtime"
-    fi
-}
+source ../_shared/scripts/runtime_utils.sh
+STAMP_FILES=(install_runtime.sh requirements*.txt versions.override.env scripts/versions.env)
 
 # The Adreno/FastRPC/QNN drivers live on the host, so they are installed here
 # rather than in install_runtime.sh, which the docker path runs in the container.
@@ -66,18 +46,7 @@ if [ "$USE_DOCKER" -eq 0 ]; then
             echo "--clean: removing runtime marker at $RUNTIME_MARKER"
             rm -f "$RUNTIME_MARKER"
         fi
-        stamp="$(runtime_stamp)"
-        installed="$(cat "$RUNTIME_MARKER" 2>/dev/null || true)"
-        if [ "$installed" = "$stamp" ]; then
-            echo "::skip::Runtime already installed (marker at $RUNTIME_MARKER matches $stamp)"
-        else
-            log_runtime_marker_miss "$RUNTIME_MARKER" "$installed" "$stamp"
-            echo "::step::Installing runtime"
-            bash install_runtime.sh
-            printf '%s\n' "$stamp" > "$RUNTIME_MARKER"
-            echo "Wrote runtime marker $stamp to $RUNTIME_MARKER"
-            echo "::done::Installing runtime"
-        fi
+        install_runtime_native "$RUNTIME_MARKER" "$(runtime_stamp "${STAMP_FILES[@]}")"
     fi
     echo "::step::Running portrait_segmentation_ubuntu_py natively"
     exec bash "$SCRIPT" "${APP_ARGS[@]}"
@@ -90,9 +59,9 @@ fi
 
 source ../_shared/scripts/sudo.sh
 source ../_shared/scripts/qairt_utils.sh
+source ../_shared/scripts/docker_utils.sh
 
-HASH="$(printf '%s' "$APP_DIR" | sha1sum | cut -c1-12)"
-IMAGE_TAG="aiha-run-$(basename "$APP_DIR")-$HASH"
+IMAGE_TAG="$(docker_image_tag aiha-run "$APP_DIR")"
 CONTAINER_NAME="$IMAGE_TAG-container"
 
 # The venv must live outside /app, or the bind mount would hide it -- and a
@@ -112,12 +81,7 @@ fi
 LIBCDSPRPC_SRC="$(qcom_host_libcdsprpc)"
 
 # The base image is prebuilt and published, so this build is just a pull.
-# QAIHA_BASE_IMAGE overrides it, e.g. to point at a locally built base.
-if [ -n "${QAIHA_BASE_IMAGE:-}" ]; then
-    BASE_IMAGE="$QAIHA_BASE_IMAGE"
-else
-    BASE_IMAGE="ghcr.io/qcom-ai-hub/qai-hub-apps-ubuntu-base:sha-f3ce55a28d93"
-fi
+BASE_IMAGE="$(resolve_base_image "ghcr.io/qcom-ai-hub/qai-hub-apps-ubuntu-base:sha-f3ce55a28d93")"
 
 echo "::step::Building Docker image from $BASE_IMAGE"
 if ! $SUDO docker build --build-arg "BASE_IMAGE=$BASE_IMAGE" -t "$IMAGE_TAG" .; then
@@ -140,36 +104,17 @@ if [ -n "$host_ip" ]; then
     exec_env_args+=(-e "QAIHA_HOST_IP=$host_ip")
 fi
 
-# A container is pinned to the image id it was created from, not to the tag, so
-# an existing container built from an older image would silently keep running
-# the stale one. Drop it and let the block below recreate it.
-built_image_id="$($SUDO docker image inspect -f '{{.Id}}' "$IMAGE_TAG")"
-container_image_id="$($SUDO docker container inspect -f '{{.Image}}' "$CONTAINER_NAME" 2>/dev/null || true)"
-if [ -n "$container_image_id" ] && [ "$container_image_id" != "$built_image_id" ]; then
-    echo "::step::Replacing container $CONTAINER_NAME built from a stale image"
-    $SUDO docker rm -f "$CONTAINER_NAME" >/dev/null 2>&1 || true
-    echo "::done::replace"
-fi
+replace_stale_container "$CONTAINER_NAME" "$IMAGE_TAG"
 
 # Reuse this app directory's container, or create it. The app directory is
 # bind-mounted rather than copied into the image, so app edits cost nothing.
-if ! $SUDO docker start "$CONTAINER_NAME" >/dev/null 2>&1; then
-    # A create or install that died earlier can leave a container behind under
-    # this name in a state docker start rejects; replace it.
-    $SUDO docker rm -f "$CONTAINER_NAME" >/dev/null 2>&1 || true
-    echo "::step::Creating container $CONTAINER_NAME"
-    # --init reaps the daemons that docker exec children reparent to PID 1.
-    $SUDO docker create --name "$CONTAINER_NAME" --init --privileged \
-        -v "$APP_DIR:/app" \
-        -v /usr/lib/:/opt/host/lib/:ro \
-        -v "$LIBCDSPRPC_SRC:/usr/lib/libcdsprpc.so:ro" \
-        -v /tmp/socket/cam_server:/tmp/socket/cam_server \
-        -v "$QAIRT_ROOT:$QAIRT_ROOT" \
-        -p 8080:8080 \
-        "$IMAGE_TAG" sleep infinity >/dev/null
-    $SUDO docker start "$CONTAINER_NAME" >/dev/null
-    echo "::done::container"
-fi
+start_container "$CONTAINER_NAME" "$IMAGE_TAG" --privileged \
+    -v "$APP_DIR:/app" \
+    -v /usr/lib/:/opt/host/lib/:ro \
+    -v "$LIBCDSPRPC_SRC:/usr/lib/libcdsprpc.so:ro" \
+    -v /tmp/socket/cam_server:/tmp/socket/cam_server \
+    -v "$QAIRT_ROOT:$QAIRT_ROOT" \
+    -p 8080:8080
 
 # Stop the container after every launch: docker-proxy holds port 8080 for as
 # long as the container runs, not as long as the app runs, which would block the
@@ -182,39 +127,11 @@ cleanup_container() {
 }
 trap cleanup_container EXIT
 
-if [ "${QC_INTERNAL_HOST:-}" = "1" ]; then
-    echo "::step::Installing Qualcomm CA certificates in $CONTAINER_NAME"
-    $SUDO docker exec "$CONTAINER_NAME" bash -c '
-        set -euo pipefail
-        cert_dir=/usr/local/share/ca-certificates/qualcomm.com
-        if [ ! -f "$cert_dir/nscacert.crt" ]; then
-            mkdir -p "$cert_dir"
-            wget --no-check-certificate -P "$cert_dir" \
-                https://pki.qualcomm.com/qc_root_g2_cert.crt \
-                https://pki.qualcomm.com/ssl_v2_cert.crt \
-                https://pki.qualcomm.com/ssl_v4_cert.crt
-            wget --no-check-certificate -O "$cert_dir/nscacert.crt" \
-                https://github.qualcomm.com/raw/netskope-ssl/download/main/nscacert.cer
-            update-ca-certificates
-        fi'
-    echo "::done::Qualcomm CA certificates"
-fi
+install_qc_ca_certs "$CONTAINER_NAME"
 
 if [ -f install_runtime.sh ]; then
-    stamp="$(runtime_stamp)"
-    installed="$($SUDO docker exec "$CONTAINER_NAME" cat "$CONTAINER_RUNTIME_MARKER" 2>/dev/null || true)"
-    if [ "$installed" = "$stamp" ]; then
-        echo "::skip::Runtime already installed in $CONTAINER_NAME (marker at $CONTAINER_RUNTIME_MARKER matches $stamp)"
-    else
-        log_runtime_marker_miss "$CONTAINER_NAME:$CONTAINER_RUNTIME_MARKER" "$installed" "$stamp"
-        echo "::step::Installing runtime in $CONTAINER_NAME"
-        $SUDO docker exec "${exec_env_args[@]}" -w /app \
-            "$CONTAINER_NAME" bash install_runtime.sh
-        $SUDO docker exec "$CONTAINER_NAME" bash -c \
-            'mkdir -p "$(dirname "$1")" && printf "%s\n" "$2" > "$1"' _ "$CONTAINER_RUNTIME_MARKER" "$stamp"
-        echo "Wrote runtime marker $stamp to $CONTAINER_NAME:$CONTAINER_RUNTIME_MARKER"
-        echo "::done::Installing runtime"
-    fi
+    install_runtime_in_container "$CONTAINER_NAME" "$CONTAINER_RUNTIME_MARKER" \
+        "$(runtime_stamp "${STAMP_FILES[@]}")" "${exec_env_args[@]}"
 fi
 
 # -i so the app can read stdin, -t so Ctrl-C reaches it inside the container

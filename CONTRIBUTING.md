@@ -358,6 +358,9 @@ global `versions.env`. Example: `apps/whisper_windows_py/versions.override.env` 
 | `interactive.sh` | `require_consent [--skip-on-decline] <desc> -- <cmd>...` | y/N gate for system-mutating commands. Auto-passes when `NON_INTERACTIVE=true` or `INTERACTIVE_GRANTED=1`; on approval it exports `INTERACTIVE_GRANTED=1` for that subtree so one approval covers nested calls. Declining aborts, or with `--skip-on-decline` emits `::skip::` and returns non-zero. |
 | `retry.sh` | `with_retry [--attempts N] [--backoff S] <desc> -- <cmd>...` | Retries a flaky command (default 3 attempts, 5s base backoff), returning the final exit code so callers under `set -e` still abort. |
 | `exit_codes.sh` | sets `$QAIHA_EXIT_BUILD_REQUIRED` | Exit code (86) a launch/run script uses to tell the CLI the app is not built yet; `run` then builds and retries once. Kept in sync with `BUILD_REQUIRED_EXIT_CODE` in `qai_hub_apps.experimental.commands.run` and with `exit_codes.ps1`. |
+| `docker_utils.sh` | `docker_image_tag <prefix> <app_dir>`, `resolve_base_image <pinned>`, `replace_stale_container <container> <image>`, `start_container <container> <image> [<create_args>...]`, `install_qc_ca_certs <container> [--java-keystore]` | Docker steps shared by the generated `build.sh`/`launch.sh`. Runs docker through `$SUDO` when the caller has sourced `sudo.sh`. |
+| `runtime_utils.sh` | `runtime_stamp <file>...`, `install_runtime_native <marker> <stamp>`, `install_runtime_in_container <container> <marker> <stamp> [<exec_args>...]` | Runs `install_runtime.sh` unless the runtime marker already holds the current stamp. |
+| `adb_utils.sh` | `select_adb_device` | Sets `$SERIAL` to the connected Android device, prompting when there are several. |
 
 ### PowerShell utilities (`.ps1`)
 
@@ -372,6 +375,9 @@ global `versions.env`. Example: `apps/whisper_windows_py/versions.override.env` 
 | `interactive.ps1` | `Invoke-WithConsent -Description <str> [-SkipOnDecline] -Action { … }` — PowerShell equivalent of `require_consent` |
 | `retry.ps1` | `Invoke-WithRetry -Description <str> [-Attempts N] [-Backoff S] -Action { … }` |
 | `exit_codes.ps1` | sets `$QAIHA_EXIT_BUILD_REQUIRED` — the `exit_codes.sh` counterpart |
+| `docker_utils.ps1` | `Get-DockerImageTag`, `Resolve-BaseImage`, `Start-Container`, `Install-QcCaCerts` — the `docker_utils.sh` counterpart |
+| `runtime_utils.ps1` | `Get-RuntimeStamp -Files <string[]>`, `Install-Runtime -Marker <path> -Stamp <str>` — the `runtime_utils.sh` counterpart |
+| `adb_utils.ps1` | `Select-AdbDevice` — returns the device serial; the `adb_utils.sh` counterpart |
 
 ### `NON_INTERACTIVE` environment variable
 
