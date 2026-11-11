@@ -1,0 +1,28 @@
+name: EasyOCR Text Recognition
+id: easyocr_ubuntu_py
+license_url: https://github.com/qualcomm/ai-hub-apps/blob/main/LICENSE
+license_type: bsd-3-clause
+runtime: tflite
+status: published
+domain: 'Computer Vision'
+headline: 'On-device optical character recognition with TFLite'
+description: 'A sample app for Ubuntu integrating EasyOCR, a two-stage text detector (CRAFT) plus text recognizer (CTC), run via TFLite Runtime. It uses GStreamer for input video/images and provides a minimal web interface to stream output frames with recognized text overlaid, suitable for embedded applications.'
+precisions: [w8a8]
+app_type: 'ubuntu'
+static_img_filename: 'app_screen.png'
+app_repo_relative_path: 'easyocr_ubuntu_py'
+model_file_paths:
+  - 'models/easyocr_detector.tflite'
+  - 'models/easyocr_recognizer.tflite'
+os:
+  name: Ubuntu
+  version: 24.04+
+languages: ['Python']
+base_docker: ubuntu.dockerfile
+use_case: 'Image To Text'
+supported_devices:
+  - name: "Arduino VENTUNO Q"
+    status: "Tested"
+  - name: "Dragonwing IQ-9075 EVK"
+    status: "Not Tested"
+related_models: ['easyocr']

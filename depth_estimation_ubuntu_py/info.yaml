@@ -1,0 +1,28 @@
+name: Depth Estimation
+id: depth_estimation_ubuntu_py
+license_url: https://github.com/qualcomm/ai-hub-apps/blob/main/LICENSE
+license_type: bsd-3-clause
+runtime: tflite
+status: published
+domain: 'Computer Vision'
+headline: 'On-device monocular depth estimation with TFLite'
+description: 'A sample app for Ubuntu integrating monocular depth-estimation models (Depth-Anything, Depth-Anything-V2, Depth-Anything-V3, Midas) via TFLite Runtime.
+  It uses GStreamer for input video and provides a minimal web interface to stream a depth heatmap suitable for embedded applications.'
+precisions: [float]
+app_type: 'ubuntu'
+static_img_filename: 'DepthAnything.png'
+app_repo_relative_path: 'depth_estimation_ubuntu_py'
+model_file_paths:
+    - 'models/depth_anything.tflite'
+os:
+    name: Ubuntu
+    version: 24.04+
+languages: ['Python']
+base_docker: ubuntu.dockerfile
+use_case: 'Depth Estimation'
+supported_devices:
+    - name: "Arduino VENTUNO Q"
+      status: "Tested"
+    - name: "Dragonwing IQ-9075 EVK"
+      status: "Not Tested"
+related_models: ['depth_anything_v3', 'depth_anything_v2', 'depth_anything', 'midas']

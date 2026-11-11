@@ -1,0 +1,14 @@
+{
+  "dependencies": [
+    {
+      "name": "opencv4",
+      "default-features": false,
+      "features": [
+        "jpeg",
+        "png",
+        "highgui",
+        "win32ui"
+      ]
+    }
+  ]
+}

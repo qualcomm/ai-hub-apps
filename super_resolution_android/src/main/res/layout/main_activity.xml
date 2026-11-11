@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+
+    <androidx.cardview.widget.CardView
+        android:id="@+id/appTitleCard"
+        android:layout_width="409sp"
+        android:layout_height="50sp"
+        android:backgroundTint="@color/purple_qcom"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <TextView
+            android:id="@+id/appTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_gravity="center"
+            android:gravity="center"
+            android:text="Super Resolution"
+            android:textColor="@color/white"
+            android:textSize="20sp"
+            android:textStyle="bold" />
+
+    </androidx.cardview.widget.CardView>
+
+    <androidx.cardview.widget.CardView
+        android:id="@+id/imageSelectorCard"
+        android:layout_width="409sp"
+        android:layout_height="50sp"
+        android:backgroundTint="@color/purple_qcom"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent">
+
+        <TextView
+            android:id="@+id/imageSelectorText"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_marginStart="60sp"
+            android:gravity="center"
+            android:text="Image"
+            android:textColor="@color/white"
+            android:textSize="17sp" />
+
+
+        <Spinner
+            android:id="@+id/imageSelector"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_gravity="end"
+            android:layout_marginEnd="30sp"
+            android:backgroundTint="@color/white"
+            android:theme="@style/spinnerTheme" />
+
+    </androidx.cardview.widget.CardView>
+
+    <RadioGroup
+        android:id="@+id/delegateSelectionGroup"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="8sp"
+        android:backgroundTint="@color/purple_qcom"
+        android:orientation="horizontal"
+        app:layout_constraintBottom_toTopOf="@+id/imageSelectorCard"
+        tools:layout_editor_absoluteX="2sp">
+
+        <RadioButton
+            android:id="@+id/cpuOnlyRadio"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginStart="30dp"
+            android:layout_marginEnd="25dp"
+            android:buttonTint="@color/purple_qcom"
+            android:includeFontPadding="true"
+            android:text="CPU Only"
+            android:textStyle="bold" />
+
+        <RadioButton
+            android:id="@+id/defaultDelegateRadio"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginStart="25dp"
+            android:layout_marginEnd="50dp"
+            android:buttonTint="@color/purple_qcom"
+            android:checked="true"
+            android:includeFontPadding="true"
+            android:text="All Hardware"
+            android:textStyle="bold" />
+
+
+    </RadioGroup>
+
+    <Button
+        android:id="@+id/runModelButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="32dp"
+        android:backgroundTint="@color/purple_qcom"
+        android:text="Run Model"
+        android:textColor="@color/white"
+        app:layout_constraintBottom_toTopOf="@+id/delegateSelectionGroup"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <androidx.cardview.widget.CardView
+        android:id="@+id/selectedImageCard"
+        android:layout_width="360sp"
+        android:layout_height="360sp"
+        android:layout_marginStart="40sp"
+        android:layout_marginTop="10sp"
+        android:layout_marginEnd="40sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/appTitleCard">
+
+        <ImageView
+            android:id="@+id/selectedImageView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:src="@drawable/ic_launcher_background" />
+    </androidx.cardview.widget.CardView>
+
+    <TextView
+        android:id="@+id/inferenceTimeResultText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="-- ms"
+        android:textColor="@color/purple_qcom"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toBottomOf="@+id/inferenceTimeText"
+        app:layout_constraintEnd_toEndOf="@+id/predictionTimeResultText"
+        app:layout_constraintStart_toStartOf="@+id/predictionTimeResultText"
+        app:layout_constraintTop_toTopOf="@+id/inferenceTimeText" />
+
+    <TextView
+        android:id="@+id/predictionTimeResultText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="-- ms"
+        android:textColor="@color/purple_qcom"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toBottomOf="@+id/predictionTimeText"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toEndOf="@+id/predictionTimeText"
+        app:layout_constraintTop_toTopOf="@+id/predictionTimeText"
+        app:layout_constraintVertical_bias="0.0" />
+
+    <TextView
+        android:id="@+id/predictionTimeText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_marginBottom="16dp"
+        android:text="End-to-End Prediction Time"
+        android:textColor="#344235"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toTopOf="@+id/runModelButton"
+        app:layout_constraintEnd_toStartOf="@+id/predictionTimeResultText"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <TextView
+        android:id="@+id/inferenceTimeText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_marginBottom="8dp"
+        android:text="Inference Time"
+        android:textColor="#344235"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toTopOf="@+id/predictionTimeText"
+        app:layout_constraintEnd_toEndOf="@+id/predictionTimeText" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

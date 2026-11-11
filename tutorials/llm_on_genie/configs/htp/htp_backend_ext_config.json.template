@@ -1,0 +1,21 @@
+{
+    "devices": [
+        {
+            "soc_model": <TODO>,
+            "dsp_arch": "<TODO>",
+            "cores": [
+                {
+                    "core_id": 0,
+                    "perf_profile": "burst",
+                    "rpc_control_latency": 100
+                }
+            ]
+        }
+    ],
+    "memory": {
+        "mem_type": "shared_buffer"
+    },
+    "context": {
+        "weight_sharing_enabled": true
+    }
+}
