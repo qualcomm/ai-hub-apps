@@ -12,7 +12,7 @@ on:
         type: string
         required: true
       app_type:
-        description: "App platform: ubuntu, android, or windows"
+        description: "App platform: ubuntu, android, windows, or imsdk"
         type: string
         required: true
       model_selection:
@@ -51,10 +51,10 @@ on:
         required: true
         type: string
       app_type:
-        description: "App platform: ubuntu, android, or windows"
+        description: "App platform: ubuntu, android, windows, or imsdk"
         required: true
         type: choice
-        options: [ubuntu, android, windows]
+        options: [ubuntu, android, windows, imsdk]
         default: ubuntu
       model_selection:
         description: "Which models to test per app"

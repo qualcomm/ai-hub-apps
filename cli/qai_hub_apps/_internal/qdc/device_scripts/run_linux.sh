@@ -20,7 +20,8 @@ remount_rootfs_rw() {
     fi
 }
 
-APP_DIR=/data/local/tmp/TestContent/app
+TEST_CONTENT_DIR=/data/local/tmp/TestContent
+APP_DIR="$TEST_CONTENT_DIR/app"
 LOG_DIR=/data/local/tmp/QDC_logs
 # set QAIHA_APP_ROOT for shared utils
 export QAIHA_APP_ROOT="$APP_DIR"
@@ -96,6 +97,15 @@ REGISTRY_PATH="<<REGISTRY_PATH>>"
 TEST_ARGS=(--app-path "$APP_DIR" --device "<<DEVICE_NAME>>" --model-id "<<MODEL_ID>>")
 [ -n "$REGISTRY_PATH" ] && TEST_ARGS+=(--registry "$REGISTRY_PATH")
 [ "$USE_DOCKER" = "false" ] && TEST_ARGS+=(--no-docker)
+
+# QDC devices run the Adreno drivers, whose CDI and env files differ from the
+# ones a user's device pins, so an IMSDK app fetches the QDC ones instead.
+# Temporary: https://github.com/qcom-ai-hub/tetracode/issues/22430
+IMSDK_DEVICE_ASSETS="$APP_DIR/scripts/assets/imsdk_utils/device_assets.json"
+if [ -f "$IMSDK_DEVICE_ASSETS" ]; then
+    cp "$TEST_CONTENT_DIR/device_assets.json" "$IMSDK_DEVICE_ASSETS"
+    echo "Replaced $IMSDK_DEVICE_ASSETS with the QDC device assets."
+fi
 
 qai-hub-apps test "${TEST_ARGS[@]}"
 

@@ -100,7 +100,10 @@ def bundle_app(
         # which the bundle already carries, so it builds from the bundle as-is.
         # Drop this (and the README instructions) once
         # https://github.com/qcom-ai-hub/ai-hub-apps-internal/pull/463 merges.
-        if app_info.base_docker is not None:
+        if (
+            app_info.base_docker is not None
+            and (DOCKER_ROOT / app_info.base_docker).is_file()
+        ):
             shutil.copy2(
                 DOCKER_ROOT / app_info.base_docker, tmp_dir / "base.Dockerfile"
             )

@@ -1,0 +1,120 @@
+#!/usr/bin/env bash
+{{ header }}
+set -euo pipefail
+
+APP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+export QAIHA_APP_ROOT="$APP_DIR"
+cd "$APP_DIR"
+
+USE_DOCKER=1
+CLEAN=0
+RUN_TEST=0
+APP_ARGS=()
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --no-docker) USE_DOCKER=0 ;;
+        --docker) USE_DOCKER=1 ;;
+        --clean) CLEAN=1 ;;
+        --test) RUN_TEST=1 ;;
+        --) shift; APP_ARGS=("$@"); break ;;
+        *) echo "::error::Unknown argument: $1" >&2; exit 2 ;;
+    esac
+    shift
+done
+
+if [ "$USE_DOCKER" -eq 0 ]; then
+    echo "::error::{{ app_id }} is an IMSDK app and only runs in Docker; --no-docker is not supported." >&2
+    exit 1
+fi
+
+SCRIPT="run.sh"
+[ "$RUN_TEST" -eq 1 ] && SCRIPT="test.sh"
+
+source ../_shared/scripts/runtime_utils.sh
+STAMP_FILES=({{ runtime_stamp_files | join(" ") }})
+
+if [ ! -f "$APP_DIR/Dockerfile" ]; then
+    echo "::error::No Dockerfile found for {{ app_id }}." >&2
+    exit 1
+fi
+
+source ../_shared/scripts/sudo.sh
+source ../_shared/scripts/docker_utils.sh
+source ../_shared/scripts/imsdk_utils.sh
+
+IMAGE_TAG="$(docker_image_tag aiha-run "$APP_DIR")"
+CONTAINER_NAME="$IMAGE_TAG-container"
+
+# Outside /app, which is a bind mount.
+CONTAINER_VENV_DIR="/opt/qaiha/venv"
+CONTAINER_RUNTIME_MARKER="/opt/qaiha/runtime-installed"
+
+if [ "$CLEAN" -eq 1 ]; then
+    echo "::step::Cleaning prior docker container and image"
+    $SUDO docker rm -f "$CONTAINER_NAME" >/dev/null 2>&1 || true
+    $SUDO docker rmi "$IMAGE_TAG" >/dev/null 2>&1 || true
+    echo "::done::clean"
+fi
+
+BASE_IMAGE="$(resolve_base_image "{{ base_image }}:{{ base_image_tag }}")"
+
+echo "::step::Building Docker image from $BASE_IMAGE"
+if ! $SUDO docker build --build-arg "BASE_IMAGE=$BASE_IMAGE" -t "$IMAGE_TAG" .; then
+    echo "::error::Failed to build the image for {{ app_id }}. If '$BASE_IMAGE' could not be pulled, check network access to it, or set QAIHA_BASE_IMAGE to a base image you built locally." >&2
+    exit 1
+fi
+echo "::done::Docker image"
+
+# Passed on each exec rather than at create time, since the device can change between runs.
+exec_env_args=(-e "QAIHA_APP_ROOT=/app" -e "QAIHA_VENV_OVERRIDE=$CONTAINER_VENV_DIR")
+for var in "${!QAI_HUB_APPS_@}"; do
+    exec_env_args+=(-e "$var=${!var}")
+done
+# Lets the web UI print the host's address instead of the container's.
+host_ip="$(resolve_host_ip)"
+if [ -n "$host_ip" ]; then
+    exec_env_args+=(-e "QAIHA_HOST_IP=$host_ip")
+fi
+
+replace_stale_container "$CONTAINER_NAME" "$IMAGE_TAG"
+
+imsdk_fetch_device_assets
+
+# The CDI device covers the SoC; /dev plus the video4linux cgroup rule (major 81)
+# add USB cameras. Ports: 8080 web UI, 8900 RTSP.
+start_container "$CONTAINER_NAME" "$IMAGE_TAG" \
+    -v "$APP_DIR:/app" \
+    -v /dev:/dev \
+    --device-cgroup-rule 'c 81:* rmw' \
+    -p 8080:8080 \
+    -p 8900:8900 \
+    -e NON_INTERACTIVE="true" \
+    --env-file /etc/docker/env/qimsdk.env \
+    --device qualcomm.com/device=qimsdk
+
+# Stop the container on exit so it releases its ports, and give files written
+# to /app back to the calling user.
+cleanup_container() {
+    $SUDO docker exec "$CONTAINER_NAME" chown -R "$(id -u):$(id -g)" /app >/dev/null 2>&1 ||
+        echo "::warning::Failed to reclaim ownership of $APP_DIR from $CONTAINER_NAME; files it wrote may still be owned by root." >&2
+    $SUDO docker stop "$CONTAINER_NAME" >/dev/null 2>&1 || true
+}
+trap cleanup_container EXIT
+
+install_qc_ca_certs "$CONTAINER_NAME"
+
+if [ -f install_runtime.sh ]; then
+    install_runtime_in_container "$CONTAINER_NAME" "$CONTAINER_RUNTIME_MARKER" \
+        "$(runtime_stamp "${STAMP_FILES[@]}")" "${exec_env_args[@]}"
+fi
+
+# -it forwards stdin and Ctrl-C to the app; docker rejects -t without a terminal.
+tty_args=()
+if [ -t 0 ]; then
+    tty_args=(-i -t)
+fi
+
+echo "::step::Running {{ app_id }} in Docker"
+$SUDO docker exec "${tty_args[@]}" "${exec_env_args[@]}" -w /app "$CONTAINER_NAME" \
+    bash "$SCRIPT" "${APP_ARGS[@]}"
+echo "::done::run"

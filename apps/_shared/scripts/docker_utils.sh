@@ -12,6 +12,8 @@
 #       in different directories never collide.
 #   resolve_base_image <pinned>
 #       Echo $QAIHA_BASE_IMAGE if set (e.g. a locally built base), else <pinned>.
+#   resolve_host_ip
+#       Echo the host's outbound IP address, or nothing if it cannot be found.
 #   replace_stale_container <container> <image>
 #       Remove <container> if it was created from an older build of <image>.
 #   start_container <container> <image> [<docker create arg>...]
@@ -31,6 +33,10 @@ docker_image_tag() {
 
 resolve_base_image() {
     echo "${QAIHA_BASE_IMAGE:-$1}"
+}
+
+resolve_host_ip() {
+    ip route get 1.1.1.1 2>/dev/null | awk '{for (i = 1; i < NF; i++) if ($i == "src") {print $(i + 1); exit}}'
 }
 
 # A container is pinned to the image id it was created from, not to the tag, so

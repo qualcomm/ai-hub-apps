@@ -40,6 +40,7 @@ class AppType(Enum):
     ANDROID = "android"
     WINDOWS = "windows"
     UBUNTU = "ubuntu"
+    IMSDK = "imsdk"
 
 
 class AppUrl(BaseConfig):

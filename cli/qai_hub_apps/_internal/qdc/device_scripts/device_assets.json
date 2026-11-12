@@ -1,0 +1,16 @@
+{
+  "Arduino VENTUNO Q": {
+    "Ubuntu 24.04": {
+      "env": {
+        "url": "https://qaihub-public-assets.s3.us-west-2.amazonaws.com/qai-hub-apps/assets/imsdk/2.1.0/qcs8275_ubuntu_server_qimsdk_no_session.env",
+        "path": "/etc/docker/env/qimsdk.env",
+        "sha256": "3356dc4786843720fd205c511987632cae75ac5f9efc689cbb68e807706ba987"
+      },
+      "cdi": {
+        "url": "https://qaihub-public-assets.s3.us-west-2.amazonaws.com/qai-hub-apps/assets/imsdk/2.1.0/qcs8275_ubuntu_server_qimsdk_no_session.json",
+        "path": "/etc/cdi/qimsdk.json",
+        "sha256": "143239c6004ce60dfefe73692aecf2a8ab5d8ca43e5935f9feabf6342e48dab4"
+      }
+    }
+  }
+}

@@ -99,7 +99,7 @@ for var in "${!QAI_HUB_APPS_@}"; do
 done
 # The container only sees its Docker bridge IP; pass the host's so the web UI
 # can print a URL reachable from the network.
-host_ip="$(ip route get 1.1.1.1 2>/dev/null | awk '{for (i = 1; i < NF; i++) if ($i == "src") {print $(i + 1); exit}}')"
+host_ip="$(resolve_host_ip)"
 if [ -n "$host_ip" ]; then
     exec_env_args+=(-e "QAIHA_HOST_IP=$host_ip")
 fi

@@ -45,6 +45,16 @@ def test_ubuntu_on_win32(monkeypatch):
     assert check_platform(_make_app(AppType.UBUNTU)) is False
 
 
+def test_imsdk_on_linux(monkeypatch):
+    monkeypatch.setattr("qai_hub_apps.validate.platform_check.sys.platform", "linux")
+    assert check_platform(_make_app(AppType.IMSDK)) is True
+
+
+def test_imsdk_on_win32(monkeypatch):
+    monkeypatch.setattr("qai_hub_apps.validate.platform_check.sys.platform", "win32")
+    assert check_platform(_make_app(AppType.IMSDK)) is False
+
+
 def test_app_with_unknown_type_is_true():
     app = _make_app(AppType.UBUNTU)
     app.app_type = "unknown_platform"  # type: ignore[attr-defined]

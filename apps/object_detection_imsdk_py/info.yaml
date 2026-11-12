@@ -1,0 +1,25 @@
+name: Object Detection in IMSDK
+id: object_detection_imsdk_py
+license_url: https://github.com/qualcomm/ai-hub-apps/blob/main/LICENSE
+license_type: bsd-3-clause
+runtime: tflite
+status: unpublished
+domain: 'Computer Vision'
+headline: 'Yolo Object Detection with QIM SDK'
+description: 'A sample application using QIMSDK python app builder for object detection via TFLite Runtime. It uses hardware-accelerated video decoding and encoding, GPU preprocessing, and AI inference on the NPU to detect objects and draw bounding boxes and labels on each frame. It handles video file or USB camera input, with annotated output saved to MP4 or streamed over RTSP'
+precisions: [float]
+app_type: 'imsdk'
+static_img_filename: 'app_screen.png'
+app_repo_relative_path: 'object_detection_imsdk_py'
+model_file_paths:
+  - 'models/detector.tflite'
+os:
+  name: Ubuntu
+  version: 24.04+
+languages: ['Python']
+base_docker: imsdk
+use_case: 'Object Detection'
+supported_devices:
+  - name: "Arduino VENTUNO Q"
+    status: "Tested"
+related_models: ['yolox', 'yolov8_det', 'yolo26_det']

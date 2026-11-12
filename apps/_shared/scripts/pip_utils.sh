@@ -13,6 +13,12 @@
 #       <pkg_or_req>    : package spec (e.g. numpy==1.24) or -r requirements.txt
 #       -- <args>       : extra flags passed directly to uv pip install
 #
+#   create_venv [--venv <dir>] [--python <exe>] [-- <venv_args>]
+#       Create the venv if it does not exist yet, at the same directory
+#       install_pip_deps and activate_venv resolve. Args after -- go to
+#       `python -m venv` (e.g. --system-site-packages). To install into it
+#       yourself, activate_venv and use `python -m pip`.
+#
 #   activate_venv [<dir>]
 #       Activate the venv install_pip_deps created. Resolves the same directory,
 #       so callers normally pass nothing.
@@ -38,6 +44,29 @@ _resolve_venv_dir() {
     else
         printf '%s' "${QAIHA_APP_ROOT:-$PWD}/.venv"
     fi
+}
+
+create_venv() {
+    local venv_dir=""
+    local python_exe=""
+    local -a venv_args=()
+
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --venv)   venv_dir="$2"; shift 2 ;;
+            --python) python_exe="$2"; shift 2 ;;
+            --) shift; venv_args=("$@"); break ;;
+            *) echo "error: create_venv: unknown argument '$1'" >&2; return 2 ;;
+        esac
+    done
+
+    venv_dir="$(_resolve_venv_dir "$venv_dir")"
+    if [ -x "$venv_dir/bin/python" ]; then
+        return 0
+    fi
+    echo "::step::Creating virtual environment at $venv_dir"
+    "${python_exe:-python${PYTHON_VERSION}}" -m venv "${venv_args[@]}" "$venv_dir"
+    echo "::done::virtual environment"
 }
 
 activate_venv() {
@@ -74,14 +103,12 @@ _install_pip_deps() {
         esac
     done
 
+    local -a create_args=()
+    [ -n "$venv_dir" ] && create_args+=(--venv "$venv_dir")
+    [ -n "$python_exe" ] && create_args+=(--python "$python_exe")
+    create_venv "${create_args[@]}"
     venv_dir="$(_resolve_venv_dir "$venv_dir")"
-    local python_bin="${python_exe:-python${PYTHON_VERSION}}"
 
-    if [ ! -x "$venv_dir/bin/python" ]; then
-        echo "::step::Creating virtual environment at $venv_dir"
-        "$python_bin" -m venv "$venv_dir"
-        echo "::done::virtual environment"
-    fi
     echo "::step::Installing uv"
     "$venv_dir/bin/python" -m pip install --quiet uv
 

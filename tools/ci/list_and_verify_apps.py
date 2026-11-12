@@ -5,10 +5,11 @@
 # ---------------------------------------------------------------------
 """Group CLI-registered apps by app_type, verify full coverage, and print results.
 
-Prints one KEY=JSON_ARRAY line per app type to stdout:
+Prints one KEY=JSON_ARRAY line per app type (every AppType value) to stdout:
   ubuntu=["app_a", "app_b"]
   android=["app_c"]
   windows=[]
+  imsdk=[]
 
 Exits non-zero if any registry app is not covered by any group.
 
@@ -22,7 +23,7 @@ import json
 import sys
 
 from qai_hub_apps.registry import Registry
-from qai_hub_apps._internal.configs.info_yaml import AppInfoInternal
+from qai_hub_apps._internal.configs.info_yaml import AppInfoInternal, AppType
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
@@ -34,7 +35,7 @@ parser.add_argument(
 )
 args = parser.parse_args()
 
-groups: dict[str, list[str]] = {"ubuntu": [], "android": [], "windows": []}
+groups: dict[str, list[str]] = {t.value: [] for t in AppType}
 registry = Registry.load()
 all_apps = set()
 for app in registry.apps:
@@ -50,17 +51,16 @@ if args.only:
         print(f"ERROR: Unknown app IDs: {sorted(unknown)}", file=sys.stderr)
         sys.exit(1)
 else:
-    covered = set(groups["ubuntu"] + groups["android"] + groups["windows"])
+    covered = {app_id for ids in groups.values() for app_id in ids}
     missing = all_apps - covered
     if missing:
         print(f"ERROR: Apps not covered by any group: {sorted(missing)}", file=sys.stderr)
         sys.exit(1)
 
+counts = ", ".join(f"{key}={len(ids)}" for key, ids in groups.items())
 print(
     f"Coverage OK: {sum(len(v) for v in groups.values())} apps {f'(filtered to: {sorted(args.only)}) ' if args.only else ''}— "
-    f"ubuntu={len(groups['ubuntu'])}, "
-    f"android={len(groups['android'])}, "
-    f"windows={len(groups['windows'])}",
+    f"{counts}",
     file=sys.stderr,
 )
 

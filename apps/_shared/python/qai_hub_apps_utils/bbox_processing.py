@@ -212,6 +212,75 @@ def batched_nms(
     return boxes_out, scores_out, class_indices_out
 
 
+def filter_boxes(
+    boxes: np.ndarray,
+    scores: np.ndarray,
+    class_indices: np.ndarray,
+    score_threshold: float,
+    low: float = 0.0,
+    high: float = 1.0,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """
+    Keep boxes scoring at least `score_threshold` that lie fully inside [low, high].
+
+    Parameters
+    ----------
+    boxes
+        Boxes of shape (N, 4) in the format ``(x1, y1, x2, y2)``.
+    scores
+        Confidence scores of shape (N,) for each box.
+    class_indices
+        Class ID of shape (N,) for each box.
+    score_threshold
+        Minimum score a box needs to be kept.
+    low
+        Smallest coordinate a kept box may have.
+    high
+        Largest coordinate a kept box may have.
+
+    Returns
+    -------
+    tuple[np.ndarray, np.ndarray, np.ndarray]
+        The kept ``(boxes, scores, class_indices)``, with class indices as int32.
+    """
+    in_bounds = np.all((boxes >= low) & (boxes <= high), axis=1)
+    mask = (scores >= score_threshold) & in_bounds
+    return boxes[mask], scores[mask], class_indices[mask].astype(np.int32)
+
+
+def map_boxes_to_region(
+    bboxes: np.ndarray,
+    in_size_hw: tuple[int, int],
+    region_xywh: tuple[int, int, int, int],
+) -> np.ndarray:
+    """Convert model-pixel ``(x1, y1, x2, y2)`` boxes to 0-1 region coordinates.
+
+    Parameters
+    ----------
+    bboxes
+        Boxes of shape (N, 4) in model input pixels.
+    in_size_hw
+        Model input size; boxes are returned unchanged if it is not positive.
+    region_xywh
+        Region of the model input holding the frame, in model input pixels.
+
+    Returns
+    -------
+    np.ndarray
+        Boxes of shape (N, 4), normalized to the region.
+    """
+    in_h, in_w = in_size_hw
+    x0, y0, w_region, h_region = region_xywh
+    if in_h <= 0 or in_w <= 0 or w_region <= 0 or h_region <= 0:
+        return bboxes
+
+    left = (bboxes[:, 0] - x0) / w_region
+    top = (bboxes[:, 1] - y0) / h_region
+    right = (bboxes[:, 2] - x0) / w_region
+    bottom = (bboxes[:, 3] - y0) / h_region
+    return np.stack([left, top, right, bottom], axis=1)
+
+
 def box_xywh_to_xyxy(box_cwh: np.ndarray, flat_boxes: bool = False) -> np.ndarray:
     """
     Convert center (xc, yc), width (w), height (h) to (x0, y0, x1, y1).

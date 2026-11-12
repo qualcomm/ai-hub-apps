@@ -20,7 +20,11 @@ def check_platform(app: App) -> bool:
     if app_type == AppType.ANDROID:
         return False
 
-    platform_map = {AppType.WINDOWS: "win32", AppType.UBUNTU: "linux"}
+    platform_map = {
+        AppType.WINDOWS: "win32",
+        AppType.UBUNTU: "linux",
+        AppType.IMSDK: "linux",
+    }
     required_platform = platform_map.get(app_type)
     if required_platform is None:
         return True

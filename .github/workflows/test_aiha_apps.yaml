@@ -86,6 +86,7 @@ jobs:
       ubuntu: ${{ steps.list.outputs.ubuntu }}
       android: ${{ steps.list.outputs.android }}
       windows: ${{ steps.list.outputs.windows }}
+      imsdk: ${{ steps.list.outputs.imsdk }}
 
     steps:
       - uses: actions/checkout@v7
@@ -201,9 +202,33 @@ jobs:
       QAIHA_CI_AWS_ROLE_ARN: ${{ secrets.QAIHA_CI_AWS_ROLE_ARN }}
 
 
+  test_imsdk_apps:
+    name: "Test ${{ matrix.app }} (imsdk)"
+    needs: list_apps
+    if: ${{ needs.list_apps.outputs.imsdk != '[]' }}
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        app: ${{ fromJson(needs.list_apps.outputs.imsdk) }}
+    uses: ./.github/workflows/test-app.yaml
+    with:
+      app: ${{ matrix.app }}
+      app_type: imsdk
+      model_selection: ${{ inputs.model_selection }}
+      test_stage: ${{ inputs.test_stage }}
+      # IMSDK apps are docker-only
+      use_docker: true
+      version: ${{ inputs.version }}
+      install_source: ${{ inputs.install_source }}
+    secrets:
+      QDC_API_TOKEN: ${{ secrets.QDC_API_TOKEN }}
+      QAIHA_CI_AWS_ROLE_ARN: ${{ secrets.QAIHA_CI_AWS_ROLE_ARN }}
+
+
   report:
     name: "Build Test Report"
-    needs: [test_ubuntu_apps, test_android_apps, test_windows_apps]
+    needs: [test_ubuntu_apps, test_android_apps, test_windows_apps, test_imsdk_apps]
     if: always()
     runs-on: aihub-apps-ubuntu-2404-ec2
     outputs:

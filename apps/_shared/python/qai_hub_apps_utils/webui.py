@@ -5,8 +5,9 @@
 """Shared Flask-based live-video web UI for Ubuntu-py apps.
 
 A grid of windows (`set_windows`, default 1x1), each showing live video
-(`set_frame`) or one still image (`set_image`) with a caption (`set_text`); an
-"Info" side panel (`set_sections`); and browser keydown callbacks (`on_keypress`).
+(`set_frame`), one still image (`set_image`), or an RTSP stream (`set_rtsp_stream`)
+with a caption (`set_text`); an "Info" side panel (`set_sections`); and browser
+keydown callbacks (`on_keypress`).
 
 All state lives on a `WebUI` object with its own Flask app, so an app creates
 one (`ui = WebUI()`, or `WebUI(port=...)`) and drives it (`ui.start_thread()`,
@@ -19,6 +20,7 @@ blocked: `/keypress` requires a JSON content type and no CORS headers are sent.)
 Only run this on a trusted, isolated network.
 """
 
+import atexit
 import dataclasses
 import inspect
 import logging
@@ -42,6 +44,9 @@ _ASSET_DIR = "assets/webui"
 # Frames wider than this are downscaled before JPEG encoding; see `set_frame`.
 _DEFAULT_MAX_WIDTH = 1280
 
+# Wait between attempts to (re)open an RTSP stream that is not serving yet or dropped.
+_RTSP_RETRY_SECONDS = 2.0
+
 # An Info row is (label, value); a list value renders as an indented sub-group.
 InfoRow = tuple[str, "str | list[tuple[str, str]]"]
 
@@ -55,6 +60,9 @@ class _Window:
     # True when the window holds one still image (`set_image`) rather than a
     # live stream, so the client fetches it once instead of opening /stream.
     static: bool = False
+    # Bumped by every set_rtsp_stream on this window; a reader whose token is no
+    # longer current stops, so a window has at most one live RTSP reader.
+    rtsp_token: int = 0
 
 
 def _mjpeg_generator(win: _Window) -> Iterator[bytes]:
@@ -89,6 +97,7 @@ class WebUI:
         self._keypress_callbacks: dict[str, Callable[[], Any]] = {}
         self._server_started = False
         self._callback_queue: queue.Queue[Callable[[], Any]] = queue.Queue()
+        self._rtsp_readers: list[threading.Thread] = []
 
         self.app.add_url_rule("/", "index", self._index)
         # Bare /stream aliases window 0 for apps that hardcode it.
@@ -206,6 +215,67 @@ class WebUI:
     ) -> None:
         """Publish `bgr_image` as `window`'s still image."""
         self._publish(bgr_image, window, jpeg_quality, max_width, static=True)
+
+    def set_rtsp_stream(
+        self,
+        url: str,
+        window: int = 0,
+        jpeg_quality: int = 80,
+        max_width: int | None = _DEFAULT_MAX_WIDTH,
+    ) -> None:
+        """Show the RTSP stream at `url` as `window`'s live video.
+
+        Browsers cannot open ``rtsp://``, so a background thread decodes the stream
+        with OpenCV (FFmpeg) and publishes each frame like `set_frame`. The thread
+        retries until `url` is serving and reconnects if it drops. Calling it again on the same window replaces the previous stream. Safe to call at any time.
+        """
+        win = self._get_window(window)
+        if win is None:
+            return
+        win.rtsp_token += 1
+        if not self._rtsp_readers:
+            atexit.register(self._stop_rtsp_readers)
+        reader = threading.Thread(
+            target=self._rtsp_reader,
+            args=(win, win.rtsp_token, url, window, jpeg_quality, max_width),
+            daemon=True,
+        )
+        self._rtsp_readers.append(reader)
+        reader.start()
+
+    def _stop_rtsp_readers(self) -> None:
+        # A daemon thread still inside FFmpeg when the interpreter tears down
+        # aborts the process, so let each reader leave its loop and release first.
+        for win in self._windows:
+            win.rtsp_token += 1
+        for reader in self._rtsp_readers:
+            reader.join(timeout=5)
+
+    def _rtsp_reader(
+        self,
+        win: _Window,
+        token: int,
+        url: str,
+        window: int,
+        jpeg_quality: int,
+        max_width: int | None,
+    ) -> None:
+        """Publish frames from `url` to `window` until superseded by a newer stream."""
+        while win.rtsp_token == token:
+            capture = cv2.VideoCapture(url, cv2.CAP_FFMPEG)
+            if not capture.isOpened():
+                capture.release()
+                time.sleep(_RTSP_RETRY_SECONDS)
+                continue
+            _logger.info("Connected to RTSP stream %s (window %d)", url, window)
+            while win.rtsp_token == token:
+                ok, frame = capture.read()
+                if not ok:
+                    _logger.warning("RTSP stream %s dropped; reconnecting", url)
+                    break
+                self._publish(frame, window, jpeg_quality, max_width, static=False)
+            capture.release()
+            time.sleep(_RTSP_RETRY_SECONDS)
 
     def _publish(
         self,

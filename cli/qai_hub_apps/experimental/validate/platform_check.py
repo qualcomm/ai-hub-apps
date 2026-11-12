@@ -65,7 +65,7 @@ def ensure_build_supported(app: App, use_docker: bool) -> None:
       x86-64 Docker host.
     - Docker-mode builds require Docker to be installed and running.
 
-    Ubuntu / Windows-Python apps have no build-time host constraint (their build
+    Ubuntu / IMSDK / Windows-Python apps have no build-time host constraint (their build
     is a no-op).
     """
     # platform.machine() reports the process arch, note that an emulated x64 Python on
@@ -107,6 +107,7 @@ def ensure_run_supported(app: App, device: DeviceInfo, use_docker: bool) -> None
     - Windows apps can only be run on a Windows host.
     - Ubuntu apps can only be run on native Linux (not Windows, macOS, or WSL),
       and docker-mode runs require Docker to be installed and running.
+    - IMSDK apps can only be run on native Linux and only in Docker.
     - The target device must be one of the app's supported devices.
     """
     logger.debug(
@@ -141,6 +142,18 @@ def ensure_run_supported(app: App, device: DeviceInfo, use_docker: bool) -> None
             )
         if use_docker:
             ensure_docker_available()
+    elif app.app_type == AppType.IMSDK:
+        if sys.platform != "linux" or _is_wsl():
+            raise AppIncompatibleError(
+                f"'{app.id}' is an IMSDK app and can only be run on native Linux "
+                "(Windows, macOS, and WSL are not supported)."
+            )
+        if not use_docker:
+            raise AppIncompatibleError(
+                f"'{app.id}' is an IMSDK app and only runs in Docker; "
+                "--no-docker is not supported."
+            )
+        ensure_docker_available()
     ensure_device_supported(app, device.name)
     logger.debug("Run support check passed for '%s'", app.id)
 

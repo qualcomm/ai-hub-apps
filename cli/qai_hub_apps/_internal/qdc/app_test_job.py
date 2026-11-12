@@ -272,7 +272,8 @@ class AppTestLinuxArtifactHandler(AppTestArtifactHandler):
         """Build the test bundle directory and return the path to the zip archive.
 
         Copies ``run_linux.sh`` from ``device_scripts/`` into ``dest_dir``,
-        substituting placeholders in the shell script. The app directory (which
+        substituting placeholders in the shell script, along with the QDC
+        ``device_assets.json`` it swaps into IMSDK apps. The app directory (which
         must contain a ``Dockerfile`` when ``use_docker=True``) is copied in as
         an ``app/`` subdirectory. The whole ``dest_dir`` is then zipped into
         ``test.zip`` one level above it.
@@ -323,6 +324,10 @@ class AppTestLinuxArtifactHandler(AppTestArtifactHandler):
                     f"{sys.version_info.major}.{sys.version_info.minor}",
                 )
             )
+        shutil.copy(
+            os.path.join(curr_dirname, "device_scripts", "device_assets.json"),
+            os.path.join(dest_dir, "device_assets.json"),
+        )
 
         shutil.copytree(app_dir, os.path.join(dest_dir, "app"))
 

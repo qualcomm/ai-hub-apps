@@ -217,6 +217,42 @@ def test_bundle_scripts_copies_versions_env(
     assert "PYTHON_VERSION" in (app_dir / "scripts" / "versions.env").read_text()
 
 
+def test_bundle_scripts_copies_assets_of_bundled_scripts(
+    tmp_path: Path, dummy_scripts_path: Path
+) -> None:
+    """A transitively bundled script's assets/<stem>/ files ship with it."""
+    asset = dummy_scripts_path / "assets" / "load_versions" / "data.json"
+    asset.parent.mkdir(parents=True)
+    asset.write_text('{"placeholder": true}')
+
+    app_dir = tmp_path / "myapp"
+    app_dir.mkdir()
+    (app_dir / "install_runtime.sh").write_text(
+        f"source {dummy_scripts_path}/apt_utils.sh\n"
+    )
+    bundle_scripts(app_dir, dummy_scripts_path)
+
+    bundled_asset = app_dir / "scripts" / "assets" / "load_versions" / "data.json"
+    assert bundled_asset.read_text() == '{"placeholder": true}'
+
+
+def test_bundle_scripts_skips_assets_of_unbundled_scripts(
+    tmp_path: Path, dummy_scripts_path: Path
+) -> None:
+    asset = dummy_scripts_path / "assets" / "winget_utils" / "data.json"
+    asset.parent.mkdir(parents=True)
+    asset.write_text("{}")
+
+    app_dir = tmp_path / "myapp"
+    app_dir.mkdir()
+    (app_dir / "install_runtime.sh").write_text(
+        f"source {dummy_scripts_path}/apt_utils.sh\n"
+    )
+    bundle_scripts(app_dir, dummy_scripts_path)
+
+    assert not (app_dir / "scripts" / "assets").exists()
+
+
 def test_bundle_scripts_merges_versions_override(
     tmp_path: Path, dummy_scripts_path: Path
 ) -> None:

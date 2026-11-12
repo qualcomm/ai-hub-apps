@@ -157,6 +157,33 @@ def test_run_android_on_macos_raises(monkeypatch):
         ensure_run_supported(app, make_device(), use_docker=False)
 
 
+def test_run_imsdk_app_on_wsl_raises(monkeypatch):
+    monkeypatch.setattr(platform_check.sys, "platform", "linux")
+    monkeypatch.setattr(platform_check, "_is_wsl", lambda: True)
+    app = App(make_app_info(app_type=AppType.IMSDK))
+    with pytest.raises(AppIncompatibleError, match="native Linux"):
+        ensure_run_supported(app, make_device(), use_docker=True)
+
+
+def test_run_imsdk_app_no_docker_raises(monkeypatch):
+    monkeypatch.setattr(platform_check.sys, "platform", "linux")
+    monkeypatch.setattr(platform_check, "_is_wsl", lambda: False)
+    app = App(make_app_info(app_type=AppType.IMSDK))
+    with pytest.raises(AppIncompatibleError, match="only runs in Docker"):
+        ensure_run_supported(app, make_device(), use_docker=False)
+
+
+def test_run_imsdk_docker_checks_docker(monkeypatch):
+    monkeypatch.setattr(platform_check.sys, "platform", "linux")
+    monkeypatch.setattr(platform_check, "_is_wsl", lambda: False)
+    docker_check = MagicMock()
+    monkeypatch.setattr(platform_check, "ensure_docker_available", docker_check)
+    ensure_run_supported(
+        App(make_app_info(app_type=AppType.IMSDK)), make_device(), use_docker=True
+    )
+    docker_check.assert_called_once()
+
+
 def test_ensure_device_supported_rejects_other_device():
     app = App(make_app_info(supported_devices=[TEST_DEVICE]))
     with pytest.raises(AppIncompatibleError, match="does not support the configured"):

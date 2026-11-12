@@ -18,6 +18,9 @@
 #       - failure with attempts remaining -> report, sleep, retry.
 #       - all attempts fail -> return the command's exit code so callers
 #                              under `set -e` still abort.
+#   download_and_verify <url> <dest_file> [<sha256>]
+#       Download <url> to <dest_file>. If <sha256> is provided, verifies the
+#       checksum and exits non-zero if it does not match.
 #
 # Usage: source retry.sh
 # ---------------------------------------------------------------------
@@ -58,4 +61,19 @@ with_retry() {
         sleep "$delay"
         attempt=$((attempt + 1))
     done
+}
+
+download_and_verify() {
+    local url="$1"
+    local dest="$2"
+    local sha256="${3:-}"
+
+    echo "Downloading $(basename "$dest")"
+    echo "   URL: $url"
+    # Explicit returns: callers in a `||` or `if` context run without `set -e`.
+    curl -fSL --max-time 120 -o "$dest" "$url" || return 1
+    if [ -n "$sha256" ]; then
+        echo "$sha256  $dest" | sha256sum -c - || return 1
+    fi
+    echo "Downloaded and verified"
 }

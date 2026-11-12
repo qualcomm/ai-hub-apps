@@ -109,7 +109,11 @@ def _base_image_context(info: AppInfoInternal) -> dict[str, object]:
     """
     if info.base_docker is None:
         return {}
-    if not (DOCKER_ROOT / info.base_docker).is_file():
+    # IMSDK apps pin an external base image (no local Dockerfile under tools/docker/).
+    if (
+        info.app_type != AppType.IMSDK
+        and not (DOCKER_ROOT / info.base_docker).is_file()
+    ):
         raise SystemExit(
             f"Error: base_docker '{info.base_docker}' for '{info.id}' not found at "
             f"'{DOCKER_ROOT / info.base_docker}'."
@@ -135,6 +139,11 @@ def _launch_plan(
         context.update(_base_image_context(info))
         context["runtime_stamp_files"] = _runtime_stamp_files("sh")
         return [("ubuntu/launch_sh.j2", "launch.sh", context)]
+    if info.app_type == AppType.IMSDK:
+        # IMSDK apps are docker-only;
+        context.update(_base_image_context(info))
+        context["runtime_stamp_files"] = _runtime_stamp_files("sh")
+        return [("imsdk/launch_sh.j2", "launch.sh", context)]
     if info.app_type == AppType.ANDROID:
         context["package"] = _android_package(app_dir)
         context["runner"] = _android_instrumentation_runner(app_dir)

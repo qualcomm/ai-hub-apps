@@ -8,7 +8,8 @@ The bundler:
   1. For each install_*.sh / install_*.ps1 / test.{sh,ps1} / build.{sh,ps1}:
      rewrites source lines to the bundle-local scripts/ prefix and collects
      direct shared refs.
-  2. Transitively copies all referenced shared scripts to out_dir/scripts/.
+  2. Transitively copies all referenced shared scripts to out_dir/scripts/,
+     along with each script's assets/<script stem>/ directory if it has one.
   3. Writes out_dir/scripts/versions.env from apps/_shared/scripts/versions.env,
      merging the app's versions.override.env (if present) on top.
 """
@@ -52,6 +53,18 @@ def _merge_versions_env(base: Path, override: Path | None, dest: Path) -> None:
     dest.write_text(
         "".join(f'{k}="{v}"\n' for k, v in merged.items()), encoding="utf-8"
     )
+
+
+def collect_script_assets(script: Path, shared_scripts_root: Path) -> set[Path]:
+    """Return the asset files a shared script ships, if any.
+
+    A script's assets live in ``assets/<script stem>/`` under
+    ``shared_scripts_root`` (e.g. ``imsdk_utils.sh`` -> ``assets/imsdk_utils/``).
+    """
+    asset_dir = shared_scripts_root / "assets" / script.stem
+    if not asset_dir.is_dir():
+        return set()
+    return {f for f in asset_dir.rglob("*") if f.is_file()}
 
 
 def collect_and_rewrite_scripts(
@@ -241,6 +254,8 @@ def bundle_scripts(out_dir: Path, shared_scripts_root: Path | None = None) -> No
     all_shared: set[Path] = set()
     for ref in all_direct_refs:
         all_shared.update(find_transitive_scripts(ref, shared_scripts_root))
+    for script in list(all_shared):
+        all_shared.update(collect_script_assets(script, shared_scripts_root))
 
     for shared in sorted(all_shared):
         rel = shared.relative_to(shared_scripts_root)

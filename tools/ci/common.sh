@@ -11,13 +11,14 @@
 #       Print the value of <KEY> from tools/versions.env (KEY="VALUE" lines).
 #       Exits non-zero if the key is not found.
 #   download_and_verify <url> <dest_file> [<sha256>]
-#       Download <url> to <dest_file>. If <sha256> is provided, verifies the
-#       checksum and exits non-zero if it does not match.
+#       From apps/_shared/scripts/retry.sh.
 #
 # Usage: source common.sh
 # ---------------------------------------------------------------------
 
 _COMMON_SH_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=apps/_shared/scripts/retry.sh
+source "$_COMMON_SH_DIR/../../apps/_shared/scripts/retry.sh"
 
 repo_root() {
     git rev-parse --show-toplevel
@@ -37,18 +38,4 @@ get_version() {
         return 1
     fi
     printf '%s\n' "$value"
-}
-
-download_and_verify() {
-    local url="$1"
-    local dest="$2"
-    local sha256="${3:-}"
-
-    echo "Downloading $(basename "$dest")"
-    echo "   URL: $url"
-    curl -fSL --max-time 120 -o "$dest" "$url"
-    if [ -n "$sha256" ]; then
-        echo "$sha256  $dest" | sha256sum -c -
-    fi
-    echo "Downloaded and verified"
 }
