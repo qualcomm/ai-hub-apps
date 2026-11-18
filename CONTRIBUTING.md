@@ -120,6 +120,9 @@ qai-hub-apps run <app_id_or_path>            # experimental (see below)
   └─ validates run-compatibility, builds if needed, then execs the bundled
      launch.sh / launch.ps1 (which drives the app's run.sh / run.ps1)
 
+# With no app given, build/run/test use the current directory if it is an app;
+# an app id is rejected when --output-dir (default: the current directory) is already an app.
+
 qai-hub-apps switch-model <path> --model <model_id>   # experimental
   └─ replaces the model bundled in a fetched app; apps that package the model at build time (Android, Windows C++) need `build --clean`
 ```

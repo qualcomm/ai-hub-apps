@@ -14,12 +14,13 @@ from qai_hub_apps.commands.fetch import run_fetch
 from qai_hub_apps.commands.list_apps import run_info, run_list
 from qai_hub_apps.configs.model_asset import ModelAsset
 from qai_hub_apps.errors import (
+    AppNotFoundError,
     InvalidArgumentError,
     QAIHubAppsError,
     RegistryNotFoundError,
 )
 from qai_hub_apps.experimental import add_experimental_parser, is_enabled
-from qai_hub_apps.experimental.commands.build import run_build
+from qai_hub_apps.experimental.commands.build import resolve_app_from_dir, run_build
 from qai_hub_apps.experimental.commands.configure import run_configure
 from qai_hub_apps.experimental.commands.run import run_run
 from qai_hub_apps.experimental.commands.switch_model import run_switch_model
@@ -116,17 +117,65 @@ def _resolve_app_filter(args: argparse.Namespace) -> AppFilter:
 
 
 def _resolve_app_target(
+    command: str,
     app: str | None,
     app_id: str | None,
     app_path: Path | None,
+    output_dir: Path,
     overwrite: bool,
+    registry: Registry,
 ) -> tuple[str | None, Path | None]:
     """Resolve the build target into an (app_id, app_path) pair.
 
     --app-id and --app-path are explicit. The positional ``app`` is auto-resolved:
     an existing directory is treated as a fetched app path, otherwise as an app
-    ID.
+    ID. With no app given, the current directory is used if it is an app.
     """
+    logger.debug(
+        "resolve_app_target: command=%s, app=%s, app_id=%s, app_path=%s, output_dir=%s",
+        command,
+        app,
+        app_id,
+        app_path,
+        output_dir,
+    )
+    if app is None and app_id is None and app_path is None:
+        logger.debug("No app given; checking %s for an app", Path.cwd())
+        try:
+            cwd_app = resolve_app_from_dir(Path.cwd(), registry)
+        except InvalidArgumentError as e:
+            raise InvalidArgumentError(
+                "No app given and the current directory is not an app. Pass an app "
+                "ID or path (APP_ID_OR_PATH, --app-id or --app-path), or run from "
+                "inside a fetched app."
+            ) from e
+        logger.info("Using app '%s' in the current directory.", cwd_app.id)
+        return None, Path.cwd()
+    app_id, app_path = _resolve_named_target(app, app_id, app_path, overwrite)
+    if app_id is None:
+        return app_id, app_path
+    logger.debug("Checking that output dir %s is not already an app", output_dir)
+    try:
+        existing = resolve_app_from_dir(output_dir, registry).id
+    except AppNotFoundError as e:
+        existing = e.app_id
+    except InvalidArgumentError:
+        logger.debug("Output dir %s is not an app", output_dir)
+        return app_id, app_path
+    raise InvalidArgumentError(
+        f"Cannot fetch '{app_id}' into '{output_dir.resolve().as_posix()}' because it "
+        f"is already app '{existing}'. Run 'qai-hub-apps {command}' without an app "
+        "name to use it, or pass a different --output-dir."
+    )
+
+
+def _resolve_named_target(
+    app: str | None,
+    app_id: str | None,
+    app_path: Path | None,
+    overwrite: bool,
+) -> tuple[str | None, Path | None]:
+    """Resolve an explicitly given app into an (app_id, app_path) pair."""
     if app is None:
         return app_id, app_path
     if Path(app).exists():
@@ -353,7 +402,7 @@ def main() -> None:
             default=None,
             metavar="APP_ID_OR_PATH",
             help=f"App to {verb}: an app ID to fetch-and-{verb} (from "
-            "'qai-hub-apps list'), or a path to an already-fetched app directory. "
+            "'qai-hub-apps list'), or a path to an already-fetched app directory (default: the current directory). "
             "Use --app-id or --app-path to be explicit",
         )
         app_group.add_argument(
@@ -486,14 +535,6 @@ def main() -> None:
     ):
         switch_parser.error("one of --model, --model-id or --model-path is required")
 
-    if args.command in ("build", "run", "test") and (
-        args.app is None and args.app_id is None and args.app_path is None
-    ):
-        cmd_parser = {"build": build_parser, "run": run_parser, "test": test_parser}[
-            args.command
-        ]
-        cmd_parser.error("one of APP_ID_OR_PATH, --app-id or --app-path is required")
-
     registry_path = getattr(args, "registry", None)
 
     if args.command not in (
@@ -535,7 +576,13 @@ def main() -> None:
                 args.model, args.model_id, args.model_path, args.chipset, args.device
             )
             app_id, app_path = _resolve_app_target(
-                args.app, args.app_id, args.app_path, args.overwrite
+                args.command,
+                args.app,
+                args.app_id,
+                args.app_path,
+                args.output_dir,
+                args.overwrite,
+                registry,
             )
             run_build(
                 app_id,
@@ -552,7 +599,13 @@ def main() -> None:
                 args.model, args.model_id, args.model_path, args.chipset, args.device
             )
             app_id, app_path = _resolve_app_target(
-                args.app, args.app_id, args.app_path, args.overwrite
+                args.command,
+                args.app,
+                args.app_id,
+                args.app_path,
+                args.output_dir,
+                args.overwrite,
+                registry,
             )
             run_run(
                 app_id,

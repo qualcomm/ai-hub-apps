@@ -24,7 +24,7 @@ from qai_hub_apps.utils.scripts import script_env
 logger = logging.getLogger(__name__)
 
 
-def _resolve_app_from_dir(app_dir: Path, registry: Registry) -> App:
+def resolve_app_from_dir(app_dir: Path, registry: Registry) -> App:
     """Resolve the registry App for an already-fetched app directory.
 
     The app id is read from the ``id`` field of the bundled ``info.yaml``.
@@ -63,7 +63,7 @@ def _prepare_app(
     if app_path is not None:
         app_dir = app_path.resolve()
         logger.debug("Building in place from path %s", app_dir)
-        app = _resolve_app_from_dir(app_dir, registry)
+        app = resolve_app_from_dir(app_dir, registry)
         did_fetch = False
         if model_asset is not None:
             did_fetch = app.switch_model(app_dir, model_asset)

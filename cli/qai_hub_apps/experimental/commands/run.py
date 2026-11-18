@@ -14,7 +14,7 @@ from qai_hub_apps import _is_dev
 from qai_hub_apps.configs.app_yaml import AppType
 from qai_hub_apps.configs.model_asset import ModelAsset
 from qai_hub_apps.errors import QAIHubAppsError
-from qai_hub_apps.experimental.commands.build import _resolve_app_from_dir, run_build
+from qai_hub_apps.experimental.commands.build import resolve_app_from_dir, run_build
 from qai_hub_apps.experimental.commands.configure import (
     prompt_for_device,
     run_configure,
@@ -121,7 +121,7 @@ def run_run(
     else:
         assert app_path is not None
         app_path = app_path.resolve()
-        app = _resolve_app_from_dir(app_path, registry)
+        app = resolve_app_from_dir(app_path, registry)
 
     # Windows apps can be built in a Windows container, but always run natively.
     run_docker = use_docker

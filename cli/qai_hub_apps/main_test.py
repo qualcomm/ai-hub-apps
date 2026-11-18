@@ -4,6 +4,7 @@
 # ---------------------------------------------------------------------
 from __future__ import annotations
 
+from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
@@ -387,10 +388,80 @@ def test_build_positional_path_with_overwrite_errors(
     assert exc.value.code == 1
 
 
-def test_build_requires_a_target(monkeypatch, sample_registry_yaml):
+@pytest.mark.parametrize("info", [None, "name: no id\n", "not a mapping\n"])
+def test_build_no_target_outside_app_errors(
+    info, monkeypatch, tmp_path, sample_registry_yaml, caplog
+):
+    monkeypatch.chdir(tmp_path)
+    if info is not None:
+        (tmp_path / "info.yaml").write_text(info, encoding="utf-8")
     with pytest.raises(SystemExit) as exc:
         _run_build_main([], monkeypatch, sample_registry_yaml)
-    assert exc.value.code == 2
+    assert exc.value.code == 1
+    assert "current directory is not an app" in caplog.text
+
+
+def _write_app(app_dir: Path, app_id: str = "test_app") -> None:
+    app_dir.mkdir(parents=True, exist_ok=True)
+    (app_dir / "info.yaml").write_text(f"id: {app_id}\n", encoding="utf-8")
+
+
+def test_build_no_target_uses_cwd_app(monkeypatch, tmp_path, sample_registry_yaml):
+    _write_app(tmp_path)
+    monkeypatch.chdir(tmp_path)
+    mock = _run_build_main([], monkeypatch, sample_registry_yaml)
+    assert mock.call_args.args[:2] == (None, tmp_path)
+
+
+def test_build_no_target_unregistered_cwd_app_errors(
+    monkeypatch, tmp_path, sample_registry_yaml, caplog
+):
+    _write_app(tmp_path, "unknown_app")
+    monkeypatch.chdir(tmp_path)
+    with pytest.raises(SystemExit) as exc:
+        _run_build_main([], monkeypatch, sample_registry_yaml)
+    assert exc.value.code == 1
+    assert "App 'unknown_app' not found" in caplog.text
+
+
+@pytest.mark.parametrize("cwd_app_id", ["test_app", "other_app", "unknown_app"])
+def test_build_app_id_inside_app_errors(
+    cwd_app_id, monkeypatch, tmp_path, sample_registry_yaml, caplog
+):
+    _write_app(tmp_path, cwd_app_id)
+    monkeypatch.chdir(tmp_path)
+    with pytest.raises(SystemExit) as exc:
+        _run_build_main(["test_app"], monkeypatch, sample_registry_yaml)
+    assert exc.value.code == 1
+    assert f"is already app '{cwd_app_id}'" in caplog.text
+
+
+def test_build_app_id_into_app_output_dir_errors(
+    monkeypatch, tmp_path, sample_registry_yaml, caplog
+):
+    out = tmp_path / "out"
+    _write_app(out)
+    monkeypatch.chdir(tmp_path)
+    with pytest.raises(SystemExit) as exc:
+        _run_build_main(
+            ["test_app", "--output-dir", str(out)], monkeypatch, sample_registry_yaml
+        )
+    assert exc.value.code == 1
+    assert (
+        f"into '{out.as_posix()}' because it is already app 'test_app'" in caplog.text
+    )
+
+
+def test_build_app_id_inside_app_with_output_dir_proceeds(
+    monkeypatch, tmp_path, sample_registry_yaml
+):
+    _write_app(tmp_path)
+    monkeypatch.chdir(tmp_path)
+    out = tmp_path / "out"
+    mock = _run_build_main(
+        ["test_app", "--output-dir", str(out)], monkeypatch, sample_registry_yaml
+    )
+    assert mock.call_args.args[:3] == ("test_app", None, out)
 
 
 def test_default_registry_calls_ensure_registry(monkeypatch, sample_registry_yaml):

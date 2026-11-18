@@ -9,7 +9,7 @@ from pathlib import Path
 
 from qai_hub_apps.configs.model_asset import ModelAsset
 from qai_hub_apps.errors import InvalidArgumentError
-from qai_hub_apps.experimental.commands.build import _resolve_app_from_dir
+from qai_hub_apps.experimental.commands.build import resolve_app_from_dir
 from qai_hub_apps.registry import Registry
 
 logger = logging.getLogger(__name__)
@@ -25,7 +25,7 @@ def run_switch_model(
             f"'{app_path}' is not a directory. Pass a directory produced by "
             "'qai-hub-apps fetch'."
         )
-    app = _resolve_app_from_dir(app_dir, registry)
+    app = resolve_app_from_dir(app_dir, registry)
     if not app.switch_model(app_dir, model_asset):
         logger.info("'%s' already bundles %s; nothing to switch.", app.id, model_asset)
         return False

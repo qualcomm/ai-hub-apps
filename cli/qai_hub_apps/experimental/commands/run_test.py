@@ -102,7 +102,7 @@ def test_run_run_rejects_id_and_path(tmp_path):
 def test_run_run_from_path_builds_to_switch_model(tmp_path, stub_run_run, monkeypatch):
     """A model the app does not already bundle has to go through the build path."""
     monkeypatch.setattr(
-        run_mod, "_resolve_app_from_dir", MagicMock(return_value=_make_app())
+        run_mod, "resolve_app_from_dir", MagicMock(return_value=_make_app())
     )
     monkeypatch.setattr(run_mod, "resolve_device_info", MagicMock(return_value=DEVICE))
     monkeypatch.setattr(App, "bundles", MagicMock(return_value=False))
@@ -116,7 +116,7 @@ def test_run_run_from_path_skips_build_when_model_bundled(
     tmp_path, stub_run_run, monkeypatch
 ):
     monkeypatch.setattr(
-        run_mod, "_resolve_app_from_dir", MagicMock(return_value=_make_app())
+        run_mod, "resolve_app_from_dir", MagicMock(return_value=_make_app())
     )
     monkeypatch.setattr(run_mod, "resolve_device_info", MagicMock(return_value=DEVICE))
     monkeypatch.setattr(App, "bundles", MagicMock(return_value=True))
@@ -194,7 +194,7 @@ def test_run_run_from_path_builds_when_launch_reports_build_required(
     tmp_path, stub_run_run, monkeypatch, caplog
 ):
     monkeypatch.setattr(
-        run_mod, "_resolve_app_from_dir", MagicMock(return_value=_make_app())
+        run_mod, "resolve_app_from_dir", MagicMock(return_value=_make_app())
     )
     stub_run_run.subprocess_run.side_effect = [
         subprocess.CompletedProcess([], code) for code in [BUILD_REQUIRED_EXIT_CODE, 0]
@@ -207,7 +207,7 @@ def test_run_run_from_path_builds_when_launch_reports_build_required(
 
 def test_run_run_from_path_with_clean_builds_first(tmp_path, stub_run_run, monkeypatch):
     monkeypatch.setattr(
-        run_mod, "_resolve_app_from_dir", MagicMock(return_value=_make_app())
+        run_mod, "resolve_app_from_dir", MagicMock(return_value=_make_app())
     )
     run_run(None, tmp_path, tmp_path, MagicMock(), None, clean=True)
     assert stub_run_run.run_build.call_args.kwargs["clean"] is True
