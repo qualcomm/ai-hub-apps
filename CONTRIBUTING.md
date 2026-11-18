@@ -119,6 +119,9 @@ qai-hub-apps configure                       # experimental — pick & persist a
 qai-hub-apps run <app_id_or_path>            # experimental (see below)
   └─ validates run-compatibility, builds if needed, then execs the bundled
      launch.sh / launch.ps1 (which drives the app's run.sh / run.ps1)
+
+qai-hub-apps switch-model <path> --model <model_id>   # experimental
+  └─ replaces the model bundled in a fetched app; apps that package the model at build time (Android, Windows C++) need `build --clean`
 ```
 
 ### Fetch provenance manifest
@@ -619,7 +622,7 @@ configured device (that's the build host) and prompt for a mobile device each ru
 ## Experimental CLI Features
 
 Some CLI features are **experimental** — opt-in, unstable, and hidden from end users
-until they graduate. The `build`, `run`, `configure`, and `test` commands are currently
+until they graduate. The `build`, `run`, `configure`, `switch-model`, and `test` commands are currently
 experimental (`test` is `run` with an internal `--test` flag, used by the on-device
 stage; see [Testing Infrastructure](#testing-infrastructure)).
 

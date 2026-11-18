@@ -22,6 +22,7 @@ from qai_hub_apps.experimental import add_experimental_parser, is_enabled
 from qai_hub_apps.experimental.commands.build import run_build
 from qai_hub_apps.experimental.commands.configure import run_configure
 from qai_hub_apps.experimental.commands.run import run_run
+from qai_hub_apps.experimental.commands.switch_model import run_switch_model
 from qai_hub_apps.logging_utils import configure_logging
 from qai_hub_apps.registry import AppFilter, Registry, build_app_filter
 from qai_hub_apps.user_config import get_configured_device
@@ -416,6 +417,27 @@ def main() -> None:
     )
     add_app_action_args(test_parser, "test")
 
+    switch_parser = add_experimental_parser(
+        subparsers,
+        "switch-model",
+        help="Switch the model in an already-fetched app",
+    )
+    add_registry_arg(switch_parser)
+    switch_parser.add_argument(
+        "app_path",
+        type=Path,
+        metavar="APP_PATH",
+        help="Path to an already-fetched app directory",
+    )
+    add_model_args(switch_parser)
+    switch_parser.add_argument(
+        "-y",
+        "--yes",
+        dest="assume_yes",
+        action="store_true",
+        help="Replace the bundled model without asking",
+    )
+
     configure_parser = add_experimental_parser(
         subparsers, "configure", help="Configure the target device"
     )
@@ -441,11 +463,12 @@ def main() -> None:
     if getattr(args, "assume_yes", False):
         set_non_interactive()
 
-    if args.command in ("fetch", "build", "run", "test") and (
+    if args.command in ("fetch", "build", "run", "test", "switch-model") and (
         args.chipset or args.device
     ):
         cmd_parser = {
             "fetch": fetch_parser,
+            "switch-model": switch_parser,
             "build": build_parser,
             "run": run_parser,
             "test": test_parser,
@@ -457,6 +480,11 @@ def main() -> None:
             cmd_parser.error(f"{flag} requires --model or --model-id")
         if args.command in ("run", "test") and args.chipset:
             cmd_parser.error("--chipset cannot be used with run/test; pass --device.")
+
+    if args.command == "switch-model" and (
+        args.model is None and args.model_id is None and args.model_path is None
+    ):
+        switch_parser.error("one of --model, --model-id or --model-path is required")
 
     if args.command in ("build", "run", "test") and (
         args.app is None and args.app_id is None and args.app_path is None
@@ -476,6 +504,7 @@ def main() -> None:
         "run",
         "test",
         "configure",
+        "switch-model",
     ):
         parser.print_help()
         return
@@ -537,6 +566,12 @@ def main() -> None:
                 app_args=app_args,
                 test=args.command == "test",
             )
+        elif args.command == "switch-model":
+            model_asset = _resolve_model_asset(
+                args.model, args.model_id, args.model_path, args.chipset, args.device
+            )
+            assert model_asset is not None
+            run_switch_model(args.app_path, registry, model_asset)
         elif args.command == "configure":
             run_configure(args.device, show=args.show)
     except QAIHubAppsError as e:

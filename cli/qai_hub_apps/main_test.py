@@ -454,6 +454,44 @@ def test_yes_flag_sets_non_interactive(monkeypatch, sample_registry_yaml):
     mock.assert_called_once_with()
 
 
+def _run_switch_main(argv: list[str], monkeypatch, sample_registry_yaml) -> MagicMock:
+    """Run `switch-model ...` against the sample registry with run_switch_model mocked."""
+    return _run_experimental_main(
+        ["switch-model", "--registry", str(sample_registry_yaml), *argv],
+        monkeypatch,
+        "run_switch_model",
+    )
+
+
+def test_switch_model_passes_model_asset(monkeypatch, tmp_path, sample_registry_yaml):
+    mock = _run_switch_main(
+        [str(tmp_path), "--model-id", "m", "--device", "D"],
+        monkeypatch,
+        sample_registry_yaml,
+    )
+    app_path, _, model_asset = mock.call_args.args
+    assert app_path == tmp_path
+    assert model_asset == ModelAsset(model_id="m", device="D")
+
+
+def test_switch_model_requires_a_model(monkeypatch, tmp_path, sample_registry_yaml):
+    with pytest.raises(SystemExit) as exc:
+        _run_switch_main([str(tmp_path)], monkeypatch, sample_registry_yaml)
+    assert exc.value.code == 2
+
+
+def test_switch_model_rejects_device_with_model_path(
+    monkeypatch, tmp_path, sample_registry_yaml
+):
+    with pytest.raises(SystemExit) as exc:
+        _run_switch_main(
+            [str(tmp_path), "--model-path", str(tmp_path), "--device", "D"],
+            monkeypatch,
+            sample_registry_yaml,
+        )
+    assert exc.value.code == 2
+
+
 def test_configure_show_calls_run_configure(monkeypatch):
     mock = _run_experimental_main(["configure", "--show"], monkeypatch, "run_configure")
     mock.assert_called_once_with(None, show=True)
