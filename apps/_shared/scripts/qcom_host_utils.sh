@@ -6,7 +6,7 @@
 # Qualcomm host (driver) package installation for Ubuntu devices.
 #
 # These packages live on the host, not in the app container: they provide the
-# Adreno/FastRPC/QNN user-space drivers that talk to the kernel.
+# Adreno/FastRPC user-space drivers that talk to the kernel.
 #
 # Functions:
 #   qcom_host_libcdsprpc
@@ -28,7 +28,7 @@ source "$_QCOM_HOST_UTILS_DIR/interactive.sh"
 source "$_QCOM_HOST_UTILS_DIR/retry.sh"
 
 QCOM_HOST_PPA="ppa:ubuntu-qcom-iot/qcom-ppa"
-QCOM_HOST_PKGS=(qcom-adreno1 qcom-fastrpc1 qcom-fastrpc-dev libqnn1)
+QCOM_HOST_PKGS=(qcom-adreno1 qcom-fastrpc1 qcom-fastrpc-dev)
 
 qcom_host_libcdsprpc() {
     local candidate

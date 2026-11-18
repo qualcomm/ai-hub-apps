@@ -28,7 +28,7 @@ SCRIPT="run.sh"
 source ../_shared/scripts/runtime_utils.sh
 STAMP_FILES=({{ runtime_stamp_files | join(" ") }})
 
-# The Adreno/FastRPC/QNN drivers live on the host, so they are installed here
+# The Adreno/FastRPC drivers live on the host, so they are installed here
 # rather than in install_runtime.sh, which the docker path runs in the container.
 source ../_shared/scripts/qcom_host_utils.sh
 install_qcom_host_pkgs

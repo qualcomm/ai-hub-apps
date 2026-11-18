@@ -34,7 +34,7 @@ SCRIPT="run.sh"
 source ../_shared/scripts/runtime_utils.sh
 STAMP_FILES=(install_runtime.sh requirements*.txt versions.override.env scripts/versions.env)
 
-# The Adreno/FastRPC/QNN drivers live on the host, so they are installed here
+# The Adreno/FastRPC drivers live on the host, so they are installed here
 # rather than in install_runtime.sh, which the docker path runs in the container.
 source ../_shared/scripts/qcom_host_utils.sh
 install_qcom_host_pkgs
