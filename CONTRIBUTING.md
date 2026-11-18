@@ -31,7 +31,7 @@ This guide covers dev environment setup, repo architecture, app conventions, tes
 - Docker
 
 > [!IMPORTANT]
-> The expected contributor environment is a **Linux or macOS host**. Some dev dependencies (e.g. `onnxruntime` via `qai_hub_models`) lack `win-arm64` wheels, so the full tooling — including `generate_registry` — may not install cleanly on native Windows.
+> The expected contributor environment is a **Linux or macOS host**. The dev tooling installs on native Windows, but pre-commit hooks may produce false positives due to differences in transitive dependency versions and platform-specific type stubs. Windows contributors should use **WSL** for the dev workflow.
 >
 > **Install [git-lfs](https://git-lfs.com) and run `git lfs install` *before cloning*.**
 > Binary assets are LFS-tracked. If you already cloned, run

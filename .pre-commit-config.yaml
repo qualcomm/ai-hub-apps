@@ -116,32 +116,37 @@ repos:
     -   id: google-java-format
         name: google-java-format
         files: \.java$
-        entry: tools/lint/run_google_java_format.sh
-        language: system
+        entry: python tools/lint/run_google_java_format.py
+        language: python
+        additional_dependencies: []
         require_serial: true
     -   id: checkstyle
         name: checkstyle
         files: \.java$
-        entry: tools/lint/run_checkstyle.sh
-        language: system
+        entry: python tools/lint/run_checkstyle.py
+        language: python
+        additional_dependencies: []
         require_serial: true
     -   id: ktlint
         name: ktlint
         files: \.kts?$
-        entry: tools/lint/run_ktlint.sh
-        language: system
+        entry: python tools/lint/run_ktlint.py
+        language: python
+        additional_dependencies: []
         require_serial: true
     -   id: mypy
         name: mypy (cli)
         files: ^cli/qai_hub_apps/.*\.(py|pyi)$
-        entry: tools/run_mypy.sh cli --warn-unused-configs --config-file=pyproject.toml -p qai_hub_apps
-        language: system
+        entry: python tools/run_mypy.py cli --warn-unused-configs --config-file=pyproject.toml -p qai_hub_apps
+        language: python
+        additional_dependencies: []
         pass_filenames: false
         require_serial: true
     -   id: mypy
         name: mypy (apps)
         files: ^apps/.*\.(py|pyi)$
-        entry: tools/run_mypy.sh . --ignore-missing-imports --explicit-package-bases --warn-unused-configs --config-file=pyproject.toml apps/
-        language: system
+        entry: python tools/run_mypy.py . --ignore-missing-imports --explicit-package-bases --warn-unused-configs --config-file=pyproject.toml apps/
+        language: python
+        additional_dependencies: []
         pass_filenames: false
         require_serial: true
