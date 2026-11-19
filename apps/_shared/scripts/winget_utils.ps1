@@ -2,7 +2,7 @@
 # Copyright (c) 2025 Qualcomm Technologies, Inc. and/or its subsidiaries.
 # SPDX-License-Identifier: BSD-3-Clause
 # ---------------------------------------------------------------------
-# Windows winget package installation utilities.
+# Description: Windows winget package installation utilities.
 #
 # Functions:
 #   Install-WingetPackage -Id <package_id> [-ExtraArgs <string[]>]

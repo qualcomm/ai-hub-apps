@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Shared MSVC toolchain versions for AI Hub Apps Windows C++ apps.
+<!-- Description: Shared MSVC toolchain versions for AI Hub Apps Windows C++ apps.
      Symlinked into each app and imported by its .vcxproj.
      Update here to propagate the toolset / C++ standard to all Windows C++ apps. -->
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">

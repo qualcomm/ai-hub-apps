@@ -2,6 +2,7 @@
 // Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 // ---------------------------------------------------------------------
+// Description: Builds chat prompts with the model's system/user/assistant tags.
 #pragma once
 
 #include <string>

@@ -3,7 +3,7 @@
 # Copyright (c) 2025 Qualcomm Technologies, Inc. and/or its subsidiaries.
 # SPDX-License-Identifier: BSD-3-Clause
 # ---------------------------------------------------------------------
-# Ubuntu/Linux apt package installation utilities.
+# Description: Ubuntu/Linux apt package installation utilities.
 #
 # Functions:
 #   install_apt_pkg <package> [extra_apt_args...]

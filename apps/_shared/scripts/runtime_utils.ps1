@@ -2,6 +2,8 @@
 # Copyright (c) 2026 Qualcomm Technologies, Inc. and/or its subsidiaries.
 # SPDX-License-Identifier: BSD-3-Clause
 # ---------------------------------------------------------------------
+# Description: PowerShell version of runtime_utils.sh.
+#
 # install_runtime.ps1 is skipped once it has succeeded for this exact app content;
 # the marker holds a hash of everything the install depends on.
 #

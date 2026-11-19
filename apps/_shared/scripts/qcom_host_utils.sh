@@ -3,7 +3,7 @@
 # Copyright (c) 2025 Qualcomm Technologies, Inc. and/or its subsidiaries.
 # SPDX-License-Identifier: BSD-3-Clause
 # ---------------------------------------------------------------------
-# Qualcomm host (driver) package installation for Ubuntu devices.
+# Description: Qualcomm host (driver) package installation for Ubuntu devices.
 #
 # These packages live on the host, not in the app container: they provide the
 # Adreno/FastRPC user-space drivers that talk to the kernel.

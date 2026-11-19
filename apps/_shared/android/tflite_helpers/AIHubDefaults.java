@@ -2,6 +2,7 @@
 // Copyright (c) 2025 Qualcomm Technologies, Inc. and/or its subsidiaries.
 // SPDX-License-Identifier: BSD-3-Clause
 // ---------------------------------------------------------------------
+// Description: TFLite delegate and CPU thread defaults matching AI Hub's profiling setup.
 package com.quicinc.tflite;
 
 import java.util.Arrays;

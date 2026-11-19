@@ -3,7 +3,7 @@
 # Copyright (c) 2025 Qualcomm Technologies, Inc. and/or its subsidiaries.
 # SPDX-License-Identifier: BSD-3-Clause
 # ---------------------------------------------------------------------
-# Retry wrapper for flaky commands.
+# Description: Retry wrapper for flaky commands.
 #
 # Re-runs a command with exponential backoff until it succeeds or the
 # attempt budget is exhausted.

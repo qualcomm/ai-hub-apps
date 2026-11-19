@@ -2,7 +2,7 @@
 # Copyright (c) 2025 Qualcomm Technologies, Inc. and/or its subsidiaries.
 # SPDX-License-Identifier: BSD-3-Clause
 # ---------------------------------------------------------------------
-# User-consent gating for install/system-mutating commands.
+# Description: PowerShell version of interactive.sh.
 #
 # Wraps a script block and asks the user for y/N approval before running it.
 # Approval is skipped when $env:NON_INTERACTIVE -eq "true".

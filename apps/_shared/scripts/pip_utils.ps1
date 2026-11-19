@@ -2,7 +2,7 @@
 # Copyright (c) 2025 Qualcomm Technologies, Inc. and/or its subsidiaries.
 # SPDX-License-Identifier: BSD-3-Clause
 # ---------------------------------------------------------------------
-# Windows pip/venv installation utilities.
+# Description: PowerShell version of pip_utils.sh.
 #
 # Functions:
 #   Install-PipDeps [-VenvDir <path>] [-Python <exe>] [-Packages <string[]>] [-ExtraArgs <string[]>]

@@ -3,7 +3,7 @@
 # Copyright (c) 2025 Qualcomm Technologies, Inc. and/or its subsidiaries.
 # SPDX-License-Identifier: BSD-3-Clause
 # ---------------------------------------------------------------------
-# Loads versions.env (KEY=VALUE) into the current shell environment.
+# Description: Loads versions.env (KEY=VALUE) into the current shell environment.
 # All variables are exported so sub-processes inherit them.
 # If $QAIHA_APP_ROOT/versions.override.env exists, its keys are layered on top
 # of the global versions.env (the override wins).

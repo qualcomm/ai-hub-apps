@@ -2,7 +2,7 @@
 # Copyright (c) 2025 Qualcomm Technologies, Inc. and/or its subsidiaries.
 # SPDX-License-Identifier: BSD-3-Clause
 # ---------------------------------------------------------------------
-# Windows MSVC (Visual Studio Build Tools) installation utilities.
+# Description: Windows MSVC (Visual Studio Build Tools) installation utilities.
 #
 # Functions:
 #   Install-MSVC

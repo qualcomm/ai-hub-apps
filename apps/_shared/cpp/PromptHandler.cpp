@@ -2,6 +2,7 @@
 // Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 // ---------------------------------------------------------------------
+// Description: Implementation of PromptHandler.hpp.
 #include "PromptHandler.hpp"
 // nlohmann/json single-header. To use this shared utility, have your build system
 // download json.hpp from:

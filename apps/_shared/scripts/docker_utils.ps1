@@ -2,7 +2,7 @@
 # Copyright (c) 2026 Qualcomm Technologies, Inc. and/or its subsidiaries.
 # SPDX-License-Identifier: BSD-3-Clause
 # ---------------------------------------------------------------------
-# Docker helpers for the generated build.ps1 scripts.
+# Description: PowerShell version of docker_utils.sh.
 #
 # Functions:
 #   Get-DockerImageTag -Prefix <str> -AppDir <path>

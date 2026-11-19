@@ -3,7 +3,7 @@
 # Copyright (c) 2025 Qualcomm Technologies, Inc. and/or its subsidiaries.
 # SPDX-License-Identifier: BSD-3-Clause
 # ---------------------------------------------------------------------
-# Fetches the per-device CDI and env auxiliary files an IMSDK app's container
+# Description: Fetches the per-device CDI and env auxiliary files an IMSDK app's container
 # needs, pinned by URL in IMSDK_DEVICE_ASSETS_FILE (apps/_shared/scripts/versions.env).
 #
 # Functions:

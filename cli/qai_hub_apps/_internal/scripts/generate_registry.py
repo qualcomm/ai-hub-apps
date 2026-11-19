@@ -92,7 +92,13 @@ def _to_cli_info(info: AppInfoInternal, **updates: object) -> AppInfo:
     return AppInfo.model_validate(fields)
 
 
-def _read_cli_version() -> str:
+# Bump this when a schema change requires a newer CLI to parse the registry correctly.
+# The check is exclusive (cli > min_cli_version), so set this to the last version
+# that does NOT support the new schema.
+MIN_CLI_VERSION = "0.30.1"
+
+
+def read_cli_version() -> str:
     from setuptools_scm import get_version
 
     return get_version(root=str(REPOSITORY_ROOT))
@@ -101,13 +107,10 @@ def _read_cli_version() -> str:
 class GenerateRegistryParser(Tap):
     output_dir: Path  # Directory where registry.yaml will be written
     schema_version: str = "1.2"  # Schema version to embed in the registry
-    # Bump this when a schema change requires a newer CLI to parse the registry correctly.
-    # The check is exclusive (cli > min_cli_version), so set this to the last version
-    # that does NOT support the new schema.
-    min_cli_version: str = "0.30.1"
+    min_cli_version: str = MIN_CLI_VERSION
     ref: str = "main"  # Git ref (branch or tag) used to construct GitHub URLs
 
-    cli_version: str = _read_cli_version()  # CLI version used for S3 path
+    cli_version: str = read_cli_version()  # CLI version used for S3 path
     build_and_upload: bool = False  # Build app zips and upload to S3; without this, list apps without bundling
     # Which apps to include: Only 'production' may be combined with --build_and_upload, unless --force is set
     scope: RegistryScope = RegistryScope.PRODUCTION

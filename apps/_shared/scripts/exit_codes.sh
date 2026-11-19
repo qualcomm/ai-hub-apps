@@ -3,7 +3,7 @@
 # Copyright (c) 2026 Qualcomm Technologies, Inc. and/or its subsidiaries.
 # SPDX-License-Identifier: BSD-3-Clause
 # ---------------------------------------------------------------------
-# Exit codes an app's launch/run/test script uses to signal the CLI.
+# Description: Exit codes an app's launch/run/test script uses to signal the CLI.
 #
 # Variables:
 #   QAIHA_EXIT_BUILD_REQUIRED

@@ -3,7 +3,7 @@
 # Copyright (c) 2025 Qualcomm Technologies, Inc. and/or its subsidiaries.
 # SPDX-License-Identifier: BSD-3-Clause
 # ---------------------------------------------------------------------
-# Android build toolchain installation utilities.
+# Description: Android build toolchain installation utilities.
 #
 # Functions:
 #   install_android_sdk [--force]

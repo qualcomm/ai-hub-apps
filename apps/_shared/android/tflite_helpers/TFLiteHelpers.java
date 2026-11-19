@@ -2,6 +2,7 @@
 // Copyright (c) 2025 Qualcomm Technologies, Inc. and/or its subsidiaries.
 // SPDX-License-Identifier: BSD-3-Clause
 // ---------------------------------------------------------------------
+// Description: TFLite model loading and interpreter creation with QNN NPU / GPU delegates.
 package com.quicinc.tflite;
 
 import android.content.res.AssetFileDescriptor;

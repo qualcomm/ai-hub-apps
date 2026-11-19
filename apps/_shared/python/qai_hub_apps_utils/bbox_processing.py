@@ -2,6 +2,7 @@
 # Copyright (c) 2025 Qualcomm Technologies, Inc. and/or its subsidiaries.
 # SPDX-License-Identifier: BSD-3-Clause
 # ---------------------------------------------------------------------
+"""Bounding-box math: IoU, NMS, and box format/rotation conversions."""
 
 import numpy as np
 

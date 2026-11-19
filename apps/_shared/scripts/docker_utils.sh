@@ -3,8 +3,9 @@
 # Copyright (c) 2026 Qualcomm Technologies, Inc. and/or its subsidiaries.
 # SPDX-License-Identifier: BSD-3-Clause
 # ---------------------------------------------------------------------
-# Docker helpers for the generated build.sh / launch.sh scripts. Docker runs
-# through $SUDO when the caller has sourced sudo.sh.
+# Description: Docker helpers for the generated build and launch scripts.
+#
+# Docker runs through $SUDO when the caller has sourced sudo.sh.
 #
 # Functions:
 #   docker_image_tag <prefix> <app_dir>

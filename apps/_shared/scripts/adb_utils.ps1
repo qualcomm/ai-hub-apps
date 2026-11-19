@@ -2,7 +2,7 @@
 # Copyright (c) 2026 Qualcomm Technologies, Inc. and/or its subsidiaries.
 # SPDX-License-Identifier: BSD-3-Clause
 # ---------------------------------------------------------------------
-# adb helpers for the generated Android launch.ps1.
+# Description: PowerShell version of adb_utils.sh.
 #
 # Functions:
 #   Select-AdbDevice

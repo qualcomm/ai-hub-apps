@@ -3,6 +3,8 @@
 # Copyright (c) 2026 Qualcomm Technologies, Inc. and/or its subsidiaries.
 # SPDX-License-Identifier: BSD-3-Clause
 # ---------------------------------------------------------------------
+# Description: Runtime-install marker helpers for the generated launch scripts.
+#
 # install_runtime.sh is skipped once it has succeeded for this exact app content;
 # the marker holds a hash of everything the install depends on.
 #

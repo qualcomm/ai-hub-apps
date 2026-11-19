@@ -2,7 +2,7 @@
 # Copyright (c) 2025 Qualcomm Technologies, Inc. and/or its subsidiaries.
 # SPDX-License-Identifier: BSD-3-Clause
 # ---------------------------------------------------------------------
-# Retry wrapper for flaky commands.
+# Description: PowerShell version of retry.sh.
 #
 # Re-runs a script block with exponential backoff until it succeeds or the
 # attempt budget is exhausted.

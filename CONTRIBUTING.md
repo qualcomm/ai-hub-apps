@@ -321,7 +321,10 @@ Registry generation selects which apps to include via `--scope` (see [Regenerate
 
 ## Shared Scripts (`apps/_shared/scripts/`)
 
-Sourced by app install scripts — never executed directly.
+Sourced by app install scripts — never executed directly. See
+[`apps/_shared/README.md`](apps/_shared/README.md) for every shared script and what it does.
+A new shared file needs a `Description: <one line>` header comment, which is what the README
+shows; regenerate it with `python -m qai_hub_apps._internal.scripts.generate_shared_readme`.
 
 ### `versions.env`
 
@@ -351,40 +354,6 @@ To override versions for an app, add them to `apps/<id>/versions.override.env`
 (creating the file if needed) — same `KEY="VALUE"` format; its keys win over the
 global `versions.env`. Example: `apps/whisper_windows_py/versions.override.env` pins `PYTHON_VERSION="3.12"` for win-arm64.
 
-### Bash utilities (`.sh`)
-
-| Script | Functions | Description |
-|--------|-----------|-------------|
-| `android_utils.sh` | `install_android_sdk [--force]` | Installs SDKMAN → Java → Gradle → Android SDK + NDK. Also exports `ANDROID_HOME`, `JAVA_HOME`, `GRADLE_HOME`. |
-| `qairt_utils.sh` | `install_qairt [--force]` | Downloads and extracts QAIRT SDK. Exports `QAIRT_ROOT`, `QAIRT_PATH`. |
-| `apt_utils.sh` | `install_apt_pkg <pkg> [apt_args...]`, `install_apt_pkgs <pkg>...` | Idempotent apt installation — each package is skipped (`::skip::`) if `dpkg-query` already reports it installed. `install_apt_pkgs` batches the consent prompt over only the missing ones. |
-| `python_utils.sh` | `install_python` | Installs `python$PYTHON_VERSION` (via the deadsnakes PPA) + venv + dev + uv. Skips when that interpreter can already run `uv`. |
-| `pip_utils.sh` | `install_pip_deps [--venv <dir>] <req>...`, `activate_venv [<dir>]` | Creates the venv and installs via uv; `activate_venv` resolves the *same* directory, so callers pass nothing. Default `$QAIHA_APP_ROOT/.venv`, else `$PWD/.venv`; `$QAIHA_VENV_OVERRIDE` wins over both (the docker path sets it to a location outside `/app`, which the app bind mount would otherwise shadow). |
-| `sudo.sh` | sets `$SUDO` | `""` when already root or `sudo` is absent, else `"sudo"`. Source before privileged commands — it is what lets the same scripts run as root in a container and unprivileged on a host. |
-| `interactive.sh` | `require_consent [--skip-on-decline] <desc> -- <cmd>...` | y/N gate for system-mutating commands. Auto-passes when `NON_INTERACTIVE=true` or `INTERACTIVE_GRANTED=1`; on approval it exports `INTERACTIVE_GRANTED=1` for that subtree so one approval covers nested calls. Declining aborts, or with `--skip-on-decline` emits `::skip::` and returns non-zero. |
-| `retry.sh` | `with_retry [--attempts N] [--backoff S] <desc> -- <cmd>...` | Retries a flaky command (default 3 attempts, 5s base backoff), returning the final exit code so callers under `set -e` still abort. |
-| `exit_codes.sh` | sets `$QAIHA_EXIT_BUILD_REQUIRED` | Exit code (86) a launch/run script uses to tell the CLI the app is not built yet; `run` then builds and retries once. Kept in sync with `BUILD_REQUIRED_EXIT_CODE` in `qai_hub_apps.experimental.commands.run` and with `exit_codes.ps1`. |
-| `docker_utils.sh` | `docker_image_tag <prefix> <app_dir>`, `resolve_base_image <pinned>`, `replace_stale_container <container> <image>`, `start_container <container> <image> [<create_args>...]`, `install_qc_ca_certs <container> [--java-keystore]` | Docker steps shared by the generated `build.sh`/`launch.sh`. Runs docker through `$SUDO` when the caller has sourced `sudo.sh`. |
-| `runtime_utils.sh` | `runtime_stamp <file>...`, `install_runtime_native <marker> <stamp>`, `install_runtime_in_container <container> <marker> <stamp> [<exec_args>...]` | Runs `install_runtime.sh` unless the runtime marker already holds the current stamp. |
-| `adb_utils.sh` | `select_adb_device` | Sets `$SERIAL` to the connected Android device, prompting when there are several. |
-
-### PowerShell utilities (`.ps1`)
-
-| Script | Functions |
-|--------|-----------|
-| `qairt_utils.ps1` | `Install-Qairt [-Force]` — exports `$env:QAIRT_ROOT`, `$env:QAIRT_PATH` |
-| `winget_utils.ps1` | `Install-WingetPackage -Id <id> [-ExtraArgs <string[]>]`, `Install-WingetPackages -Ids <string[]>` |
-| `msvc_utils.ps1` | `Install-MSVC` — installs VS 2022 Build Tools with the C++ ARM64 toolchain via winget, then exports `$env:MSBUILD_EXE` |
-| `vcpkg_utils.ps1` | `Install-Vcpkg` — clones + bootstraps vcpkg, runs `vcpkg integrate install`, exports `$env:VCPKG_ROOT` (manifest-mode `vcpkg.json` deps then restore during MSBuild); `Install-NuGet` — installs the NuGet CLI via winget and exports `$env:NUGET_EXE` |
-| `python_utils.ps1` | `Install-Python` |
-| `pip_utils.ps1` | `Install-PipDeps [-VenvDir <path>] [-Python <exe>] [-Packages <string[]>] [-ExtraArgs <string[]>]`, `Activate-Venv [-VenvDir <path>]` |
-| `interactive.ps1` | `Invoke-WithConsent -Description <str> [-SkipOnDecline] -Action { … }` — PowerShell equivalent of `require_consent` |
-| `retry.ps1` | `Invoke-WithRetry -Description <str> [-Attempts N] [-Backoff S] -Action { … }` |
-| `exit_codes.ps1` | sets `$QAIHA_EXIT_BUILD_REQUIRED` — the `exit_codes.sh` counterpart |
-| `docker_utils.ps1` | `Get-DockerImageTag`, `Resolve-BaseImage`, `Start-Container`, `Install-QcCaCerts` — the `docker_utils.sh` counterpart |
-| `runtime_utils.ps1` | `Get-RuntimeStamp -Files <string[]>`, `Install-Runtime -Marker <path> -Stamp <str>` — the `runtime_utils.sh` counterpart |
-| `adb_utils.ps1` | `Select-AdbDevice` — returns the device serial; the `adb_utils.sh` counterpart |
-
 ### `NON_INTERACTIVE` environment variable
 
 Set `NON_INTERACTIVE=true` to auto-accept every `require_consent` /
@@ -401,7 +370,7 @@ these same utils at build time) and the QDC device scripts.
 
 Python apps share common helpers (drawing, bounding-box math, image pre/post-processing, FPS counting, a minimal web UI, …) through the `qai_hub_apps_utils` package (distribution name `qai-hub-apps-utils`), which lives in `apps/_shared/python/`. Instead of copy-pasting this code into every app, import it from the package — the bundler ([The Bundlers](#the-bundlers)) copies only the modules an app actually imports (plus their transitive imports) into the standalone bundle, so end users never need the internal repo.
 
-Browse `apps/_shared/python/qai_hub_apps_utils/` for the available modules and their (numpy-style) docstrings. `apps/posenet_ubuntu_py/` is a good end-to-end reference — it imports the `draw`, `webui`, `fps`, `image_processing`, and `quantization` modules.
+See [`apps/_shared/README.md`](apps/_shared/README.md) for the available modules, and their (numpy-style) docstrings for details. `apps/posenet_ubuntu_py/` is a good end-to-end reference — it imports the `draw`, `webui`, `fps`, `image_processing`, and `quantization` modules.
 
 ### Using it in an app
 
@@ -427,7 +396,7 @@ Browse `apps/_shared/python/qai_hub_apps_utils/` for the available modules and t
 
 ### Adding a new shared utility
 
-1. Add a module under `apps/_shared/python/qai_hub_apps_utils/` (e.g. `my_helper.py`) with numpy-style docstrings.
+1. Add a module under `apps/_shared/python/qai_hub_apps_utils/` (e.g. `my_helper.py`) with numpy-style docstrings, including a module docstring. Then run `python -m qai_hub_apps._internal.scripts.generate_shared_readme`.
 2. If it has third-party dependencies, create `qai_hub_apps_utils/requirements/requirements-my_helper.txt` listing them. This file is what the bundler merges and what becomes the `[my_helper]` pip extra — no `setup.py` change is needed (extras are discovered dynamically).
 3. Import it from your app as `from qai_hub_apps_utils.my_helper import ...`. The AST-based collector picks it up automatically at bundle time; transitive imports of other `qai_hub_apps_utils` modules are followed too.
 
@@ -560,10 +529,14 @@ all (SDKMAN's own `curl` and the JVM truststore are out of reach of any `wget` f
 ### CI keeps generated scripts in sync
 
 `build-and-test.yaml`'s **"Check generated files are up to date"** job regenerates
-both the registry and the app scripts — `build.*` and `launch.*` (`--scope test`) —
-and fails if the working tree differs, so a template change with stale committed
+the registry, the app scripts — `build.*` and `launch.*` (`--scope test`) — and
+`apps/_shared/README.md`, and fails if the working tree differs, so a template change with stale committed
 output is caught in CI, just like `registry.yaml`. Regenerate and commit whenever you
-touch a template or add an app.
+touch a template or add an app. To regenerate everything CI checks in one step:
+
+```bash
+python -m qai_hub_apps._internal.scripts.run_codegen
+```
 
 ---
 

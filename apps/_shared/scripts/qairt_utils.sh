@@ -3,7 +3,7 @@
 # Copyright (c) 2025 Qualcomm Technologies, Inc. and/or its subsidiaries.
 # SPDX-License-Identifier: BSD-3-Clause
 # ---------------------------------------------------------------------
-# Ubuntu/Linux QAIRT SDK installation utilities.
+# Description: Ubuntu/Linux QAIRT SDK installation utilities.
 #
 # Functions:
 #   install_qairt [--force]

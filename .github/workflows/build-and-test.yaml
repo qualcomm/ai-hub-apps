@@ -88,29 +88,16 @@ jobs:
       run: |
         bash tools/setup_env.sh --python="${{ steps.setup_python.outputs.python-path }}" --venv="${{ env.VENV_PATH }}"
 
-    - name: Check registry.yaml
+    - name: Check generated files
       run: |
         source ${{ env.VENV_PATH }}/bin/activate
-        python -m qai_hub_apps._internal.scripts.generate_registry --output_dir cli/qai_hub_apps/
+        python -m qai_hub_apps._internal.scripts.run_codegen
         if [[ -n $(git diff) || -n $(git ls-files --others --exclude-standard) ]]; then
           git diff
           git ls-files --others --exclude-standard
           echo ""
-          echo "registry.yaml is out of date."
-          echo "Please run: python -m qai_hub_apps._internal.scripts.generate_registry --output_dir cli/qai_hub_apps/"
-          exit 1
-        fi
-
-    - name: Check app scripts
-      run: |
-        source ${{ env.VENV_PATH }}/bin/activate
-        python -m qai_hub_apps._internal.scripts.generate_app_scripts --scope test
-        if [[ -n $(git diff) || -n $(git ls-files --others --exclude-standard) ]]; then
-          git diff
-          git ls-files --others --exclude-standard
-          echo ""
-          echo "App scripts (build/launch) are out of date."
-          echo "Please run: python -m qai_hub_apps._internal.scripts.generate_app_scripts --scope test"
+          echo "Generated files are out of date."
+          echo "Please run: python -m qai_hub_apps._internal.scripts.run_codegen"
           exit 1
         fi
 

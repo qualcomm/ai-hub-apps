@@ -2,6 +2,8 @@
 # Copyright (c) 2025 Qualcomm Technologies, Inc. and/or its subsidiaries.
 # SPDX-License-Identifier: BSD-3-Clause
 # ---------------------------------------------------------------------
+# Description: PowerShell version of load_versions.sh.
+#
 # Loads versions.env (KEY=VALUE) into PowerShell variables in the caller's scope.
 # If $QAIHA_APP_ROOT\versions.override.env exists, its keys are layered on top
 # of the global versions.env (the override wins).

@@ -1,3 +1,5 @@
+// Description: Shared Gradle config: loads versions.env into ext for every Android app.
+
 // Load versions from versions.env (relative to this file)
 // DONOT CHANGE THE PATH
 def versionsEnvFile = new File(buildscript.sourceFile.parentFile, "../../../_shared/scripts/versions.env").canonicalFile

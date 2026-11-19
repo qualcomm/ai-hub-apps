@@ -3,7 +3,7 @@
 # Copyright (c) 2026 Qualcomm Technologies, Inc. and/or its subsidiaries.
 # SPDX-License-Identifier: BSD-3-Clause
 # ---------------------------------------------------------------------
-# adb helpers for the generated Android launch.sh.
+# Description: adb helpers for the generated Android launch.sh.
 #
 # Functions:
 #   select_adb_device
