@@ -1,5 +1,5 @@
 name: Object Detection in IMSDK
-id: object_detection_imsdk_py
+id: object_detection_qimsdk_yolo_py
 license_url: https://github.com/qualcomm/ai-hub-apps/blob/main/LICENSE
 license_type: bsd-3-clause
 runtime: tflite
@@ -10,7 +10,7 @@ description: 'A sample application using QIMSDK python app builder for object de
 precisions: [float]
 app_type: 'imsdk'
 static_img_filename: 'app_screen.png'
-app_repo_relative_path: 'object_detection_imsdk_py'
+app_repo_relative_path: 'object_detection_qimsdk_yolo_py'
 model_file_paths:
   - 'models/detector.tflite'
 os:
@@ -22,4 +22,4 @@ use_case: 'Object Detection'
 supported_devices:
   - name: "Arduino VENTUNO Q"
     status: "Tested"
-related_models: ['yolox', 'yolov8_det', 'yolo26_det']
+related_models: ['yolox', 'yolov8_det', 'yolo26_det', 'yolov5', 'yolov6', 'yolov7', 'yolov10_det', 'yolov11_det', 'yolor']

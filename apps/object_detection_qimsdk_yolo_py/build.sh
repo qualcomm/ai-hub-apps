@@ -23,4 +23,4 @@ for arg in "$@"; do
     esac
 done
 
-echo "::skip::Nothing to build for object_detection_imsdk_py; run it directly (see the app README)."
+echo "::skip::Nothing to build for object_detection_qimsdk_yolo_py; run it directly (see the app README)."

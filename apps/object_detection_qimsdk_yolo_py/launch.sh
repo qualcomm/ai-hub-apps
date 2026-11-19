@@ -29,7 +29,7 @@ while [ $# -gt 0 ]; do
 done
 
 if [ "$USE_DOCKER" -eq 0 ]; then
-    echo "::error::object_detection_imsdk_py is an IMSDK app and only runs in Docker; --no-docker is not supported." >&2
+    echo "::error::object_detection_qimsdk_yolo_py is an IMSDK app and only runs in Docker; --no-docker is not supported." >&2
     exit 1
 fi
 
@@ -40,7 +40,7 @@ source ../_shared/scripts/runtime_utils.sh
 STAMP_FILES=(install_runtime.sh requirements*.txt versions.override.env scripts/versions.env)
 
 if [ ! -f "$APP_DIR/Dockerfile" ]; then
-    echo "::error::No Dockerfile found for object_detection_imsdk_py." >&2
+    echo "::error::No Dockerfile found for object_detection_qimsdk_yolo_py." >&2
     exit 1
 fi
 
@@ -66,7 +66,7 @@ BASE_IMAGE="$(resolve_base_image "artifacts.codelinaro.org/iot-solutions-microse
 
 echo "::step::Building Docker image from $BASE_IMAGE"
 if ! $SUDO docker build --build-arg "BASE_IMAGE=$BASE_IMAGE" -t "$IMAGE_TAG" .; then
-    echo "::error::Failed to build the image for object_detection_imsdk_py. If '$BASE_IMAGE' could not be pulled, check network access to it, or set QAIHA_BASE_IMAGE to a base image you built locally." >&2
+    echo "::error::Failed to build the image for object_detection_qimsdk_yolo_py. If '$BASE_IMAGE' could not be pulled, check network access to it, or set QAIHA_BASE_IMAGE to a base image you built locally." >&2
     exit 1
 fi
 echo "::done::Docker image"
@@ -120,7 +120,7 @@ if [ -t 0 ]; then
     tty_args=(-i -t)
 fi
 
-echo "::step::Running object_detection_imsdk_py in Docker"
+echo "::step::Running object_detection_qimsdk_yolo_py in Docker"
 $SUDO docker exec "${tty_args[@]}" "${exec_env_args[@]}" -w /app "$CONTAINER_NAME" \
     bash "$SCRIPT" "${APP_ARGS[@]}"
 echo "::done::run"

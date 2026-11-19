@@ -20,8 +20,8 @@ Install the CLI and fetch the app with the model:
 
 ```bash
 pip install qai-hub-apps
-qai-hub-apps fetch object_detection_imsdk_py --model yolox --output-dir ~
-cd ~/object_detection_imsdk_py
+qai-hub-apps fetch object_detection_qimsdk_yolo_py --model yolox --output-dir ~
+cd ~/object_detection_qimsdk_yolo_py
 ```
 
 > [!NOTE]
@@ -30,7 +30,7 @@ cd ~/object_detection_imsdk_py
 > assets into the app automatically:
 >
 > ```bash
-> qai-hub-apps fetch object_detection_imsdk_py --model <path/to/exported_model>
+> qai-hub-apps fetch object_detection_qimsdk_yolo_py --model <path/to/exported_model>
 > ```
 
 ### Option B: Cloning the Repo
