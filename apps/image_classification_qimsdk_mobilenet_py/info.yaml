@@ -1,0 +1,25 @@
+name: Image Classification with QIM SDK
+id: image_classification_qimsdk_mobilenet_py
+license_url: https://github.com/qualcomm/ai-hub-apps/blob/main/LICENSE
+license_type: bsd-3-clause
+runtime: tflite
+status: unpublished
+domain: Computer Vision
+headline: Image Classification with QIM SDK
+description: 'A sample app using QIMSDK for image classification via TFLite Runtime. It combines hardware-accelerated video decoding and encoding, GPU preprocessing, and AI inference on the NPU with native MobileNet postprocessing. It handles video file or USB camera input, with annotated output saved to MP4 or streamed over RTSP through a minimal web interface.'
+precisions: [float, w8a8]
+app_type: imsdk
+static_img_filename: app_screen.png
+app_repo_relative_path: image_classification_qimsdk_mobilenet_py
+model_file_paths:
+  - models/classifier.tflite
+os:
+  name: Ubuntu
+  version: 24.04+
+languages: [Python]
+base_docker: imsdk
+use_case: Image Classification
+supported_devices:
+  - name: Arduino VENTUNO Q
+    status: Tested
+related_models: [efficientnet_b0, convnext_base, convnext_tiny, efficientnet_v2_s, beit, mnasnet05, efficientnet_b4, gpunet, sequencer2d, levit, mobile_vit]
