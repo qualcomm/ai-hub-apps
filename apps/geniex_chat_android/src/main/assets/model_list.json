@@ -101,6 +101,26 @@
     "runtime": "llama_cpp"
   },
   {
+    "_note": "Requires geniex-android >= 0.10.0.",
+    "id": "LFM3-1.7B-GGUF",
+    "displayName": "LFM3-1.7B (GGUF)",
+    "modelName": "LiquidAI/LFM3-1.7B-GGUF",
+    "quant": "Q4_0",
+    "hub": "HUGGINGFACE",
+    "type": "chat",
+    "runtime": "llama_cpp"
+  },
+  {
+    "_note": "Requires geniex-android >= 0.10.0.",
+    "id": "LFM3-VL-2B-GGUF",
+    "displayName": "LFM3-VL-2B (GGUF)",
+    "modelName": "LiquidAI/LFM3-VL-2B-GGUF",
+    "quant": "Q4_0",
+    "hub": "HUGGINGFACE",
+    "type": "vlm",
+    "runtime": "llama_cpp"
+  },
+  {
     "id": "gpt-oss-20b-GGUF",
     "displayName": "gpt-oss-20b (GGUF)",
     "modelName": "unsloth/gpt-oss-20b-GGUF",
@@ -111,7 +131,7 @@
   },
   {
     "id": "Qwen3-4B",
-    "displayName": "Qwen3-4B (NPU)",
+    "displayName": "Qwen3-4B (NPU, 8 Elite)",
     "modelName": "ai-hub-models/Qwen3-4B",
     "hub": "AUTO",
     "chipset": "SM8750",
@@ -119,8 +139,17 @@
     "runtime": "qairt"
   },
   {
+    "id": "Qwen3-4B-SM8850",
+    "displayName": "Qwen3-4B (NPU, 8 Elite Gen 5)",
+    "modelName": "ai-hub-models/Qwen3-4B",
+    "hub": "AUTO",
+    "chipset": "SM8850",
+    "type": "chat",
+    "runtime": "qairt"
+  },
+  {
     "id": "Qwen3-4B-Instruct-2507",
-    "displayName": "Qwen3-4B-Instruct-2507 (NPU)",
+    "displayName": "Qwen3-4B-Instruct-2507 (NPU, 8 Elite)",
     "modelName": "ai-hub-models/Qwen3-4B-Instruct-2507",
     "hub": "AUTO",
     "chipset": "SM8750",
@@ -128,11 +157,29 @@
     "runtime": "qairt"
   },
   {
+    "id": "Qwen3-4B-Instruct-2507-SM8850",
+    "displayName": "Qwen3-4B-Instruct-2507 (NPU, 8 Elite Gen 5)",
+    "modelName": "ai-hub-models/Qwen3-4B-Instruct-2507",
+    "hub": "AUTO",
+    "chipset": "SM8850",
+    "type": "chat",
+    "runtime": "qairt"
+  },
+  {
     "id": "Qwen2.5-VL-7B-Instruct",
-    "displayName": "Qwen2.5-VL-7B-Instruct (NPU)",
+    "displayName": "Qwen2.5-VL-7B-Instruct (NPU, 8 Elite)",
     "modelName": "ai-hub-models/Qwen2.5-VL-7B-Instruct",
     "hub": "AUTO",
     "chipset": "SM8750",
+    "type": "vlm",
+    "runtime": "qairt"
+  },
+  {
+    "id": "Qwen2.5-VL-7B-Instruct-SM8850",
+    "displayName": "Qwen2.5-VL-7B-Instruct (NPU, 8 Elite Gen 5)",
+    "modelName": "ai-hub-models/Qwen2.5-VL-7B-Instruct",
+    "hub": "AUTO",
+    "chipset": "SM8850",
     "type": "vlm",
     "runtime": "qairt"
   }
