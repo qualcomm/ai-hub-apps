@@ -14,7 +14,7 @@ With this repository, you can...
 ### Supported runtimes
 * [TensorFlow Lite](https://www.tensorflow.org/lite)
 * [ONNX](https://onnxruntime.ai/)
-* Genie SDK (Generative AI runtime on top of [Qualcomm® AI Engine Direct SDK](https://www.qualcomm.com/developer/software/qualcomm-ai-engine-direct-sdk))
+* [GenieX SDK](https://aihub.qualcomm.com/geniex)
 
 ### Supported Deployment Targets
 * Android 11 Red Velvet Cake & Newer, API v30+
@@ -93,6 +93,18 @@ __NOTE: Some of these apps will run without NPU acceleration on non-Snapdragon®
 | [Depth Estimation](apps/depth_estimation_ubuntu_py) | Python | TensorFlow Lite | GStreamer |
 | [Video Classification](apps/video_classification_ubuntu_py) | Python | TensorFlow Lite | |
 <!-- /UBUNTU_APPS -->
+
+<!-- IMSDK_APPS -->
+## _IMSDK_ App Directory
+
+[Getting started with QIMSDK](https://imsdkdocs.qualcomm.com/): Qualcomm® Intelligent Multimedia SDK (IM SDK) is a comprehensive, unified development platform designed to accelerate the creation of next-generation AI and multimedia applications on Qualcomm® IoT platforms.
+
+| Task | Language | Inference API | Special Tags |
+| -- | -- | -- | -- |
+| [Image Classification with QIM SDK](apps/image_classification_qimsdk_mobilenet_py) | Python | TensorFlow Lite | IMSDK |
+| [Object Detection with QIM SDK](apps/object_detection_qimsdk_yolo_py) | Python | TensorFlow Lite | IMSDK |
+<!-- /IMSDK_APPS -->
+
 
 _\* Source available on GitHub; not included in the CLI release._
 

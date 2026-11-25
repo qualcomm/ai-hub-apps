@@ -316,7 +316,7 @@ def main() -> None:
 
     if args.output == "rtsp":
         ui = WebUI()
-        ui.set_title("Object Detection in IMSDK")
+        ui.set_title("Object Detection with QIM SDK")
         ui.set_rtsp_stream(f"rtsp://127.0.0.1:{args.rtsp_port}{args.rtsp_mount}")
         ui.set_text(
             f"RTSP: rtsp://<device-ip>:{args.rtsp_port}{args.rtsp_mount}  |  "

@@ -1,4 +1,4 @@
-# Object Detection in IMSDK
+# Object Detection with QIM SDK
 
 A configurable version of the QIMSDK reference object-detection app that
 uses a **custom Python postprocess callback** (manual tensor decode + NMS +

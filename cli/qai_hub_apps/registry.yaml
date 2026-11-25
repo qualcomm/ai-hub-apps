@@ -167,6 +167,38 @@ apps:
   - Samsung Galaxy S25
   model_file_paths:
   - src/main/assets/classifier.tflite
+- name: Image Classification with QIM SDK
+  id: image_classification_qimsdk_mobilenet_py
+  status: published
+  headline: Image Classification with QIM SDK
+  description: A sample app using QIMSDK for image classification via TFLite Runtime. It combines hardware-accelerated video decoding and encoding, GPU preprocessing, and AI inference on the NPU with native MobileNet postprocessing. It handles video file or USB camera input, with annotated output saved to MP4 or streamed over RTSP through a minimal web interface.
+  domain: Computer Vision
+  use_case: Image Classification
+  app_repo_url: https://github.com/qualcomm/ai-hub-apps/tree/main/apps/image_classification_qimsdk_mobilenet_py
+  app_type: imsdk
+  runtime:
+  - tflite
+  related_models:
+  - efficientnet_b0
+  - convnext_base
+  - convnext_tiny
+  - efficientnet_v2_s
+  - beit
+  - mnasnet05
+  - efficientnet_b4
+  - gpunet
+  - sequencer2d
+  - levit
+  - mobile_vit
+  precisions:
+  - float
+  - w8a8
+  languages:
+  - Python
+  supported_devices:
+  - Arduino VENTUNO Q
+  model_file_paths:
+  - models/classifier.tflite
 - name: Image Classification Windows
   id: image_classification_windows_cpp
   status: published
@@ -303,6 +335,35 @@ apps:
   - Samsung Galaxy S25
   model_file_paths:
   - src/main/assets/detector.tflite
+- name: Object Detection with QIM SDK
+  id: object_detection_qimsdk_yolo_py
+  status: published
+  headline: Yolo Object Detection with QIM SDK
+  description: A sample application using QIMSDK python app builder for object detection via TFLite Runtime. It uses hardware-accelerated video decoding and encoding, GPU preprocessing, and AI inference on the NPU to detect objects and draw bounding boxes and labels on each frame. It handles video file or USB camera input, with annotated output saved to MP4 or streamed over RTSP
+  domain: Computer Vision
+  use_case: Object Detection
+  app_repo_url: https://github.com/qualcomm/ai-hub-apps/tree/main/apps/object_detection_qimsdk_yolo_py
+  app_type: imsdk
+  runtime:
+  - tflite
+  related_models:
+  - yolox
+  - yolov8_det
+  - yolo26_det
+  - yolov5
+  - yolov6
+  - yolov7
+  - yolov10_det
+  - yolov11_det
+  - yolor
+  precisions:
+  - float
+  languages:
+  - Python
+  supported_devices:
+  - Arduino VENTUNO Q
+  model_file_paths:
+  - models/detector.tflite
 - name: Object Detection Windows
   id: object_detection_windows_cpp
   status: published
