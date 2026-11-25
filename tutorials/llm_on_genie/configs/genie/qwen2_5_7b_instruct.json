@@ -1,0 +1,61 @@
+{
+    "dialog": {
+        "version": 1,
+        "type": "basic",
+        "context": {
+            "version": 1,
+            "size": 4096,
+            "n-vocab": 131072,
+            "bos-token": 151644,
+            "eos-token": 151645,
+            "eot-token": 151643
+        },
+        "sampler": {
+            "version": 1,
+            "seed": 42,
+            "temp": 0.8,
+            "top-k": 40,
+            "top-p": 0.95
+        },
+        "tokenizer": {
+            "version": 1,
+            "path": "tokenizer.json"
+        },
+        "engine": {
+            "version": 1,
+            "n-threads": 3,
+            "backend": {
+                "version": 1,
+                "type": "QnnHtp",
+                "QnnHtp": {
+                    "version": 1,
+                    "use-mmap": true,
+                    "spill-fill-bufsize": 0,
+                    "mmap-budget": 0,
+                    "poll": false,
+                    "pos-id-dim": 64,
+                    "cpu-mask": "0xe0",
+                    "kv-dim": 128,
+                    "rope-theta": 1000000,
+                    "allow-async-init": false
+                },
+                "extensions": "htp_backend_ext_config.json"
+            },
+            "model": {
+                "version": 1,
+                "type": "binary",
+                "binary": {
+                    "version": 1,
+                    "ctx-bins": [
+                        "qwen2_5_7b_instruct_part_1_of_6.bin",
+                        "qwen2_5_7b_instruct_part_2_of_6.bin",
+                        "qwen2_5_7b_instruct_part_3_of_6.bin",
+                        "qwen2_5_7b_instruct_part_4_of_6.bin",
+                        "qwen2_5_7b_instruct_part_5_of_6.bin",
+			"qwen2_5_7b_instruct_part_6_of_6.bin"
+                    ]
+                }
+            }
+        }
+    }
+}

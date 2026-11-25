@@ -1,0 +1,57 @@
+{
+    "dialog": {
+        "version": 1,
+        "type": "basic",
+        "context": {
+            "version": 1,
+            "size": 1024,
+            "n-vocab": 32000,
+            "bos-token": 1,
+            "eos-token": 2
+        },
+        "sampler": {
+            "version": 1,
+            "seed": 42,
+            "temp": 0.8,
+            "top-k": 40,
+            "top-p": 0.95
+        },
+        "tokenizer": {
+            "version": 1,
+            "path": "tokenizer.json"
+        },
+        "engine": {
+            "version": 1,
+            "n-threads": 4,
+            "backend": {
+                "version": 1,
+                "type": "QnnHtp",
+                "QnnHtp": {
+                    "version": 1,
+                    "spill-fill-bufsize": 0,
+                    "use-mmap": true,
+                    "mmap-budget": 0,
+                    "poll": true,
+                    "pos-id-dim": 64,
+                    "cpu-mask": "0xe0",
+                    "kv-dim": 128,
+                    "allow-async-init": false
+                },
+                "extensions": "htp_backend_ext_config.json"
+            },
+            "model": {
+                "version": 1,
+                "type": "binary",
+                "binary": {
+                    "version": 1,
+                    "ctx-bins": [
+                        "Llama2_Part1.bin",
+                        "Llama2_Part2.bin",
+                        "Llama2_Part3.bin",
+                        "Llama2_Part4.bin"
+                    ]
+                }
+            }
+        }
+    }
+}

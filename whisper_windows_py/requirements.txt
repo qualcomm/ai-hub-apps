@@ -1,0 +1,8 @@
+onnxruntime==1.24.4
+onnxruntime-qnn==2.3.0
+onnxruntime-qnn
+numpy==2.4.6
+scipy==1.17.1
+sounddevice==0.5.5
+audio2numpy==0.1.2
+transformers==4.56.2

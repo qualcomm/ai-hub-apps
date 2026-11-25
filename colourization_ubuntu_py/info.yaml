@@ -1,0 +1,27 @@
+name: Image Colourization
+id: colourization_ubuntu_py
+license_url: https://github.com/qualcomm/ai-hub-apps/blob/main/LICENSE
+license_type: bsd-3-clause
+runtime: tflite
+status: published
+domain: 'Computer Vision'
+headline: 'On-device image colourization with TFLite'
+description: 'A sample app for Ubuntu integrating an image-colourization model (DDColor) via TFLite Runtime. It uses GStreamer for input video and provides a minimal web interface to stream colourized frames suitable for embedded applications.'
+precisions: [float]
+app_type: 'ubuntu'
+static_img_filename: 'DDColor.png'
+app_repo_relative_path: 'colourization_ubuntu_py'
+model_file_paths:
+  - 'models/ddcolor.tflite'
+os:
+  name: Ubuntu
+  version: 24.04+
+languages: ['Python']
+base_docker: ubuntu.dockerfile
+use_case: 'Image Editing'
+supported_devices:
+  - name: "Arduino VENTUNO Q"
+    status: "Tested"
+  - name: "Dragonwing IQ-9075 EVK"
+    status: "Not Tested"
+related_models: ['ddcolor']
