@@ -111,6 +111,7 @@ jobs:
             -e '/<!-- ANDROID_APPS -->/,/<!-- \/ANDROID_APPS -->/s|](apps/|](|g' \
             -e '/<!-- WINDOWS_APPS -->/,/<!-- \/WINDOWS_APPS -->/s|](apps/|](|g' \
             -e '/<!-- UBUNTU_APPS -->/,/<!-- \/UBUNTU_APPS -->/s|](apps/|](|g' \
+            -e '/<!-- IMSDK_APPS -->/,/<!-- \/IMSDK_APPS -->/s|](apps/|](|g' \
             README.md > ${{ env.APPS_DIR }}/README.md
 
           # App READMEs link to the tutorials by absolute URL; retarget those at
